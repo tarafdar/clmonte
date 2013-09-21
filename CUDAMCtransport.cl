@@ -13,7 +13,7 @@
     You should have received a copy of the GNU General Public License
     along with CUDAMC.  If not, see <http://www.gnu.org/licenses/>.*/
 
- 
+
 #define NUM_THREADS_PER_BLOCK 320 //Keep above 192 to eliminate global memory access overhead
 #define NUM_BLOCKS 84 //Keep numblocks a multiple of the #MP's of the GPU (8800GT=14MP)
 #define NUM_THREADS 26880
@@ -24,10 +24,15 @@
 #define TMAX 2000.0f //[ps] Maximum time of flight
 #define DT 10.0f //[ps] Time binning resolution
 #define TEMP 201 //ceil(TMAX/DT), precalculated to avoid dynamic memory allocation (fulhack)
+
+#define MUS_MAX 90.0f	//[1/cm]
+#define V 0.0214f		//[cm/ps] (c=0.03 [cm/ps] v=c/n) here n=1.4
+#define COS_CRIT 0.6999f	//the critical angle for total internal reflection at the border cos_crit=sqrt(1-(nt/ni)^2)
+#define G 0.9f	
+#define N 1.4f
+
 float divide(float x, float y)
 {
-
-	
 	//return (float)x/y;
 	return native_divide(x,y);
 }
@@ -86,7 +91,7 @@ void LaunchPhoton(float3* pos, float3* dir, float* t)
 
 
 
-void Spin(float3* dir, float* g, unsigned long* x,//unsigned int* c,
+void Spin(float3* dir, unsigned long* x,//unsigned int* c,
 		       unsigned int* a)
 {
 	float cost, sint;	// cosine and sine of the 
@@ -99,15 +104,15 @@ void Spin(float3* dir, float* g, unsigned long* x,//unsigned int* c,
 
 
 	//This is more efficient for g!=0 but of course less efficient for g==0
-	temp = divide((1.0f-(*g)*(*g)),(1.0f-(*g)+2.0f*(*g)*rand_MWC_co(x,a)));//Should be close close????!!!!!
-	cost = divide((1.0f+(*g)*(*g) - temp*temp),(2.0f*(*g)));
+	temp = divide((1.0f-(G)*(G)),(1.0f-(G)+2.0f*(G)*rand_MWC_co(x,a)));//Should be close close????!!!!!
+	cost = divide((1.0f+(G)*(G) - temp*temp),(2.0f*(G)));
 
 
 	//temp = (1.0f-(*g)*(*g))/(1.0f-(*g)+2.0f*(*g)*rand_MWC_co(x,a));//Should be close close????!!!!!
 	//cost = (1.0f+(*g)*(*g) - temp*temp)(2.0f*(*g)));
 
 
-	if((*g)==0.0f)
+	if((G)==0.0f)
 		cost = 2.0f*rand_MWC_co(x,a) -1.0f;
 
 
@@ -140,26 +145,26 @@ void Spin(float3* dir, float* g, unsigned long* x,//unsigned int* c,
 }
 
 
-unsigned int Reflect(float3* dir, float3* pos, float* t, float* v, float* cos_crit, float* n, unsigned long* x, unsigned int* a, __global unsigned int* histd)
+unsigned int Reflect(float3* dir, float3* pos, float* t,  unsigned long* x, unsigned int* a, __global unsigned int* histd)
 {
 	float r;
 	float fibre_separtion=1.0f;//[cm]
 	float fibre_diameter=0.05f;//[cm]
 	float abs_return;
-	if(-dir->z<=*cos_crit)
+	if(-dir->z<=COS_CRIT)
 		r=1.0f; //total internal reflection
 	else
 	{
 		if(-dir->z==1.0f)//normal incident
 		{		
-			r = divide((1.0f-*n),(1+*n));
+			r = divide((1.0f-N),(1+N));
 			r *= r;//square
 		}
 		else
 		{
 			//long and boring calculations of r
 			float sinangle_i = sqrtf(1.0f-dir->z*dir->z);
-			float sinangle_t = *n*sinangle_i;
+			float sinangle_t = N*sinangle_i;
 			float cosangle_t = sqrtf(1.0f-sinangle_t*sinangle_t);
 			
 			float cossumangle = (-dir->z*cosangle_t) - sinangle_i*sinangle_t;
@@ -182,7 +187,7 @@ unsigned int Reflect(float3* dir, float3* pos, float* t, float* v, float* cos_cr
 			r= divide(pos->z,-dir->z);//dir->z must be finite since we have a boundary cross!
 			pos->x+=dir->x*r;
 			pos->y+=dir->y*r;
-			*t+= divide(r,*v); //calculate the time when the photon exits
+			*t+= divide(r,V); //calculate the time when the photon exits
 
 			r=sqrtf(pos->x*pos->x+pos->y*pos->y);
 			
@@ -236,12 +241,6 @@ __kernel void MCd(__global unsigned int* xd,__global unsigned int* cd,__global u
 	float t;	//float to store the time of flight
 	float s;	//step length
 	
-	float mus_max=90.0f;	//[1/cm]
-	float v=0.0214f;		//[cm/ps] (c=0.03 [cm/ps] v=c/n) here n=1.4
-	float cos_crit=0.6999f;	//the critical angle for total internal reflection at the border cos_crit=sqrt(1-(nt/ni)^2)
-	float g=0.9f;	
-	float n=1.4f;
-
 	unsigned int num_det_photons=0;
 	unsigned int flag=0;
 
@@ -250,21 +249,21 @@ __kernel void MCd(__global unsigned int* xd,__global unsigned int* cd,__global u
 	for(ii=0;ii<NUMSTEPS_GPU;ii++) //this is the main while loop
 	{
 		//num_det_photons++;
-		s = divide(- logf(rand_MWC_oc(&x,&a)),mus_max);//sample step length 
+		s = divide(- logf(rand_MWC_oc(&x,&a)), MUS_MAX);//sample step length 
 		
 		//Perform boundary crossing check here
 		if((pos.z+dir.z*s)<=0)//photon crosses boundary within the next step
 		{
-			flag=Reflect(&dir,&pos,&t,&v,&cos_crit,&n,&x,&a,histd);
+			flag=Reflect(&dir,&pos,&t,&x,&a,histd);
 		}
 		
 		//Move (we can move the photons that have been terminated above since it improves our performance and does not affect our results)
 		pos.x += s*dir.x;
 		pos.y += s*dir.y;
 		pos.z += s*dir.z;
-		t += divide(s,v); 
+		t += divide(s,V); 
 
-		Spin(&dir,&g,&x,&a);
+		Spin(&dir,&x,&a);
 
 		if(t >= TMAX || flag>=1)//Kill photon and launch a new one
 		{
