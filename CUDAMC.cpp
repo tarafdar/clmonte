@@ -59,7 +59,9 @@
 #define DT 10.0f //[ps] Time binning resolution
 #define TEMP 201 //ceil(TMAX/DT), precalculated to avoid dynamic memory allocation (fulhack)
 
-
+#define LINUX
+//#define JORDAN
+//#define NAIF
 unsigned int xtest[NUM_THREADS];
 unsigned int ctest[NUM_THREADS];
 unsigned int atest[NUM_THREADS];
@@ -109,8 +111,13 @@ int MC(unsigned int* x,unsigned int* c,unsigned int* a)
 
 
 
-
+#ifdef JORDAN
     fp = fopen("C:\\Users\\Jordan\\Documents\\GitHub\\ece496\\CUDAMCtransport.cl", "r");
+#endif
+#ifdef LINUX
+    fp = fopen("CUDAMCtransport.cl", "r");
+
+#endif
     if (!fp) {
         fprintf(stderr, "Failed to load kernel.\n");
         exit(1);
@@ -328,14 +335,14 @@ int MC(unsigned int* x,unsigned int* c,unsigned int* a)
 	printf("Total number of photons steps simulated: %e\n",(double)NUM_THREADS*(double)NUMSTEPS_GPU);
     printf("time1=%u, time2=%u.\n",time1,time2);
 
-	printf("Photon steps per sec: %e\n",((double)NUM_THREADS*(double)NUMSTEPS_GPU)*1000/(double(time2-time1)));
+	printf("Photon steps per sec: %e\n",((double)NUM_THREADS*(double)NUMSTEPS_GPU)/((double(time2-time1))/CLOCKS_PER_SEC));
 
 
 	fprintf(print_file, "\nTotal number of photons terminated (i.e. full path simulated): %llu\nNumber of photons contribution to the histogram: %llu\n",num_tot,hist_tot);
 	fprintf(print_file, "Total number of photons steps simulated: %e\n",(double)NUM_THREADS*(double)NUMSTEPS_GPU);
     fprintf(print_file, "time1=%u, time2=%u.\n",time1,time2);
 
-	fprintf(print_file, "Photon steps per sec: %e\n",((double)NUM_THREADS*(double)NUMSTEPS_GPU)*1000/(double(time2-time1)));
+	fprintf(print_file, "Photon steps per sec: %e\n",((double)NUM_THREADS*(double)NUMSTEPS_GPU)/(((double(time2-time1)))/CLOCKS_PER_SEC));
 	
 	GPUtime=time2-time1;
 	
@@ -379,13 +386,13 @@ int MC(unsigned int* x,unsigned int* c,unsigned int* a)
 	printf("Total number of photons steps simulated: %e\n",(double)NUM_THREADS*(double)NUMSTEPS_CPU);
     printf("time1=%u, time2=%u.\n",time1,time2);
 
-	printf("Photon steps per sec: %e\n",((double)NUM_THREADS*(double)NUMSTEPS_CPU)*1000/(double(time2-time1)));
+	printf("Photon steps per sec: %e\n",((double)NUM_THREADS*(double)NUMSTEPS_CPU)/(double(time2-time1)/CLOCKS_PER_SEC));
 	
 	fprintf(print_file, "\n\nTotal number of photons (i.e. full path simulated): %llu\nNumber of photons contribution to the histogram: %llu\n",num_tot,hist_tot);
 	fprintf(print_file, "Total number of photons steps simulated: %e\n",(double)NUM_THREADS*(double)NUMSTEPS_CPU);
     fprintf(print_file, "time1=%u, time2=%u.\n",time1,time2);
 
-	fprintf(print_file, "Photon steps per sec: %e\n",((double)NUM_THREADS*(double)NUMSTEPS_CPU)*1000/(double(time2-time1)));
+	fprintf(print_file, "Photon steps per sec: %e\n",((double)NUM_THREADS*(double)NUMSTEPS_CPU)/(double(time2-time1)/CLOCKS_PER_SEC));
 
 	CPUtime=time2-time1;
 
@@ -404,8 +411,12 @@ void initialize(void)//Straight from Steven Gratton's code
     unsigned long long int xinit=1ull;
     unsigned int cinit=0u;
     unsigned int fora,tmp1,tmp2;
+#ifdef JORDAN
     fp=fopen("C:\\Users\\Jordan\\Documents\\GitHub\\ece496\\safeprimes_base32.txt","r");//use an expanded list containing 50000 safeprimes instead of Steven's shorter list
-
+#endif
+#ifdef LINUX
+	fp=fopen("safeprimes_base32.txt","r");//use an expanded list containing 50000 safeprimes instead of Steven's shorter list
+#endif
 
 // use begin as a multiplier to generate the initial x's for 
 // the other generators...

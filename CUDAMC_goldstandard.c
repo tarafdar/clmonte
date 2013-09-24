@@ -155,7 +155,7 @@ void Spinh(float3* dir, float* g, unsigned long long* x, unsigned int* a)
 	{
 		dir->x = sint*cosp;
 		dir->y = sint*sinp;
-		dir->z = _copysign(cost,dir->z*cost);
+		dir->z = copysign(cost,dir->z*cost);
 		
 	}
 	else // regular incident.
