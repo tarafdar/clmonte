@@ -110,7 +110,7 @@ int MC(unsigned int* x,unsigned int* c,unsigned int* a)
 
 
 
-    fp = fopen("C:\\Users\\Naif\\Documents\\Visual Studio 2010\\Projects\\CudaMC\\CudaMC\\CUDAMC\\CUDAMCtransport.cl", "r");
+    fp = fopen("C:\\Users\\Jordan\\Documents\\GitHub\\ece496\\CUDAMCtransport.cl", "r");
     if (!fp) {
         fprintf(stderr, "Failed to load kernel.\n");
         exit(1);
@@ -121,11 +121,12 @@ int MC(unsigned int* x,unsigned int* c,unsigned int* a)
 
 
 	FILE *file; 
-	FILE * print_file;
+	FILE *print_file;
+	FILE *build_file;
 	
 	file = fopen("outp.txt", "w");
 	print_file = fopen("print_out.txt", "w");
-	
+	build_file = fopen("build.txt", "w");
 
 	clock_t time1,time2,GPUtime,CPUtime;
     int size;
@@ -138,7 +139,7 @@ int MC(unsigned int* x,unsigned int* c,unsigned int* a)
     cl_uint ret_num_devices;
     cl_uint ret_num_platforms;
     cl_int ret = clGetPlatformIDs(1, &platform_id, &ret_num_platforms);
-    ret = clGetDeviceIDs( platform_id, CL_DEVICE_TYPE_CPU, 1, 
+    ret = clGetDeviceIDs( platform_id, CL_DEVICE_TYPE_GPU, 1, 
             &device_id, &ret_num_devices);
 
 
@@ -217,6 +218,15 @@ int MC(unsigned int* x,unsigned int* c,unsigned int* a)
 
 
 	if(ret!=CL_SUCCESS){
+		char *build_log;
+		size_t ret_val_size;
+		clGetProgramBuildInfo(program, device_id, CL_PROGRAM_BUILD_LOG, 0, NULL, &ret_val_size);
+		build_log = new char[ret_val_size+1];
+		clGetProgramBuildInfo(program, device_id, CL_PROGRAM_BUILD_LOG, ret_val_size, build_log, NULL);
+		build_log[ret_val_size] = '\0';
+		fputs (build_log, build_file);
+		delete build_log;
+		fclose(build_file);
 		printf("Build Program fail ad\n");
 		return -1;
 	}
@@ -394,7 +404,7 @@ void initialize(void)//Straight from Steven Gratton's code
     unsigned long long int xinit=1ull;
     unsigned int cinit=0u;
     unsigned int fora,tmp1,tmp2;
-    fp=fopen("C:\\Users\\Naif\\Documents\\Visual Studio 2010\\Projects\\CudaMC\\Debug\\safeprimes_base32.txt","r");//use an expanded list containing 50000 safeprimes instead of Steven's shorter list
+    fp=fopen("C:\\Users\\Jordan\\Documents\\GitHub\\ece496\\safeprimes_base32.txt","r");//use an expanded list containing 50000 safeprimes instead of Steven's shorter list
 
 
 // use begin as a multiplier to generate the initial x's for 

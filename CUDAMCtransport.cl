@@ -31,6 +31,12 @@
 #define G 0.9f	
 #define N 1.4f
 
+#define ONE_OVER_2G				( 1.0f / (2.0f * G) )
+#define ONE_MINUS_N_OVER_1_PLUS_N ( (1.0f - N) / (1.0f + N) )
+#define ONE_OVER_V				( 1.0f / V )
+#define ONE_OVER_DT				( 1.0f / DT )
+#define ONE_OVER_MUS_MAX			( 1.0f / MUS_MAX )
+
 float divide(float x, float y)
 {
 	//return (float)x/y;
@@ -105,8 +111,8 @@ void Spin(float3* dir, unsigned long* x,//unsigned int* c,
 
 	//This is more efficient for g!=0 but of course less efficient for g==0
 	temp = divide((1.0f-(G)*(G)),(1.0f-(G)+2.0f*(G)*rand_MWC_co(x,a)));//Should be close close????!!!!!
-	cost = divide((1.0f+(G)*(G) - temp*temp),(2.0f*(G)));
-
+	//cost = divide((1.0f+(G)*(G) - temp*temp),(2.0f*(G)));
+	cost = (1.0f+(G)*(G) - temp*temp)*ONE_OVER_2G;
 
 	//temp = (1.0f-(*g)*(*g))/(1.0f-(*g)+2.0f*(*g)*rand_MWC_co(x,a));//Should be close close????!!!!!
 	//cost = (1.0f+(*g)*(*g) - temp*temp)(2.0f*(*g)));
@@ -157,7 +163,8 @@ unsigned int Reflect(float3* dir, float3* pos, float* t,  unsigned long* x, unsi
 	{
 		if(-dir->z==1.0f)//normal incident
 		{		
-			r = divide((1.0f-N),(1+N));
+			//r = divide((1.0f-N),(1+N));
+			r = ONE_MINUS_N_OVER_1_PLUS_N;
 			r *= r;//square
 		}
 		else
@@ -187,7 +194,8 @@ unsigned int Reflect(float3* dir, float3* pos, float* t,  unsigned long* x, unsi
 			r= divide(pos->z,-dir->z);//dir->z must be finite since we have a boundary cross!
 			pos->x+=dir->x*r;
 			pos->y+=dir->y*r;
-			*t+= divide(r,V); //calculate the time when the photon exits
+			//*t+= divide(r,V); //calculate the time when the photon exits
+			*t+= r*ONE_OVER_V;
 
 			r=sqrtf(pos->x*pos->x+pos->y*pos->y);
 			
@@ -195,10 +203,11 @@ unsigned int Reflect(float3* dir, float3* pos, float* t,  unsigned long* x, unsi
 			if((fabs((r-fibre_separtion)))<=fibre_diameter)
 			{
 				//photon detected!
--				//atomic_add( histd + (unsigned int)(floor((divide((*t),DT)) , 1)));//&histd[(unsigned int)floorf(native_divide((t*),DT))],(unsigned int)1);
+				//atomic_add( histd + (unsigned int)(floor((divide((*t),DT)) , 1)));//&histd[(unsigned int)floorf(native_divide((t*),DT))],(unsigned int)1);
 				//unsigned int offset;
 				//offset= (unsigned int)(floor(native_divide((*t),DT)))
-				atomic_add( histd + (unsigned int)floor(divide((*t), DT)), 1);
+				//atomic_add( histd + (unsigned int)floor(divide((*t), DT)), 1);
+				atomic_add( histd + (unsigned int)floor(*t*ONE_OVER_DT), 1);
 				return 1;
 			}
 			else
@@ -249,8 +258,9 @@ __kernel void MCd(__global unsigned int* xd,__global unsigned int* cd,__global u
 	for(ii=0;ii<NUMSTEPS_GPU;ii++) //this is the main while loop
 	{
 		//num_det_photons++;
-		s = divide(- logf(rand_MWC_oc(&x,&a)), MUS_MAX);//sample step length 
-		
+		//s = divide(- logf(rand_MWC_oc(&x,&a)), MUS_MAX);//sample step length 
+		s = (- logf(rand_MWC_oc(&x,&a))*ONE_OVER_MUS_MAX);
+
 		//Perform boundary crossing check here
 		if((pos.z+dir.z*s)<=0)//photon crosses boundary within the next step
 		{
