@@ -74,12 +74,43 @@ float rand_MWC_coh(unsigned long long*,unsigned int*);
 void LaunchPhotonh(float3*, float3*, float*);
 void Spinh(float3*,float*,unsigned long long*,unsigned int*);
 unsigned int Reflecth(float3*, float3*, float*, float*, float*, float*, unsigned long long*,unsigned int*,unsigned int*);
+/*
+// CUDA runtime
+#include <cuda_runtime.h>
+#include <cuda.h>
+#include "device_launch_parameters.h"
+#include "device_functions.h"
+// helper functions and utilities to work with CUDA
+#include "helper_functions.h"
+#include "helper_cuda.h"
+#include "helper_math.h"
+#include "math_functions.h"
+#include "common_functions.h"
+//#include "sm_11_atomic_functions.h"
+//#include "sm_35_atomic_functions.h"
+*/
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <math.h>
+// Includes CUDA
+#include <cuda_runtime.h>
 
+// Utilities and timing functions
+#include <helper_functions.h>    // includes cuda.h and cuda_runtime_api.h
+
+// CUDA helper functions
+#include <helper_cuda.h>         // helper functions for CUDA error check
+
+//#include "sm_12_atomic_functions.h"
+//#include "sm_13_double_functions.h"
 #include "math_constants.h"
 #include <stdio.h>
-#include <cutil.h>
+//#include "cutil_math.h"
 #include "CUDAMCtransport.cu"
 #include "CUDAMC_goldstandard.c"
+#include <time.h>
+
 
 // wrapper for device code
 void MC(unsigned int* x,unsigned int* c,unsigned int* a)
@@ -159,13 +190,13 @@ void MC(unsigned int* x,unsigned int* c,unsigned int* a)
 
 	FILE *file;
 	file = fopen("outp.txt", "w");
-	for(i=0;i<TEMP;i++)fprintf(file,"%d ",hist[i]);
+	for(i=0;i<TEMP;i++)fprintf(file,"%d %d\n", i, hist[i]);
 	fclose(file);
 	printf("\nTotal number of photons terminated (i.e. full path simulated): %llu\nNumber of photons contribution to the histogram: %llu\n",num_tot,hist_tot);
 	printf("Total number of photons steps simulated: %e\n",(double)NUM_THREADS*(double)NUMSTEPS_GPU);
     printf("time1=%u, time2=%u.\n",time1,time2);
 
-	printf("Photon steps per sec: %e\n",((double)NUM_THREADS*(double)NUMSTEPS_GPU)*1000/(double(time2-time1)));
+	printf("Photon steps per sec: %e\n",((double)NUM_THREADS*(double)NUMSTEPS_GPU)*CLOCKS_PER_SEC/(double(time2-time1)));
 	GPUtime=time2-time1;
 
 
@@ -192,7 +223,7 @@ void MC(unsigned int* x,unsigned int* c,unsigned int* a)
 	printf("Total number of photons steps simulated: %e\n",(double)NUM_THREADS*(double)NUMSTEPS_CPU);
     printf("time1=%u, time2=%u.\n",time1,time2);
 
-	printf("Photon steps per sec: %e\n",((double)NUM_THREADS*(double)NUMSTEPS_CPU)*1000/(double(time2-time1)));
+	printf("Photon steps per sec: %e\n",((double)NUM_THREADS*(double)NUMSTEPS_CPU)*CLOCKS_PER_SEC/(double(time2-time1)));
 	CPUtime=time2-time1;
 
 	printf("\n\nSpeedup: %f",(NUMSTEPS_GPU*double(CPUtime))/(NUMSTEPS_CPU*double(GPUtime)));
@@ -208,13 +239,15 @@ void initialize(void)//Straight from Steven Gratton's code
     unsigned long long int xinit=1ull;
     unsigned int cinit=0u;
     unsigned int fora,tmp1,tmp2;
-    fp=fopen("safeprimes_base32.txt","r");//use an expanded list containing 50000 safeprimes instead of Steven's shorter list
+    fp=fopen("C:\\Users\\Jordan\\Desktop\\CUDAMC\\safeprimes_base32.txt","r");//use an expanded list containing 50000 safeprimes instead of Steven's shorter list
 
 
 // use begin as a multiplier to generate the initial x's for 
 // the other generators...
-
-    fscanf(fp,"%u %u %u",&begin,&tmp1,&tmp2);
+	if(fp!=NULL)
+		fscanf(fp,"%u %u %u",&begin,&tmp1,&tmp2);
+	else
+		printf("I'm retarded\n");
 
     for (unsigned int i=0;i<NUM_THREADS;i++)
     {
