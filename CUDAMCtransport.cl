@@ -31,11 +31,11 @@
 #define G 0.9f	
 #define N 1.4f
 
-#define ONE_OVER_2G				( 1.0f / (2.0f * G) )
-#define ONE_MINUS_N_OVER_1_PLUS_N ( (1.0f - N) / (1.0f + N) )
-#define ONE_OVER_V				( 1.0f / V )
-#define ONE_OVER_DT				( 1.0f / DT )
-#define ONE_OVER_MUS_MAX			( 1.0f / MUS_MAX )
+#define ONE_OVER_2G 				0.555555556f
+#define ONE_MINUS_N_OVER_1_PLUS_N_SQUARED   0.027777778f
+#define ONE_OVER_V				46.728971926f
+#define ONE_OVER_DT				0.1f
+#define ONE_OVER_MUS_MAX			0.01111111111f
 
 float divide(float x, float y)
 {
@@ -164,8 +164,8 @@ unsigned int Reflect(float3* dir, float3* pos, float* t,  unsigned long* x, unsi
 		if(-dir->z==1.0f)//normal incident
 		{		
 			//r = divide((1.0f-N),(1+N));
-			r = ONE_MINUS_N_OVER_1_PLUS_N;
-			r *= r;//square
+			r = ONE_MINUS_N_OVER_1_PLUS_N_SQUARED;
+			//r *= r;//square
 		}
 		else
 		{
