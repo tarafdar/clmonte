@@ -1,0 +1,22 @@
+CLSOURCES=$(CLDIR)/CLMonte.cpp
+CUDASOURCES=$(CUDADIR)/CUDAMC.cu
+CLOUT=CLMonte
+CUDAOUT=CUDAMC
+CLFLAGS =-O3 -o
+CUDAFLAGS=-O3 -o
+CLLIB=-l OpenCL
+CUDAARCH=-arch=sm_11
+SRCDIR=SRC
+CUDADIR=$(SRCDIR)/CUDA_SRC
+CLDIR=$(SRCDIR)/CLMonte_SRC
+
+all: $(CLOUT) $(CUDAOUT)
+
+$(CLOUT): $(CLDIR)/CLMonte.cpp $(CLDIR)/CLMonteTransport.cl $(CLDIR)/CLMonte_goldstandard.c
+	g++ $(CLSOURCES) $(CLFLAGS) $(CLOUT) $(CLLIB)
+
+$(CUDAOUT): $(CUDADIR)/CUDAMC.cu $(CUDADIR)/CUDAMCtransport.cu $(CUDADIR)/CUDAMC_goldstandard.c
+	nvcc $(CUDAARCH)  $(CUDASOURCES) $(CUDAFLAGS) $(CUDAOUT)
+
+clean:
+	rm -rf *.txt $(CLOUT) $(CUDAOUT)
