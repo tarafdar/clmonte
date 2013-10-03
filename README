@@ -22,3 +22,10 @@ To Make:
 	only CL:		make CLMonte
 	only CUDA:		make CUDAMC
 	clean:			make clean
+
+
+
+NOTE*****
+
+
+OpenCL and CUDA code currently tinkered to be optimal on GTX 480 (15 SMs), change as need be for different accelerators!
