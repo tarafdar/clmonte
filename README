@@ -1,8 +1,24 @@
-README FILE
+******ECE496 PROJECT*****
 
-CHANGE TEST
 
-TEST
+Source files: SRC
+	CLMonte_SRC: OpenCL files
+		CLMonte.cpp - host application 
+		CLMonteTransport.cl - OpenCL GPU application
+		CLMonte_goldstandard.c -Sequential C model
 
-NEW TEST
-NEW TEST
+	CUDA_SRC: CUDA files
+		CUDAMC.cu - host application
+		CUDAMCTransport.cu - CUDA GPU application
+		CUDAMC_goldstandard.c - Sequential C model
+
+
+	HelperFiles: safeprimes_base32.txt - prime numbers used for random number generation 
+
+
+To Make:
+
+        both CUDA and CL:	make 
+	only CL:		make CLMonte
+	only CUDA:		make CUDAMC
+	clean:			make clean
