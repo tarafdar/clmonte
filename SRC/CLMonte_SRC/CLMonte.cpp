@@ -45,9 +45,11 @@
 #include <CL/cl.h>
 
 //#define NUM_THREADS_PER_BLOCK 320 //Keep above 192 to eliminate global memory access overhead
-#define NUM_THREADS_PER_BLOCK 448 //Keep above 192 to eliminate global memory access overhead
+//#define NUM_THREADS_PER_BLOCK 448 //Keep above 192 to eliminate global memory access overhead
+#define NUM_THREADS_PER_BLOCK 560 //Keep above 192 to eliminate global memory access overhead
 //#define NUM_BLOCKS 84 //Keep numblocks a multiple of the #MP's of the GPU (8800GT=14MP)
-#define NUM_BLOCKS 30 //Keep numblocks a multiple of the #MP's of the GPU (8800GT=14MP)
+//#define NUM_BLOCKS 30 //Keep numblocks a multiple of the #MP's of the GPU (8800GT=14MP)
+#define NUM_BLOCKS 48 //Keep numblocks a multiple of the #MP's of the GPU (8800GT=14MP)
 #define NUM_THREADS 26880
 //#define NUM_THREADS 80640
 //#define NUM_THREADS NUM_THREADS_PER_BLOCK
