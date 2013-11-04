@@ -9,6 +9,9 @@ CUDAARCH=-arch=sm_11
 SRCDIR=SRC
 CUDADIR=$(SRCDIR)/CUDA_SRC
 CLDIR=$(SRCDIR)/CLMonte_SRC
+CLDIR_UNITTESTS=$(SRCDIR)/CLMonte_SRC/UnitTests
+UNITTEST_REFLECT = reflectUT
+UTSOURCES=$(CLDIR_UNITTESTS)/CLMonteBenchmark.cpp
 
 all: $(CLOUT) $(CUDAOUT)
 
@@ -18,5 +21,8 @@ $(CLOUT): $(CLDIR)/CLMonte.cpp $(CLDIR)/CLMonteTransport.cl $(CLDIR)/CLMonte_gol
 $(CUDAOUT): $(CUDADIR)/CUDAMC.cu $(CUDADIR)/CUDAMCtransport.cu $(CUDADIR)/CUDAMC_goldstandard.c
 	nvcc $(CUDAARCH)  $(CUDASOURCES) $(CUDAFLAGS) $(CUDAOUT)
 
+$(UNITTEST_REFLECT): $(CLDIR_UNITTESTS)/CLMonteBenchmark.cpp $(CLDIR_UNITTESTS)/CLMonteBenchmark_reflect.cl
+	g++ $(UTSOURCES) $(CLFLAGS) $(UNITTEST_REFLECT) $(CLLIB)
+
 clean:
-	rm -rf *.txt $(CLOUT) $(CUDAOUT)
+	rm -rf *.txt $(CLOUT) $(CUDAOUT) $(UNITTEST_REFLECT)
