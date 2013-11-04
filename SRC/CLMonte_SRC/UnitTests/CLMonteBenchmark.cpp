@@ -116,7 +116,7 @@ unsigned int Reflecth(float3*, float3*, float*, float*, float*, float*, unsigned
 
 #include <stdio.h>
 //#include <cutil.h>
-#include "CLMonte_goldstandard.c"
+//#include "CLMonte_goldstandard.c"
 #include <time.h>
 #include <stdlib.h>
 #define MAX_SOURCE_SIZE (0x100000)
