@@ -43,6 +43,14 @@
     along with CUDAMC.  If not, see <http://www.gnu.org/licenses/>.*/
 
 #include <CL/cl.h>
+#include <cmath>
+#include <cstring>
+#include <stdio.h>
+#include <time.h>
+#include <stdlib.h>
+#include <math.h>
+#include <limits.h>
+#define MAX_SOURCE_SIZE (0x100000)
 
 //#define NUM_THREADS_PER_BLOCK 320 //Keep above 192 to eliminate global memory access overhead
 //#define NUM_THREADS_PER_BLOCK 448 //Keep above 192 to eliminate global memory access overhead
@@ -80,9 +88,16 @@ struct float3{
 
 // forward declaration of the device code
 
+void check_return(cl_int ret, const char* message){
+    
+    if(ret!=CL_SUCCESS){
+        printf("%s\n", message);
+        exit(-1);
+    }
 
-#include <math.h>
-#include <limits.h>
+}
+
+
 // forward declaration of the host code
 void MCh(unsigned int*,unsigned int*,unsigned int*,unsigned int*,unsigned int*);
 float rand_MWC_och(unsigned long long*,unsigned int*);
@@ -91,14 +106,8 @@ void LaunchPhotonh(float3*, float3*, float*);
 void Spinh(float3*,float*,unsigned long long*,unsigned int*);
 unsigned int Reflecth(float3*, float3*, float*, float*, float*, float*, unsigned long long*,unsigned int*,unsigned int*);
 
-//#include "math_constants.h"
 
-#include <stdio.h>
-//#include <cutil.h>
 #include "CLMonte_goldstandard.c"
-#include <time.h>
-#include <stdlib.h>
-#define MAX_SOURCE_SIZE (0x100000)
 // wrapper for device code
 int MC(unsigned int* x,unsigned int* c,unsigned int* a)
 {
@@ -162,72 +171,44 @@ int MC(unsigned int* x,unsigned int* c,unsigned int* a)
     cl_command_queue command_queue = clCreateCommandQueue(context, device_id, 0, &ret);
 
 	// Create memory buffers on the device for each vector 
-    cl_mem xd_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, 
-            size, NULL, &ret);
+    cl_mem xd_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, size, NULL, &ret);
+    check_return(ret, "create xd buff fail\n");
 
     
-    cl_mem cd_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, 
-            size, NULL, &ret);
+    cl_mem cd_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, size, NULL, &ret);
+    check_return(ret, "create cd buff fail\n");
 
-    cl_mem ad_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, 
-            size, NULL, &ret);
+    cl_mem ad_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, size, NULL, &ret);
+    check_return(ret, "create ad buff fail\n");
 
-    cl_mem numd_mem_obj = clCreateBuffer(context, CL_MEM_WRITE_ONLY, 
-            size, NULL, &ret);
+    cl_mem numd_mem_obj = clCreateBuffer(context, CL_MEM_WRITE_ONLY, size, NULL, &ret);
+    check_return(ret, "create numd buff fail\n");
 
-    cl_mem histd_mem_obj = clCreateBuffer(context, CL_MEM_READ_WRITE, 
-            TEMP*sizeof(unsigned int), NULL, &ret);
+    cl_mem histd_mem_obj = clCreateBuffer(context, CL_MEM_READ_WRITE, TEMP*sizeof(unsigned int), NULL, &ret);
+    check_return(ret, "create histd buff fail\n");
 	
-    ret = clEnqueueWriteBuffer(command_queue, xd_mem_obj, CL_TRUE, 0,
-            size, xtest, 0, NULL, NULL);
+    ret = clEnqueueWriteBuffer(command_queue, xd_mem_obj, CL_TRUE, 0, size, xtest, 0, NULL, NULL);
+    check_return(ret, "write buff xd fail\n");
 
-	if(ret!=CL_SUCCESS){
-		printf("Write Buff fail xd\n");
-		return -1;
-	}
+	ret = clEnqueueWriteBuffer(command_queue, ad_mem_obj, CL_TRUE, 0, size, atest, 0, NULL, NULL);
+    check_return(ret, "write buff ad fail\n");
 
-
-	ret = clEnqueueWriteBuffer(command_queue, ad_mem_obj, CL_TRUE, 0,
-            size, atest, 0, NULL, NULL);
-
-	if(ret!=CL_SUCCESS){
-		printf("Write Buff fail ad\n");
-		return -1;
-	}
-
-
-	ret = clEnqueueWriteBuffer(command_queue, cd_mem_obj, CL_TRUE, 0,
-            size, ctest, 0, NULL, NULL);
-
-	if(ret!=CL_SUCCESS){
-		printf("Write Buff fail cd\n");
-		return -1;
-	}
+	ret = clEnqueueWriteBuffer(command_queue, cd_mem_obj, CL_TRUE, 0, size, ctest, 0, NULL, NULL);
+    check_return(ret, "write buff cd fail\n");
 
 	for(i=0;i<TEMP;i++)hist[i]=0;
 	
-	ret = clEnqueueWriteBuffer(command_queue, histd_mem_obj, CL_TRUE, 0,
-            TEMP*sizeof(unsigned int), hist, 0, NULL, NULL);
-
-	if(ret!=CL_SUCCESS){
-		printf("Write Buff fail histd\n");
-		return -1;
-	}
-    //load initial values
-    
-    
-
-	//cudaThreadSynchronize(); //probably not necessary
+	ret = clEnqueueWriteBuffer(command_queue, histd_mem_obj, CL_TRUE, 0, TEMP*sizeof(unsigned int), hist, 0, NULL, NULL);
+    check_return(ret, "write buff histd fail\n");
 
 	// Create a program from the kernel source
-    cl_program program = clCreateProgramWithSource(context, 1, 
-            (const char **)&source_str, (const size_t *)&source_size, &ret);
+    cl_program program = clCreateProgramWithSource(context, 1, (const char **)&source_str, (const size_t *)&source_size, &ret);
+    check_return(ret, "create program fail\n");
 
     // Build the program
 //    ret = clBuildProgram(program, 1, &device_id, "-g -s \"C:\\Users\\Naif\\Documents\\Visual Studio 2010\\Projects\\CudaMC\\CudaMC\\CUDAMC\\CUDAMCtransport.cl\"", NULL, NULL);
 
 	ret = clBuildProgram(program, 1, &device_id, NULL, NULL, NULL);
-	//ret = clBuildProgram(program, 1, &device_id, "-cl-unsafe-math-optimizations -cl-finite-math-only", NULL, NULL);
 
 
 	if(ret!=CL_SUCCESS){
@@ -246,43 +227,25 @@ int MC(unsigned int* x,unsigned int* c,unsigned int* a)
 
     // Create the OpenCL kernel
     cl_kernel kernel = clCreateKernel(program, "MCd", &ret);
+    check_return(ret, "create kernel MCd fail\n");
 
     // Set the arguments of the kernel
     ret = clSetKernelArg(kernel, 0, sizeof(cl_mem), (void *)&xd_mem_obj);
+    check_return(ret, "set arg 0 fail\n");
     
-	if(ret!=CL_SUCCESS){
-		printf("set arg 0 fail ad\n");
-		return -1;
-	}
 
 	ret = clSetKernelArg(kernel, 1, sizeof(cl_mem), (void *)&cd_mem_obj);
+    check_return(ret, "set arg 1 fail\n");
     
-	if(ret!=CL_SUCCESS){
-		printf("set arg 1 fail ad\n");
-		return -1;
-	}
-
 	ret = clSetKernelArg(kernel, 2, sizeof(cl_mem), (void *)&ad_mem_obj);
+    check_return(ret, "set arg 2 fail\n");
     
-	
-	if(ret!=CL_SUCCESS){
-		printf("set arg 2 fail ad\n");
-		return -1;
-	}
-
 	ret = clSetKernelArg(kernel, 3, sizeof(cl_mem), (void *)&numd_mem_obj);
+    check_return(ret, "set arg 3 fail\n");
 	
-	if(ret!=CL_SUCCESS){
-		printf("set arg 3 fail ad\n");
-		return -1;
-	}
-
 	ret = clSetKernelArg(kernel, 4, sizeof(cl_mem), (void *)&histd_mem_obj);
+    check_return(ret, "set arg 4 fail\n");
     
-	if(ret!=CL_SUCCESS){
-		printf("set arg 4 fail ad\n");
-		return -1;
-	}
 	// Execute the OpenCL kernel on the list
 	cl_event kern_event;
     size_t global_item_size = NUM_THREADS; // Process the entire lists
@@ -292,38 +255,25 @@ int MC(unsigned int* x,unsigned int* c,unsigned int* a)
 	ret = clFlush(command_queue);
     ret = clFinish(command_queue);
 	time1=clock();
-	ret = clEnqueueNDRangeKernel(command_queue, kernel, 1, NULL, 
-            &global_item_size, &local_item_size, 0, NULL, &kern_event);
+	ret = clEnqueueNDRangeKernel(command_queue, kernel, 1, NULL, &global_item_size, &local_item_size, 0, NULL, &kern_event);
+    check_return(ret, "enqueuendrange kernel fail\n");
 	
-	if(ret!=CL_SUCCESS){
-		printf("enquendrange  fail ad\n");
-		return -1;
-	}
 	clWaitForEvents(1,&kern_event);
 	
 	time2=clock();
 
-	ret = clEnqueueReadBuffer(command_queue, histd_mem_obj, CL_TRUE, 0, 
-            TEMP*sizeof(unsigned int), hist, 1, &kern_event, NULL);
-	if(ret!=CL_SUCCESS){
-		printf("read buff histd fail ad\n");
-		return -1;
-	}
+	ret = clEnqueueReadBuffer(command_queue, histd_mem_obj, CL_TRUE, 0,TEMP*sizeof(unsigned int), hist, 1, &kern_event, NULL);
+    check_return(ret, "read buff hist fail\n");
 
 	cl_event read_buff1;
-	ret = clEnqueueReadBuffer(command_queue, numd_mem_obj, CL_TRUE, 0, 
-           size, num, 1, &kern_event, &read_buff1);
+	ret = clEnqueueReadBuffer(command_queue, numd_mem_obj, CL_TRUE, 0,size, num, 1, &kern_event, &read_buff1);
+    check_return(ret, "read buff num fail\n");
 	
-	if(ret!=CL_SUCCESS){
-		printf("read buff numd fail ad\n");
-		return -1;
-	}
 	
 	num_tot=0;
 	for(i=0;i<NUM_THREADS;i++){
 		num_tot+=num[i];
 	}
-	//cudaThreadSynchronize(); //probably not necessary
 	
     
 	
