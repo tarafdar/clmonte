@@ -31,7 +31,7 @@
 #define MUS_MAX 90.0f	//[1/cm]
 #define V 0.0214f		//[cm/ps] (c=0.03 [cm/ps] v=c/n) here n=1.4
 #define COS_CRIT 0.6999f	//the critical angle for total internal reflection at the border cos_crit=sqrt(1-(nt/ni)^2)
-#define G 0.9f	
+//#define G 0.9f	
 #define N 1.4f
 
 
@@ -210,7 +210,7 @@ __kernel void Reflect_test1(__global float* dirx_array,__global float* diry_arra
 
 
 
-__kernel void Spin_test1(__global float* dirx_array,__global float* diry_array, __global float* dirz_array, __global unsigned int* xd,__global unsigned int* ad, __global unsigned int* cd, __global float* cost_array, __global float* sint_array, __global float* cosp_array, __global float* sinp_array ) {
+__kernel void Spin_test1(__global float* dirx_array,__global float* diry_array, __global float* dirz_array, __global unsigned int* xd,__global unsigned int* ad, __global unsigned int* cd, __global float* cost_array, __global float* sint_array, __global float* cosp_array, __global float* sinp_array, const float G ) {
 
 	int global_id = get_global_id(0);
     float3 dirvar;

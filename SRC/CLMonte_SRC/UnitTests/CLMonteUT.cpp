@@ -66,7 +66,7 @@
 #define MUS_MAX 90.0f	//[1/cm]
 #define V 0.0214f		//[cm/ps] (c=0.03 [cm/ps] v=c/n) here n=1.4
 #define COS_CRIT 0.6999f	//the critical angle for total internal reflection at the border cos_crit=sqrt(1-(nt/ni)^2)
-#define G 0.9f	
+//#define G 0.9f	
 #define N 1.4f
 #define PI 3.14159265f
 
@@ -122,6 +122,23 @@ unsigned int Reflecth(float3*, float3*, float*, float*, float*, float*, unsigned
 #include <stdlib.h>
 #define MAX_SOURCE_SIZE (0x100000)
 // wrapper for device code
+
+// takes 2 floats x1,y1,z1 and x2,y2,z2 returns result of cross product in float3 struct
+float3 cross_product (float x1, float y1, float z1, float x2, float y2, float z2) {
+    float3 ret;
+    ret.x = y1*z2 - z1*y2;
+    ret.y = z1*x2 - x1*z2;
+    ret.z = x1*y2 - y1*x2;
+    return ret;
+}
+
+float dot_product (float x1, float y1, float z1, float x2, float y2, float z2) {
+    float ret = 0;
+    ret += x1*x2;
+    ret += y1*y2;
+    ret += z1*z2;
+    return ret;
+}    
 
 void initialize_vectors(float posx, float posy, float posz, float dirx, float diry, float dirz){
 	int i;
@@ -420,9 +437,10 @@ int reflect(float posx, float posy, float posz, float dirx, float diry, float di
 
 }
 
-int spin(float dirx, float diry, float dirz, unsigned int* x,unsigned int* c,unsigned int* a)
+int spin(float dirx, float diry, float dirz, unsigned int* x,unsigned int* c,unsigned int* a, float G)
 {
-	unsigned int num[NUM_THREADS];
+	
+    unsigned int num[NUM_THREADS];
 	unsigned long long num_tot, hist_tot;
 	unsigned int i;
 	unsigned int hist[TEMP];
@@ -434,6 +452,8 @@ int spin(float dirx, float diry, float dirz, unsigned int* x,unsigned int* c,uns
     float sint_array[NUM_THREADS];
     float cosp_array[NUM_THREADS];
     float sinp_array[NUM_THREADS];
+//    float3 a_array[NUM_THREADS];
+//    float3 b_array[NUM_THREADS];
 
 	unsigned int numh[NUM_THREADS];
 	unsigned int histh[TEMP];
@@ -600,6 +620,8 @@ int spin(float dirx, float diry, float dirz, unsigned int* x,unsigned int* c,uns
     ret = clSetKernelArg(kernel, 9, sizeof(cl_mem), (void *)&sinpd_mem_obj);
     check_return(ret, "set arg 9 fail\n");
     
+    ret = clSetKernelArg(kernel, 10, sizeof(float), (void *)&G);
+    check_return(ret, "set arg 10 fail\n");
     // Execute the OpenCL kernel on the list
 	cl_event kern_event;
     size_t global_item_size = NUM_THREADS; // Process the entire lists
@@ -646,12 +668,63 @@ int spin(float dirx, float diry, float dirz, unsigned int* x,unsigned int* c,uns
               total-=cost_array[i];
           else
               total+=cost_array[i];
-          printf("cost_array[%d] %f\n", cost_array[i], i);
+          //printf("cost_array[%d] %f\n", cost_array[i], i);
 	}
     
-    printf("average %f, expected %f \n", total/NUM_THREADS, G);
+    printf("Spin Test1 - Testing average cost vs expected value G: average %f, expected %f \n", total/NUM_THREADS, G);
+    
+    FILE *results;
+    float3 a_v;
+    float3 b_v;
+    float3 a_normalized;
+    float3 b_normalized;
+    float d_dot_a;
+    float d_dot_b;
+    int test_case2_fail = 0;
 
+    a_v = cross_product(dirx, diry, dirz, 0, 0, 1);
+    b_v = cross_product(dirx, diry, dirz, a_v.x, a_v.y, a_v.z);
+    
+    a_normalized.x = a_v.x/(sqrt(dot_product(a_v.x, a_v.y, a_v.z, a_v.x, a_v.y, a_v.z)));
+    a_normalized.y = a_v.y/(sqrt(dot_product(a_v.x, a_v.y, a_v.z, a_v.x, a_v.y, a_v.z)));
+    a_normalized.z = a_v.z/(sqrt(dot_product(a_v.x, a_v.y, a_v.z, a_v.x, a_v.y, a_v.z)));
 
+    b_normalized.x = b_v.x/(sqrt(dot_product(b_v.x, b_v.y, b_v.z, b_v.x, b_v.y, b_v.z)));
+    b_normalized.y = b_v.y/(sqrt(dot_product(b_v.x, b_v.y, b_v.z, b_v.x, b_v.y, b_v.z)));
+    b_normalized.z = b_v.z/(sqrt(dot_product(b_v.x, b_v.y, b_v.z, b_v.x, b_v.y, b_v.z)));
+    
+
+    results=fopen("spintest.txt","w");
+    //create a and b arrays
+    for (i=0; i < NUM_THREADS; i++) {
+        //a_array[i] = cross_product(dirx_array[i], diry_array[i], dirz_array[i], 0, 0, 1);
+        //b_array[i] = cross_product(dirx_array[i], diry_array[i], dirz_array[i], a_array[i].x, a_array[i].y, a_array[i].z);
+//        printf("a[%d].x = %f, a[%d].y = %f, a[%d].z = %f; b[%d].x = %f, b[%d].y = %f, b[%d].z = %f\n", i,a_array[i].x,i,a_array[i].y,i,a_array[i].z,i,b_array[i].x,i,b_array[i].y,i,b_array[i].z);  
+        //d_dot_a = dot_product(dirx_array[i], diry_array[i], dirz_array[i], a_array[i].x, a_array[i].y, a_array[i].z);
+        //d_dot_b = dot_product(dirx_array[i], diry_array[i], dirz_array[i], b_array[i].x, b_array[i].y, b_array[i].z);
+        d_dot_a = dot_product(dirx_array[i], diry_array[i], dirz_array[i], a_v.x, a_v.y, a_v.z);
+        d_dot_b = dot_product(dirx_array[i], diry_array[i], dirz_array[i], b_v.x, b_v.y, b_v.z);
+        //printf("d_dot_a = %f, d_dot_b = %f\n",d_dot_a, d_dot_b);
+        if ((d_dot_a*d_dot_a + d_dot_b*d_dot_b) - (sint_array[i]*sint_array[i]) >= 0.000001f){ 
+            printf("Spin Test2 failed on i = %d, left side (d_dot_a)^2+(d_dot_b)^2 = %f, right side sin^2(theta) = %f diff %f\n",
+            i, (d_dot_a*d_dot_a + d_dot_b*d_dot_b), (sint_array[i]*sint_array[i]), 
+            (d_dot_a*d_dot_a + d_dot_b*d_dot_b) - (sint_array[i]*sint_array[i]));
+            int test_case2_fail = 1;
+        }     
+        d_dot_a = dot_product(dirx_array[i], diry_array[i], dirz_array[i], a_normalized.x, a_normalized.y, a_normalized.z);
+        d_dot_b = dot_product(dirx_array[i], diry_array[i], dirz_array[i], b_normalized.x, b_normalized.y, b_normalized.z);
+        fprintf (results, "%f %f\n", d_dot_a, d_dot_b);
+        
+        
+    }
+    if (test_case2_fail) 
+        printf("Spin Test2 failed\n");
+    else 
+        printf("Spin Test2 successful, left side (d_dot_a)^2+(d_dot_b)^2 = right side sin^2(theta) for all threads\n");    
+    
+    fclose(results);
+     
+    
 	ret = clFlush(command_queue);
     ret = clFinish(command_queue);
     ret = clReleaseKernel(kernel);
@@ -665,11 +738,12 @@ int spin(float dirx, float diry, float dirz, unsigned int* x,unsigned int* c,uns
 
 int MC(unsigned int* x,unsigned int* c,unsigned int* a){
     reflect(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, DIRZ, x, c, a);
-    spin(0.0f, 1.0f, 0.0f, x, c, a);
-    
+    spin(0.0f, 1.0f, 0.0f, x, c, a, 0.5f);
 
 
 }
+
+
 
 
 void initialize(void)//Straight from Steven Gratton's code
