@@ -45,6 +45,8 @@
 #include <CL/cl.h>
 #include <cmath>
 #include <cstring>
+
+
 //#define NUM_THREADS_PER_BLOCK 320 //Keep above 192 to eliminate global memory access overhead
 //#define NUM_THREADS_PER_BLOCK 448 //Keep above 192 to eliminate global memory access overhead
 #define NUM_THREADS_PER_BLOCK 560 //Keep above 192 to eliminate global memory access overhead
@@ -81,6 +83,14 @@
 #define LINUX
 //#define JORDAN
 //#define NAIF
+
+typedef struct{
+	float x;
+	float y;
+	float z;
+
+}float3;
+
 unsigned int xtest[NUM_THREADS];
 unsigned int ctest[NUM_THREADS];
 unsigned int atest[NUM_THREADS];
@@ -93,12 +103,8 @@ float dirytest[NUM_THREADS];
 
 float posztest[NUM_THREADS];
 float dirztest[NUM_THREADS];
-struct float3{
-	float x;
-	float y;
-	float z;
 
-};
+#include "CLMonte_host_func.cpp"
 
 // forward declaration of the device code
 
@@ -329,14 +335,11 @@ int reflect(float posx, float posy, float posz, float dirx, float diry, float di
     ret = clSetKernelArg(kernel, 1, sizeof(cl_mem), (void *)&diry_mem_obj);
     check_return(ret, "set arg 1 fail\n"); 
     
-
     ret = clSetKernelArg(kernel, 2, sizeof(cl_mem), (void *)&dirz_mem_obj);
     check_return(ret, "set arg 2 fail\n"); 
     
-
     ret = clSetKernelArg(kernel, 3, sizeof(cl_mem), (void *)&posx_mem_obj);
     check_return(ret, "set arg 3 fail\n"); 
-    
 
     ret = clSetKernelArg(kernel, 4, sizeof(cl_mem), (void *)&posy_mem_obj);
     check_return(ret, "set arg 4 fail\n"); 
@@ -352,13 +355,10 @@ int reflect(float posx, float posy, float posz, float dirx, float diry, float di
     
 	ret = clSetKernelArg(kernel, 8, sizeof(cl_mem), (void *)&ad_mem_obj);
     check_return(ret, "set arg 8 fail\n"); 
-    
-	
 
 	ret = clSetKernelArg(kernel, 9, sizeof(cl_mem), (void *)&retd_mem_obj);
     check_return(ret, "set arg 9 fail\n"); 
 	
-
 	// Execute the OpenCL kernel on the list
 	cl_event kern_event;
     size_t global_item_size = NUM_THREADS; // Process the entire lists
@@ -372,7 +372,6 @@ int reflect(float posx, float posy, float posz, float dirx, float diry, float di
 	
 	clWaitForEvents(1,&kern_event);
 	
-
 
 	ret = clEnqueueReadBuffer(command_queue, posx_mem_obj, CL_TRUE, 0, NUM_THREADS*sizeof(float), posx_array, 1, &kern_event, NULL);
     check_return(ret, "read buff posx fail\n"); 
@@ -436,6 +435,37 @@ int reflect(float posx, float posy, float posz, float dirx, float diry, float di
 	ret = clReleaseCommandQueue(command_queue);
 
 }
+int spinCPU(float dirx, float diry, float dirz, unsigned int* x,unsigned int* c,unsigned int* a, float G){
+    float3 dir[NUM_THREADS];
+    
+    float cost_array[NUM_THREADS];
+    float sint_array[NUM_THREADS];
+    float cosp_array[NUM_THREADS];
+    float sinp_array[NUM_THREADS];
+    int i;
+    for(i=0; i<NUM_THREADS; i++){
+	    dir[i].x=dirx;
+	    dir[i].y=diry;
+	    dir[i].z=dirz;
+    }
+
+
+    Spin_testh(dir, cost_array, sint_array, cosp_array, sinp_array, G);
+
+	float total= 0.0f;
+	for(i=0; i < NUM_THREADS; i++){
+          if(cost_array[i]<0)
+              total-=cost_array[i];
+          else
+              total+=cost_array[i];
+          //printf("cost_array[%d] %f\n", cost_array[i], i);
+	}
+    
+    printf("Spin Test1 CPU - Testing average cost vs expected value G: average %f, expected %f \n", total/NUM_THREADS, G);
+    
+
+}
+
 
 int spin(float dirx, float diry, float dirz, unsigned int* x,unsigned int* c,unsigned int* a, float G)
 {
@@ -738,7 +768,8 @@ int spin(float dirx, float diry, float dirz, unsigned int* x,unsigned int* c,uns
 
 int MC(unsigned int* x,unsigned int* c,unsigned int* a){
     reflect(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, DIRZ, x, c, a);
-    spin(0.0f, 1.0f, 0.0f, x, c, a, 0.5f);
+    spin(sqrt(0.5f), 0.5f, 0.5f, x, c, a, 0.5f);
+    spinCPU(sqrt(0.5f), 0.5f, 0.5f, x, c, a, 0.5f);
 
 
 }
