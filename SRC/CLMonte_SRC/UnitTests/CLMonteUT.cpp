@@ -694,10 +694,7 @@ int spin(float dirx, float diry, float dirz, unsigned int* x,unsigned int* c,uns
 	
 	float total= 0.0f;
 	for(i=0; i < NUM_THREADS; i++){
-          if(cost_array[i]<0)
-              total-=cost_array[i];
-          else
-              total+=cost_array[i];
+          total+=cost_array[i];
           //printf("cost_array[%d] %f\n", cost_array[i], i);
 	}
     

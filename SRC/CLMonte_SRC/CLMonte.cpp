@@ -129,7 +129,9 @@ int MC(unsigned int* x,unsigned int* c,unsigned int* a)
     fp = fopen("C:\\Users\\Jordan\\Documents\\GitHub\\ece496\\CLMonteTransport.cl", "r");
 #endif
 #ifdef LINUX
-    fp = fopen("SRC/CLMonte_SRC/CLMonteTransport.cl", "r");
+    //fp = fopen("SRC/CLMonte_SRC/CLMonteTransport.cl", "r");
+    fp = fopen("SRC/CLMonte_SRC/CLMonteTransport_n1.cl", "r");
+    //fp = fopen("SRC/CLMonte_SRC/CLMonteTransport_newSpin.cl", "r");
 
 #endif
     if (!fp) {
