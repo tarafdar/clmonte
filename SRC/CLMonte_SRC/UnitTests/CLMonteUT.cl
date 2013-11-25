@@ -31,7 +31,6 @@
 #define MUS_MAX 90.0f	//[1/cm]
 #define V 0.0214f		//[cm/ps] (c=0.03 [cm/ps] v=c/n) here n=1.4
 #define COS_CRIT 0.6999f	//the critical angle for total internal reflection at the border cos_crit=sqrt(1-(nt/ni)^2)
-//#define G 0.9f	
 #define N 1.4f
 
 
@@ -210,12 +209,14 @@ __kernel void Reflect_test1(__global float* dirx_array,__global float* diry_arra
 
 
 
-__kernel void Spin_test1(__global float* dirx_array,__global float* diry_array, __global float* dirz_array, __global unsigned int* xd,__global unsigned int* ad, __global unsigned int* cd, __global float* cost_array, __global float* sint_array, __global float* cosp_array, __global float* sinp_array, const float G ) {
+__kernel void Spin_test1(__global float* dirx_array,__global float* diry_array, __global float* dirz_array, __global unsigned int* xd,__global unsigned int* ad, __global unsigned int* cd, __global float* cost_array, __global float* sint_array, __global float* cosp_array, __global float* sinp_array, const float g ) {
 
 	int global_id = get_global_id(0);
     float3 dirvar;
     float3*dir;
     dirvar.x = dirx_array[global_id];
+    float P;
+
 	
     dirvar.y =diry_array[global_id]; 
 	dirvar.z =dirz_array[global_id];
@@ -237,12 +238,16 @@ __kernel void Spin_test1(__global float* dirx_array,__global float* diry_array, 
 
 	//This is more efficient for g!=0 but of course less efficient for g==0
 
+    P = 2.0f* rand_MWC_co(&x,&a) - 1.0f;
 
-	if((G)==0.0f)
-		cost = 2.0f*rand_MWC_co(&x,&a) -1.0f;
+	if((g)==0.0f)
+		cost = P;
     else{
-	    temp = divide((1.0f-(G)*(G)),(1.0f-(G)+2.0f*(G)*rand_MWC_co(&x,&a)));//Should be close close????!!!!!
-	    cost = divide((1.0f+(G)*(G) - temp*temp),(2.0f*(G)));
+	   // temp = divide((1.0f-(g)*(g)),(1.0f-(g)+2.0f*(g)*rand_MWC_co(&x,&a)));//Should be close close????!!!!!
+        temp = divide((1.0f-(g)*(g)),(1.0f+(g*P)));//Should be close close????!!!!!
+	    cost = divide((1.0f+(g)*(g) - temp*temp),(2.0f*(g)));
+//        temp = ((1.0f-(g)*(g))/(1.0f+(g*P)));//Should be close close????!!!!!
+//	    cost = ((1.0f+(g)*(g) - temp*temp)/(2.0f*(g)));
 
     }
 
