@@ -93,12 +93,12 @@ float dirytest[NUM_THREADS];
 
 float posztest[NUM_THREADS];
 float dirztest[NUM_THREADS];
-struct float3{
+typedef struct{
 	float x;
 	float y;
 	float z;
 
-};
+} float3;
 
 // forward declaration of the device code
 
@@ -124,12 +124,10 @@ unsigned int Reflecth(float3*, float3*, float*, float*, float*, float*, unsigned
 // wrapper for device code
 
 // takes 2 floats x1,y1,z1 and x2,y2,z2 returns result of cross product in float3 struct
-float3 cross_product (float x1, float y1, float z1, float x2, float y2, float z2) {
-    float3 ret;
-    ret.x = y1*z2 - z1*y2;
-    ret.y = z1*x2 - x1*z2;
-    ret.z = x1*y2 - y1*x2;
-    return ret;
+void cross_product (float x1, float y1, float z1, float x2, float y2, float z2, float* ret_x, float* ret_y, float* ret_z) {
+    *ret_x = y1*z2 - z1*y2;
+    *ret_y = z1*x2 - x1*z2;
+    *ret_z = x1*y2 - y1*x2;
 }
 
 float dot_product (float x1, float y1, float z1, float x2, float y2, float z2) {
@@ -682,8 +680,10 @@ int spin(float dirx, float diry, float dirz, unsigned int* x,unsigned int* c,uns
     float d_dot_b;
     int test_case2_fail = 0;
 
-    a_v = cross_product(dirx, diry, dirz, 0, 0, 1);
-    b_v = cross_product(dirx, diry, dirz, a_v.x, a_v.y, a_v.z);
+    cross_product(dirx, diry, dirz, 0, 0, 1, &a_v.x, &a_v.y, &a_v.z);
+    cross_product(dirx, diry, dirz, a_v.x, a_v.y, a_v.z, &b_v.x, &b_v.y, &b_v.z);
+   
+    
     
     a_normalized.x = a_v.x/(sqrt(dot_product(a_v.x, a_v.y, a_v.z, a_v.x, a_v.y, a_v.z)));
     a_normalized.y = a_v.y/(sqrt(dot_product(a_v.x, a_v.y, a_v.z, a_v.x, a_v.y, a_v.z)));
@@ -693,6 +693,7 @@ int spin(float dirx, float diry, float dirz, unsigned int* x,unsigned int* c,uns
     b_normalized.y = b_v.y/(sqrt(dot_product(b_v.x, b_v.y, b_v.z, b_v.x, b_v.y, b_v.z)));
     b_normalized.z = b_v.z/(sqrt(dot_product(b_v.x, b_v.y, b_v.z, b_v.x, b_v.y, b_v.z)));
     
+    printf("a dot product with itself = %f, b dot product with itself %f.\n", dot_product(a_v.x, a_v.y, a_v.z, a_v.x, a_v.y, a_v.z), dot_product(b_v.x, b_v.y, b_v.z, b_v.x, b_v.y, b_v.z));
 
     results=fopen("spintest.txt","w");
     //create a and b arrays
