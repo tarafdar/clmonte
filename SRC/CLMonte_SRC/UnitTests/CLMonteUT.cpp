@@ -104,6 +104,14 @@ float dirytest[NUM_THREADS];
 float posztest[NUM_THREADS];
 float dirztest[NUM_THREADS];
 
+float axtest[NUM_THREADS];
+float aytest[NUM_THREADS];
+float aztest[NUM_THREADS];
+
+float bxtest[NUM_THREADS];
+float bytest[NUM_THREADS];
+float bztest[NUM_THREADS];
+
 #include "CLMonte_host_func.cpp"
 
 // forward declaration of the device code
@@ -144,7 +152,7 @@ float dot_product (float x1, float y1, float z1, float x2, float y2, float z2) {
     return ret;
 }    
 
-void initialize_vectors(float posx, float posy, float posz, float dirx, float diry, float dirz){
+void initialize_vectors(float posx, float posy, float posz, float dirx, float diry, float dirz, float ax, float ay, float az, float bx, float by, float bz){
 	int i;
     for(i=0; i<NUM_THREADS; i++){
         posxtest[i]=posx;
@@ -153,6 +161,12 @@ void initialize_vectors(float posx, float posy, float posz, float dirx, float di
 	    dirytest[i]=diry;
 	    posztest[i]=posz;
 	    dirztest[i]=dirz;
+        axtest[i]=ax;
+        aytest[i]=ay;
+        aztest[i]=az;
+        bxtest[i]=bx;
+        bytest[i]=by;
+        bztest[i]=bz;
     }
 
 }
@@ -614,7 +628,7 @@ int spin(float dirx, float diry, float dirz, unsigned int* x,unsigned int* c,uns
 
     // Create the OpenCL kernel
     cl_kernel kernel = clCreateKernel(program, "Spin_test1", &ret);
-    check_return(ret, "create kernel Reflect_test1 fail"); 
+    check_return(ret, "create kernel Spin_test1 fail"); 
 
     // Set the arguments of the kernel
     
@@ -673,6 +687,391 @@ int spin(float dirx, float diry, float dirz, unsigned int* x,unsigned int* c,uns
 	
 	ret = clEnqueueReadBuffer(command_queue, dirz_mem_obj, CL_TRUE, 0, NUM_THREADS*sizeof(float), dirz_array, 1, &kern_event, NULL);
     check_return(ret, "read buff dirz fail\n"); 
+	
+	ret = clEnqueueReadBuffer(command_queue, costd_mem_obj, CL_TRUE, 0, NUM_THREADS*sizeof(float), cost_array, 1, &kern_event, NULL);
+    check_return(ret, "read buff cost fail\n"); 
+	
+	ret = clEnqueueReadBuffer(command_queue, sintd_mem_obj, CL_TRUE, 0, NUM_THREADS*sizeof(float), sint_array, 1, &kern_event, NULL);
+    check_return(ret, "read buff sint fail\n"); 
+    
+	ret = clEnqueueReadBuffer(command_queue, cospd_mem_obj, CL_TRUE, 0, NUM_THREADS*sizeof(float), cosp_array, 1, &kern_event, NULL);
+    check_return(ret, "read buff cosp fail\n"); 
+    
+	ret = clEnqueueReadBuffer(command_queue, sinpd_mem_obj, CL_TRUE, 0, NUM_THREADS*sizeof(float), sinp_array, 1, &kern_event, NULL);
+    check_return(ret, "read buff sinp fail\n"); 
+    
+    ret = clFlush(command_queue);
+    ret = clFinish(command_queue);
+	
+	
+	float total= 0.0f;
+	for(i=0; i < NUM_THREADS; i++){
+          total+=cost_array[i];
+          //printf("cost_array[%d] %f\n", cost_array[i], i);
+	}
+    
+    printf("Spin Test1 - Testing average cost vs expected value G: average %f, expected %f \n", total/NUM_THREADS, G);
+    
+    FILE *results;
+    float3 a_v;
+    float3 b_v;
+    float3 a_normalized;
+    float3 b_normalized;
+    float d_dot_a;
+    float d_dot_b;
+    int test_case2_fail = 0;
+
+    cross_product(dirx, diry, dirz, 0, 0, 1, &a_v.x, &a_v.y, &a_v.z);
+    cross_product(dirx, diry, dirz, a_v.x, a_v.y, a_v.z, &b_v.x, &b_v.y, &b_v.z);
+   
+    
+    
+    a_normalized.x = a_v.x/(sqrt(dot_product(a_v.x, a_v.y, a_v.z, a_v.x, a_v.y, a_v.z)));
+    a_normalized.y = a_v.y/(sqrt(dot_product(a_v.x, a_v.y, a_v.z, a_v.x, a_v.y, a_v.z)));
+    a_normalized.z = a_v.z/(sqrt(dot_product(a_v.x, a_v.y, a_v.z, a_v.x, a_v.y, a_v.z)));
+
+    b_normalized.x = b_v.x/(sqrt(dot_product(b_v.x, b_v.y, b_v.z, b_v.x, b_v.y, b_v.z)));
+    b_normalized.y = b_v.y/(sqrt(dot_product(b_v.x, b_v.y, b_v.z, b_v.x, b_v.y, b_v.z)));
+    b_normalized.z = b_v.z/(sqrt(dot_product(b_v.x, b_v.y, b_v.z, b_v.x, b_v.y, b_v.z)));
+    
+    printf("a dot product with itself = %f, b dot product with itself %f.\n", dot_product(a_v.x, a_v.y, a_v.z, a_v.x, a_v.y, a_v.z), dot_product(b_v.x, b_v.y, b_v.z, b_v.x, b_v.y, b_v.z));
+
+    results=fopen("spintest.txt","w");
+    //create a and b arrays
+    for (i=0; i < NUM_THREADS; i++) {
+        //a_array[i] = cross_product(dirx_array[i], diry_array[i], dirz_array[i], 0, 0, 1);
+        //b_array[i] = cross_product(dirx_array[i], diry_array[i], dirz_array[i], a_array[i].x, a_array[i].y, a_array[i].z);
+//        printf("a[%d].x = %f, a[%d].y = %f, a[%d].z = %f; b[%d].x = %f, b[%d].y = %f, b[%d].z = %f\n", i,a_array[i].x,i,a_array[i].y,i,a_array[i].z,i,b_array[i].x,i,b_array[i].y,i,b_array[i].z);  
+        //d_dot_a = dot_product(dirx_array[i], diry_array[i], dirz_array[i], a_array[i].x, a_array[i].y, a_array[i].z);
+        //d_dot_b = dot_product(dirx_array[i], diry_array[i], dirz_array[i], b_array[i].x, b_array[i].y, b_array[i].z);
+        d_dot_a = dot_product(dirx_array[i], diry_array[i], dirz_array[i], a_v.x, a_v.y, a_v.z);
+        d_dot_b = dot_product(dirx_array[i], diry_array[i], dirz_array[i], b_v.x, b_v.y, b_v.z);
+        //printf("d_dot_a = %f, d_dot_b = %f\n",d_dot_a, d_dot_b);
+        if ((d_dot_a*d_dot_a + d_dot_b*d_dot_b) - (sint_array[i]*sint_array[i]) >= 0.000001f){ 
+            printf("Spin Test2 failed on i = %d, left side (d_dot_a)^2+(d_dot_b)^2 = %f, right side sin^2(theta) = %f diff %f\n",
+            i, (d_dot_a*d_dot_a + d_dot_b*d_dot_b), (sint_array[i]*sint_array[i]), 
+            (d_dot_a*d_dot_a + d_dot_b*d_dot_b) - (sint_array[i]*sint_array[i]));
+            int test_case2_fail = 1;
+        }     
+        d_dot_a = dot_product(dirx_array[i], diry_array[i], dirz_array[i], a_normalized.x, a_normalized.y, a_normalized.z);
+        d_dot_b = dot_product(dirx_array[i], diry_array[i], dirz_array[i], b_normalized.x, b_normalized.y, b_normalized.z);
+        fprintf (results, "%f %f\n", d_dot_a, d_dot_b);
+        
+        
+    }
+    if (test_case2_fail) 
+        printf("Spin Test2 failed\n");
+    else 
+        printf("Spin Test2 successful, left side (d_dot_a)^2+(d_dot_b)^2 = right side sin^2(theta) for all threads\n");    
+    
+    fclose(results);
+     
+    
+	ret = clFlush(command_queue);
+    ret = clFinish(command_queue);
+    ret = clReleaseKernel(kernel);
+    ret = clReleaseProgram(program);
+    ret = clReleaseMemObject(xd_mem_obj);
+	ret = clReleaseMemObject(cd_mem_obj);
+	ret = clReleaseMemObject(ad_mem_obj);
+	ret = clReleaseCommandQueue(command_queue);
+
+}
+
+
+int spin_new(float dirx, float diry, float dirz, float ax, float ay, float az, float bx, float by, float bz, unsigned int* x,unsigned int* c,unsigned int* a, float G)
+{
+	
+    unsigned int num[NUM_THREADS];
+	unsigned long long num_tot, hist_tot;
+	unsigned int i;
+	unsigned int hist[TEMP];
+    float dirx_array[NUM_THREADS];
+    float diry_array[NUM_THREADS];
+    float dirz_array[NUM_THREADS];
+    
+    float ax_array[NUM_THREADS];
+    float ay_array[NUM_THREADS];
+    float az_array[NUM_THREADS];
+    
+    float bx_array[NUM_THREADS];
+    float by_array[NUM_THREADS];
+    float bz_array[NUM_THREADS];
+    
+    float cost_array[NUM_THREADS];
+    float sint_array[NUM_THREADS];
+    float cosp_array[NUM_THREADS];
+    float sinp_array[NUM_THREADS];
+//    float3 a_array[NUM_THREADS];
+//    float3 b_array[NUM_THREADS];
+
+	unsigned int numh[NUM_THREADS];
+	unsigned int histh[TEMP];
+
+	FILE *fp;
+    char *source_str;
+    size_t source_size;
+
+    initialize_vectors(0.0f, 0.0f, 0.0f, dirx, diry, dirz);
+
+    fp = fopen("SRC/CLMonte_SRC/UnitTests/CLMonteUT.cl", "r");
+
+    if (!fp) {
+        fprintf(stderr, "Failed to load kernel.\n");
+        exit(1);
+    }
+    source_str = (char*)malloc(MAX_SOURCE_SIZE);
+    source_size = fread( source_str, 1, MAX_SOURCE_SIZE, fp);
+    fclose( fp );
+
+    
+    FILE *file; 
+    FILE *print_file;
+    FILE *build_file;
+	
+    file = fopen("outp.txt", "w");
+    print_file = fopen("print_out.txt", "w");
+    build_file = fopen("build.txt", "w");
+
+    clock_t time1,time2,GPUtime,CPUtime;
+    int size;
+    size=NUM_THREADS*sizeof(unsigned int);
+	
+    
+	// Get platform and device information
+    cl_platform_id platform_id = NULL;
+    cl_device_id device_id = NULL;   
+    cl_uint ret_num_devices;
+    cl_uint ret_num_platforms;
+    cl_int ret = clGetPlatformIDs(1, &platform_id, &ret_num_platforms);
+    ret = clGetDeviceIDs( platform_id, CL_DEVICE_TYPE_GPU, 1, 
+            &device_id, &ret_num_devices);
+
+
+	// Create an OpenCL context
+    cl_context context = clCreateContext( NULL, 1, &device_id, NULL, NULL, &ret);
+
+    // Create a command queue
+    cl_command_queue command_queue = clCreateCommandQueue(context, device_id, 0, &ret);
+
+    
+    cl_mem dirx_mem_obj = clCreateBuffer(context, CL_MEM_READ_WRITE, NUM_THREADS*sizeof(float), NULL, &ret);
+    check_return(ret, "create dirx buff fail xd\n");
+   
+    
+    cl_mem diry_mem_obj = clCreateBuffer(context, CL_MEM_READ_WRITE, NUM_THREADS*sizeof(float), NULL, &ret);
+    check_return(ret,"create diry buff fail xd\n");
+    
+    
+    cl_mem dirz_mem_obj = clCreateBuffer(context, CL_MEM_READ_WRITE, NUM_THREADS*sizeof(float), NULL, &ret);
+    check_return(ret, "create dirz buff fail xd\n");
+ 
+ 	
+    cl_mem ax_mem_obj = clCreateBuffer(context, CL_MEM_READ_WRITE, NUM_THREADS*sizeof(float), NULL, &ret);
+    check_return(ret, "create ax buff fail xd\n");
+  
+    
+    cl_mem ay_mem_obj = clCreateBuffer(context, CL_MEM_READ_WRITE, NUM_THREADS*sizeof(float), NULL, &ret);
+    check_return(ret,"create ay buff fail xd\n");
+    
+    
+    cl_mem az_mem_obj = clCreateBuffer(context, CL_MEM_READ_WRITE, NUM_THREADS*sizeof(float), NULL, &ret);
+    check_return(ret, "create az buff fail xd\n");
+   
+    
+    cl_mem bx_mem_obj = clCreateBuffer(context, CL_MEM_READ_WRITE, NUM_THREADS*sizeof(float), NULL, &ret);
+    check_return(ret, "create bx buff fail xd\n");
+  
+    
+    cl_mem by_mem_obj = clCreateBuffer(context, CL_MEM_READ_WRITE, NUM_THREADS*sizeof(float), NULL, &ret);
+    check_return(ret,"create by buff fail xd\n");
+    
+    
+    cl_mem bz_mem_obj = clCreateBuffer(context, CL_MEM_READ_WRITE, NUM_THREADS*sizeof(float), NULL, &ret);
+    check_return(ret, "create bz buff fail xd\n");
+    
+    // Create memory buffers on the device for each vector 
+    cl_mem xd_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, size, NULL, &ret);
+    check_return(ret, "create xd buff fail\n");
+
+    
+    cl_mem cd_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, size, NULL, &ret);
+    check_return(ret, "create cd buff fail\n");
+
+    cl_mem ad_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, size, NULL, &ret);
+    check_return(ret, "create ad buff fail\n");
+
+    cl_mem sintd_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, size, NULL, &ret);
+    check_return(ret, "create sintd buff fail\n");
+    
+    cl_mem costd_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, size, NULL, &ret);
+    check_return(ret, "create costd buff fail\n");
+    
+    cl_mem cospd_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, size, NULL, &ret);
+    check_return(ret, "create cospd buff fail\n");
+	
+    cl_mem sinpd_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, size, NULL, &ret);
+    check_return(ret, "create sinpd buff fail\n");
+    
+    
+    ret = clEnqueueWriteBuffer(command_queue, xd_mem_obj, CL_TRUE, 0,size, xtest, 0, NULL, NULL);
+    check_return(ret, "write buff xd fail\n");
+
+	ret = clEnqueueWriteBuffer(command_queue, dirx_mem_obj, CL_TRUE, 0,NUM_THREADS*sizeof(float), dirxtest, 0, NULL, NULL);
+    check_return(ret,"write buff dirx fail \n");
+
+	ret = clEnqueueWriteBuffer(command_queue, diry_mem_obj, CL_TRUE, 0, NUM_THREADS*sizeof(float), dirytest, 0, NULL, NULL);
+    check_return(ret,"write buff diry fail \n");
+
+	ret = clEnqueueWriteBuffer(command_queue, dirz_mem_obj, CL_TRUE, 0,NUM_THREADS*sizeof(float), dirztest, 0, NULL, NULL);
+    check_return(ret,"write buff dirz fail \n");
+	
+    ret = clEnqueueWriteBuffer(command_queue, ax_mem_obj, CL_TRUE, 0,NUM_THREADS*sizeof(float), axtest, 0, NULL, NULL);
+    check_return(ret,"write buff ax fail \n");
+
+	ret = clEnqueueWriteBuffer(command_queue, ay_mem_obj, CL_TRUE, 0, NUM_THREADS*sizeof(float), aytest, 0, NULL, NULL);
+    check_return(ret,"write buff ay fail \n");
+
+	ret = clEnqueueWriteBuffer(command_queue, az_mem_obj, CL_TRUE, 0,NUM_THREADS*sizeof(float), aztest, 0, NULL, NULL);
+    check_return(ret,"write buff az fail \n");
+
+    ret = clEnqueueWriteBuffer(command_queue, ax_mem_obj, CL_TRUE, 0,NUM_THREADS*sizeof(float), bxtest, 0, NULL, NULL);
+    check_return(ret,"write buff bx fail \n");
+
+	ret = clEnqueueWriteBuffer(command_queue, ay_mem_obj, CL_TRUE, 0, NUM_THREADS*sizeof(float), bytest, 0, NULL, NULL);
+    check_return(ret,"write buff by fail \n");
+
+	ret = clEnqueueWriteBuffer(command_queue, az_mem_obj, CL_TRUE, 0,NUM_THREADS*sizeof(float), bztest, 0, NULL, NULL);
+    check_return(ret,"write buff bz fail \n");
+	
+    ret = clEnqueueWriteBuffer(command_queue, ad_mem_obj, CL_TRUE, 0, size, atest, 0, NULL, NULL);
+    check_return(ret,"write buff ad fail \n");
+
+	ret = clEnqueueWriteBuffer(command_queue, cd_mem_obj, CL_TRUE, 0, size, ctest, 0, NULL, NULL);
+    check_return(ret,"write buff cd fail \n");
+
+
+	for(i=0;i<TEMP;i++)hist[i]=0;
+	
+
+	// Create a program from the kernel source
+    cl_program program = clCreateProgramWithSource(context, 1, (const char **)&source_str, (const size_t *)&source_size, &ret);
+
+//    ret = clBuildProgram(program, 1, &device_id, "-g -s \"C:\\Users\\Naif\\Documents\\Visual Studio 2010\\Projects\\CudaMC\\CudaMC\\CUDAMC\\CUDAMCtransport.cl\"", NULL, NULL);
+
+	ret = clBuildProgram(program, 1, &device_id, NULL, NULL, NULL);
+	//ret = clBuildProgram(program, 1, &device_id, "-cl-unsafe-math-optimizations -cl-finite-math-only", NULL, NULL);
+
+
+	if(ret!=CL_SUCCESS){
+		char *build_log;
+		size_t ret_val_size;
+		clGetProgramBuildInfo(program, device_id, CL_PROGRAM_BUILD_LOG, 0, NULL, &ret_val_size);
+		build_log = new char[ret_val_size+1];
+		clGetProgramBuildInfo(program, device_id, CL_PROGRAM_BUILD_LOG, ret_val_size, build_log, NULL);
+		build_log[ret_val_size] = '\0';
+		fputs (build_log, build_file);
+		delete build_log;
+		fclose(build_file);
+		printf("Build Program fail ad\n");
+		return -1;
+	}
+
+    // Create the OpenCL kernel
+    cl_kernel kernel = clCreateKernel(program, "newSpin_test1", &ret);
+    check_return(ret, "create kernel newSpin_test1 fail"); 
+
+    // Set the arguments of the kernel
+    
+    ret = clSetKernelArg(kernel, 0, sizeof(cl_mem), (void *)&dirx_mem_obj);
+    check_return(ret, "set arg 0 fail\n"); 
+
+    ret = clSetKernelArg(kernel, 1, sizeof(cl_mem), (void *)&diry_mem_obj);
+    check_return(ret, "set arg 1 fail\n"); 
+    
+    ret = clSetKernelArg(kernel, 2, sizeof(cl_mem), (void *)&dirz_mem_obj);
+    check_return(ret, "set arg 2 fail\n"); 
+    
+    ret = clSetKernelArg(kernel, 3, sizeof(cl_mem), (void *)&ax_mem_obj);
+    check_return(ret, "set arg 3 fail\n"); 
+
+    ret = clSetKernelArg(kernel, 4, sizeof(cl_mem), (void *)&ay_mem_obj);
+    check_return(ret, "set arg 4 fail\n"); 
+    
+    ret = clSetKernelArg(kernel, 5, sizeof(cl_mem), (void *)&az_mem_obj);
+    check_return(ret, "set arg 5 fail\n"); 
+    
+    ret = clSetKernelArg(kernel, 6, sizeof(cl_mem), (void *)&bx_mem_obj);
+    check_return(ret, "set arg 6 fail\n"); 
+
+    ret = clSetKernelArg(kernel, 7, sizeof(cl_mem), (void *)&by_mem_obj);
+    check_return(ret, "set arg 7 fail\n"); 
+    
+    ret = clSetKernelArg(kernel, 8, sizeof(cl_mem), (void *)&bz_mem_obj);
+    check_return(ret, "set arg 8 fail\n"); 
+    
+    ret = clSetKernelArg(kernel, 9, sizeof(cl_mem), (void *)&xd_mem_obj);
+    check_return(ret, "set arg 9 fail\n"); 
+    
+	ret = clSetKernelArg(kernel, 10, sizeof(cl_mem), (void *)&ad_mem_obj);
+    check_return(ret, "set arg 10 fail\n"); 
+	
+	ret = clSetKernelArg(kernel, 11, sizeof(cl_mem), (void *)&cd_mem_obj);
+    check_return(ret, "set arg 11 fail\n");
+     
+	ret = clSetKernelArg(kernel, 12, sizeof(cl_mem), (void *)&costd_mem_obj);
+    check_return(ret, "set arg 12 fail\n");
+	
+	ret = clSetKernelArg(kernel, 13, sizeof(cl_mem), (void *)&sintd_mem_obj);
+    check_return(ret, "set arg 13 fail\n");
+	
+    ret = clSetKernelArg(kernel, 14, sizeof(cl_mem), (void *)&cospd_mem_obj);
+    check_return(ret, "set arg 14 fail\n");
+    
+    ret = clSetKernelArg(kernel, 15, sizeof(cl_mem), (void *)&sinpd_mem_obj);
+    check_return(ret, "set arg 15 fail\n");
+    
+    ret = clSetKernelArg(kernel, 16, sizeof(float), (void *)&G);
+    check_return(ret, "set arg 16 fail\n");
+    // Execute the OpenCL kernel on the list
+	cl_event kern_event;
+    size_t global_item_size = NUM_THREADS; // Process the entire lists
+    size_t local_item_size = NUM_THREADS_PER_BLOCK; // Process in groups of NUM_THREADS_PER_BLOCk
+    printf("Running code on Accelerator in OpenCL\n");
+	fprintf(print_file, "Running code on Accelerator in OpenCL\n");
+	ret = clFlush(command_queue);
+    ret = clFinish(command_queue);
+	ret = clEnqueueNDRangeKernel(command_queue, kernel, 1, NULL, &global_item_size, &local_item_size, 0, NULL, &kern_event);
+    check_return(ret, "EnqueuendRangeFail"); 
+	
+	clWaitForEvents(1,&kern_event);
+	
+	ret = clEnqueueReadBuffer(command_queue, dirx_mem_obj, CL_TRUE, 0, NUM_THREADS*sizeof(float), dirx_array, 1, &kern_event, NULL);
+    check_return(ret, "read buff dirx fail\n"); 	
+	
+	ret = clEnqueueReadBuffer(command_queue, diry_mem_obj, CL_TRUE, 0, NUM_THREADS*sizeof(float), diry_array, 1, &kern_event, NULL);
+    check_return(ret, "read buff diry fail\n"); 
+	
+	ret = clEnqueueReadBuffer(command_queue, dirz_mem_obj, CL_TRUE, 0, NUM_THREADS*sizeof(float), dirz_array, 1, &kern_event, NULL);
+    check_return(ret, "read buff dirz fail\n"); 
+	
+	ret = clEnqueueReadBuffer(command_queue, ax_mem_obj, CL_TRUE, 0, NUM_THREADS*sizeof(float), ax_array, 1, &kern_event, NULL);
+    check_return(ret, "read buff ax fail\n"); 	
+	
+	ret = clEnqueueReadBuffer(command_queue, ay_mem_obj, CL_TRUE, 0, NUM_THREADS*sizeof(float), ay_array, 1, &kern_event, NULL);
+    check_return(ret, "read buff ay fail\n"); 
+	
+	ret = clEnqueueReadBuffer(command_queue, az_mem_obj, CL_TRUE, 0, NUM_THREADS*sizeof(float), az_array, 1, &kern_event, NULL);
+    check_return(ret, "read buff az fail\n"); 
+	
+	ret = clEnqueueReadBuffer(command_queue, bx_mem_obj, CL_TRUE, 0, NUM_THREADS*sizeof(float), bx_array, 1, &kern_event, NULL);
+    check_return(ret, "read buff bx fail\n"); 	
+	
+	ret = clEnqueueReadBuffer(command_queue, by_mem_obj, CL_TRUE, 0, NUM_THREADS*sizeof(float), by_array, 1, &kern_event, NULL);
+    check_return(ret, "read buff by fail\n"); 
+	
+	ret = clEnqueueReadBuffer(command_queue, bz_mem_obj, CL_TRUE, 0, NUM_THREADS*sizeof(float), bz_array, 1, &kern_event, NULL);
+    check_return(ret, "read buff bz fail\n"); 
 	
 	ret = clEnqueueReadBuffer(command_queue, costd_mem_obj, CL_TRUE, 0, NUM_THREADS*sizeof(float), cost_array, 1, &kern_event, NULL);
     check_return(ret, "read buff cost fail\n"); 

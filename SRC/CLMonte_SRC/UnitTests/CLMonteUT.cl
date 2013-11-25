@@ -34,6 +34,9 @@
 #define N 1.4f
 
 
+float dot_product (float x1, float y1, float z1, float x2, float y2, float z2) {
+    return  x1*x2 + y1*y2 + z1*z2;
+}    
 
 float divide(float x, float y)
 {
@@ -215,12 +218,12 @@ __kernel void Spin_test1(__global float* dirx_array,__global float* diry_array, 
     float3 dirvar;
     float3*dir;
     dirvar.x = dirx_array[global_id];
-    float P;
-
-	
     dirvar.y =diry_array[global_id]; 
 	dirvar.z =dirz_array[global_id];
 	dir = &dirvar;
+    float P;
+
+	
 
 	unsigned long int x = cd[global_id];
 	x=(x<<32) + xd[global_id];
@@ -290,6 +293,158 @@ __kernel void Spin_test1(__global float* dirx_array,__global float* diry_array, 
 }
 
 
+//__kernel void newSpintest1(float3* dir, unsigned long* x, unsigned int* a, float3* dir_a, float3* dir_b)
+__kernel void newSpin_test1(
+__global float* dirx_array,__global float* diry_array, __global float* dirz_array,
+__global float* ax_array,__global float* ay_array, __global float* az_array, 
+__global float* bx_array,__global float* by_array, __global float* bz_array,  
+__global unsigned int* xd,__global unsigned int* ad, __global unsigned int* cd,
+__global float* cost_array, __global float* sint_array, __global float* cosp_array, __global float* sinp_array, const float g ) {
+{
+
+
+	int global_id = get_global_id(0);
+    
+    float3 dirvar, avar, bvar;
+    float3*dir, dir_a, dir_b;
+    dirvar.x = dirx_array[global_id];
+    dirvar.y =diry_array[global_id]; 
+	dirvar.z =dirz_array[global_id];
+	dir = &dirvar;
+    avar.x = ax_array[global_id];
+    avar.y = ay_array[global_id]; 
+	avar.z = az_array[global_id];
+	dir_a = &avar;
+    bvar.x = bx_array[global_id];
+    bvar.y = by_array[global_id]; 
+	bvar.z = bz_array[global_id];
+	dir_b = &bvar;
+	
+    float cost, sint;	// cosine and sine of the 
+						// polar deflection angle theta. 
+	float cosp, sinp;	// cosine and sine of the 
+						// azimuthal angle psi. 
+	float temp;
+
+	float tempdir=dir->x;
+
+	float3 dir_old;
+	float3 a_old;
+	float3 b_old;
+	
+	dir_old.x = dir->x;
+	dir_old.y = dir->y;
+	dir_old.z = dir->z;
+	
+	a_old.x = dir_a->x;
+	a_old.y = dir_a->y;
+	a_old.z = dir_a->z;
+	
+	b_old.x = dir_b->x;
+	b_old.y = dir_b->y;
+	b_old.z = dir_b->z;
+
+
+	//This is more efficient for g!=0 but of course less efficient for g==0
+	temp = divide((1.0f-(G)*(G)),(1.0f-(G)+2.0f*(G)*rand_MWC_co(x,a)));//Should be close close????!!!!!
+	cost = divide((1.0f+(G)*(G) - temp*temp),(2.0f*(G)));
+	//cost = (1.0f+(G)*(G) - temp*temp)*ONE_OVER_2G;
+
+	if((G)==0.0f)
+		cost = 2.0f*rand_MWC_co(x,a) -1.0f;
+
+
+	sint = sqrtf(1.0f - cost*cost);
+
+	cosp= sincos(2.0f*PI*rand_MWC_co(x,a),&sinp);
+
+
+
+/*    	
+    float P = 2.0f* rand_MWC_co(x,a) - 1.0f;
+	if((G)==0.0f)
+		cost = P;
+    else{
+        temp = divide((1.0f-(G)*(G)),(1.0f+(G*P)));//Should be close close????!!!!!
+	    cost = divide((1.0f+(G)*(G) - temp*temp),(2.0f*(G)));
+
+
+    }
+
+	sint = sqrtf(1.0f - cost*cost);
+
+	cosp= sincos(2.0f*PI*rand_MWC_co(x,a),&sinp);
+*/
+	//temp = sqrtf(1.0f - dir->z*dir->z);
+//	dir->x = cost*dir_old.x + (-sint*cosp*a_old.x) + (sint*cosp*b_old.x);
+//	dir->y = cost*dir_old.y + (-sint*cosp*a_old.y) + (sint*cosp*b_old.y);
+//	dir->z = cost*dir_old.z + (-sint*cosp*a_old.z) + (sint*cosp*b_old.z);
+
+    dir->x = dot_product(cost, -sint*cosp, sint*sinp, dir_old.x, a_old.x, b_old.x) ;
+	dir->y = dot_product(cost, -sint*cosp, sint*sinp, dir_old.y, a_old.y, b_old.y) ;
+	dir->z = dot_product(cost, -sint*cosp, sint*sinp, dir_old.z, a_old.z, b_old.z) ;
+	
+//  dir_a->x = sint*dir_old.x + (cost*cosp*a_old.x) + (-cost*sinp*b_old.x);
+//	dir_a->y = sint*dir_old.y + (cost*cosp*a_old.y) + (-cost*sinp*b_old.y);
+//	dir_a->z = sint*dir_old.z + (cost*cosp*a_old.z) + (-cost*sinp*b_old.z);
+	
+    dir_a->x = dot_product(sint, cost*cosp, -cost*sinp, dir_old.x, a_old.x, b_old.x) ;
+    dir_a->y = dot_product(sint, cost*cosp, -cost*sinp, dir_old.y, a_old.y, b_old.y) ;
+    dir_a->z = dot_product(sint, cost*cosp, -cost*sinp, dir_old.z, a_old.z, b_old.z) ;
+	
+//  dir_b->x = sint*a_old.x + cosp*b_old.x;
+//	dir_b->y = sint*a_old.y + cosp*b_old.y;
+//	dir_b->z = sint*a_old.z + cosp*b_old.z;
+
+    dir_a->x = dot_product(0, sint, cosp, dir_old.x, a_old.x, b_old.x) ;
+    dir_a->y = dot_product(0, sint, cosp, dir_old.y, a_old.y, b_old.y) ;
+    dir_a->z = dot_product(0, sint, cosp, dir_old.z, a_old.z, b_old.z) ;
+
+
+
+//	if(temp==0.0f)// normal incident.
+//	{
+//		dir->x = sint*cosp;
+//		dir->y = sint*sinp;
+//		dir->z = copysign(cost,dir->z*cost);
+//	}
+//	else // regular incident.
+//	{
+//		dir->x = divide(sint*(dir->x*dir->z*cosp - dir->y*sinp),temp) + dir->x*cost;
+//		dir->y = divide(sint*(dir->y*dir->z*cosp + tempdir*sinp),temp) + dir->y*cost;
+//		dir->z = (-1)*sint*cosp*temp + dir->z*cost;
+//	}
+//
+	//normalisation seems to be required as we are using floats! Otherwise the small numerical error will accumulate
+	temp= rsqrtf(dir->x*dir->x+dir->y*dir->y+dir->z*dir->z);
+	dir->x=dir->x*temp;
+	dir->y=dir->y*temp;
+	dir->z=dir->z*temp;
+	
+	temp= rsqrtf(dir_a->x*dir_a->x+dir_a->y*dir_a->y+dir_a->z*dir_a->z);
+	dir_a->x=dir_a->x*temp;
+	dir_a->y=dir_a->y*temp;
+	dir_a->z=dir_a->z*temp;
+	
+    temp= rsqrtf(dir_b->x*dir_b->x+dir_b->y*dir_b->y+dir_b->z*dir_b->z);
+	dir_b->x=dir_b->x*temp;
+	dir_b->y=dir_b->y*temp;
+	dir_b->z=dir_b->z*temp;
+
+
+	dirx_array[global_id]=dirvar.x; 
+	diry_array[global_id]=dirvar.y; 
+	dirz_array[global_id]=dirvar.z;
+	
+    ax_array[global_id]=avar.x; 
+	ay_array[global_id]=avar.y; 
+	az_array[global_id]=avar.z;
+	
+    bx_array[global_id]=bvar.x; 
+	by_array[global_id]=bvar.y; 
+	bz_array[global_id]=bvar.z;
+
+}
 
 
 

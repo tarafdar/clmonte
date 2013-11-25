@@ -114,8 +114,7 @@ void LaunchPhoton(float3* pos, float3* dir, float* t, float3* dir_a, float3* dir
 
 
 
-void Spin(float3* dir, unsigned long* x,//unsigned int* c,
-		       unsigned int* a, float3* dir_a, float3* dir_b)
+void Spin(float3* dir, unsigned long* x, unsigned int* a, float3* dir_a, float3* dir_b)
 {
 	float cost, sint;	// cosine and sine of the 
 						// polar deflection angle theta. 
