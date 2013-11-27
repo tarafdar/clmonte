@@ -50,11 +50,13 @@
 //#define NUM_THREADS_PER_BLOCK 320 //Keep above 192 to eliminate global memory access overhead
 //#define NUM_THREADS_PER_BLOCK 448 //Keep above 192 to eliminate global memory access overhead
 #define NUM_THREADS_PER_BLOCK 560 //Keep above 192 to eliminate global memory access overhead
+//#define NUM_THREADS_PER_BLOCK 20 //Keep above 192 to eliminate global memory access overhead
 //#define NUM_THREADS_PER_BLOCK 128 //Keep above 192 to eliminate global memory access overhead
 //#define NUM_BLOCKS 84 //Keep numblocks a multiple of the #MP's of the GPU (8800GT=14MP)
 //#define NUM_BLOCKS 30 //Keep numblocks a multiple of the #MP's of the GPU (8800GT=14MP)
 #define NUM_BLOCKS 48 //Keep numblocks a multiple of the #MP's of the GPU (8800GT=14MP)
 #define NUM_THREADS 26880
+//#define NUM_THREADS 100
 //#define NUM_THREADS 1024
 #define NUM_THREADS_TIMES_THREE 80640
 //#define NUM_THREADS_TIMES_THREE 3072
@@ -174,7 +176,7 @@ void initialize_vectors(float posx, float posy, float posz, float dirx, float di
 void check_return(cl_int ret, const char* message){
     
     if(ret!=CL_SUCCESS){
-        printf("%s\n", message);
+        printf("%s %d\n",(int)ret, message);
         exit(-1);
     }
 
@@ -203,7 +205,7 @@ int reflect(float posx, float posy, float posz, float dirx, float diry, float di
     char *source_str;
     size_t source_size;
 
-    initialize_vectors(posx, posy, posz, dirx, diry, dirz);
+    initialize_vectors(posx, posy, posz, dirx, diry, dirz, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
 
     fp = fopen("SRC/CLMonte_SRC/UnitTests/CLMonteUT.cl", "r");
 
@@ -504,7 +506,7 @@ int spin(float dirx, float diry, float dirz, unsigned int* x,unsigned int* c,uns
     char *source_str;
     size_t source_size;
 
-    initialize_vectors(0.0f, 0.0f, 0.0f, dirx, diry, dirz);
+    initialize_vectors(0.0f, 0.0f, 0.0f, dirx, diry, dirz, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
 
     fp = fopen("SRC/CLMonte_SRC/UnitTests/CLMonteUT.cl", "r");
 
@@ -802,8 +804,6 @@ int spin_new(float dirx, float diry, float dirz, float ax, float ay, float az, f
     float sint_array[NUM_THREADS];
     float cosp_array[NUM_THREADS];
     float sinp_array[NUM_THREADS];
-//    float3 a_array[NUM_THREADS];
-//    float3 b_array[NUM_THREADS];
 
 	unsigned int numh[NUM_THREADS];
 	unsigned int histh[TEMP];
@@ -812,7 +812,7 @@ int spin_new(float dirx, float diry, float dirz, float ax, float ay, float az, f
     char *source_str;
     size_t source_size;
 
-    initialize_vectors(0.0f, 0.0f, 0.0f, dirx, diry, dirz);
+    initialize_vectors(0.0f, 0.0f, 0.0f, dirx, diry, dirz, ax, ay, az, bx, by, bz);
 
     fp = fopen("SRC/CLMonte_SRC/UnitTests/CLMonteUT.cl", "r");
 
@@ -901,16 +901,16 @@ int spin_new(float dirx, float diry, float dirz, float ax, float ay, float az, f
     cl_mem ad_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, size, NULL, &ret);
     check_return(ret, "create ad buff fail\n");
 
-    cl_mem sintd_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, size, NULL, &ret);
+    cl_mem sintd_mem_obj = clCreateBuffer(context, CL_MEM_READ_WRITE, size, NULL, &ret);
     check_return(ret, "create sintd buff fail\n");
     
-    cl_mem costd_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, size, NULL, &ret);
+    cl_mem costd_mem_obj = clCreateBuffer(context, CL_MEM_READ_WRITE, size, NULL, &ret);
     check_return(ret, "create costd buff fail\n");
     
-    cl_mem cospd_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, size, NULL, &ret);
+    cl_mem cospd_mem_obj = clCreateBuffer(context, CL_MEM_READ_WRITE, size, NULL, &ret);
     check_return(ret, "create cospd buff fail\n");
 	
-    cl_mem sinpd_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, size, NULL, &ret);
+    cl_mem sinpd_mem_obj = clCreateBuffer(context, CL_MEM_READ_WRITE, size, NULL, &ret);
     check_return(ret, "create sinpd buff fail\n");
     
     
@@ -1042,13 +1042,26 @@ int spin_new(float dirx, float diry, float dirz, float ax, float ay, float az, f
 	ret = clFlush(command_queue);
     ret = clFinish(command_queue);
 	ret = clEnqueueNDRangeKernel(command_queue, kernel, 1, NULL, &global_item_size, &local_item_size, 0, NULL, &kern_event);
-    check_return(ret, "EnqueuendRangeFail"); 
+    check_return(ret, "EnqueuendRangeFail\n"); 
 	
-	clWaitForEvents(1,&kern_event);
+	ret = clFlush(command_queue);
+    if(ret!=CL_SUCCESS){
+        printf("%d bro 1\n", ret);
+        exit(-1);
+    }
+    ret = clFinish(command_queue);
+//    check_return(ret, "EnqueuendRangeFail\n"); 
+//    check_return(ret, "read buff dirx fail\n"); 	
 	
+    if(ret!=CL_SUCCESS){
+        printf("%d bro 2\n", ret);
+        exit(-1);
+    }
+//exit(0);	
 	ret = clEnqueueReadBuffer(command_queue, dirx_mem_obj, CL_TRUE, 0, NUM_THREADS*sizeof(float), dirx_array, 1, &kern_event, NULL);
-    check_return(ret, "read buff dirx fail\n"); 	
-	
+        check_return(ret, "read buff dirx fail\n"); 	
+//exit(0);	
+
 	ret = clEnqueueReadBuffer(command_queue, diry_mem_obj, CL_TRUE, 0, NUM_THREADS*sizeof(float), diry_array, 1, &kern_event, NULL);
     check_return(ret, "read buff diry fail\n"); 
 	
@@ -1100,7 +1113,10 @@ int spin_new(float dirx, float diry, float dirz, float ax, float ay, float az, f
     FILE *results;
     float3 a_v;
     float3 b_v;
+    float3 a_v_new;
+    float3 b_v_new;
     float3 a_normalized;
+    float3 a_new_normalized;
     float3 b_normalized;
     float d_dot_a;
     float d_dot_b;
@@ -1138,6 +1154,25 @@ int spin_new(float dirx, float diry, float dirz, float ax, float ay, float az, f
             (d_dot_a*d_dot_a + d_dot_b*d_dot_b) - (sint_array[i]*sint_array[i]));
             int test_case2_fail = 1;
         }     
+        cross_product(dirx_array[i], diry_array[i], dirz_array[i], 0, 0, 1, &a_v_new.x, &a_v_new.y, &a_v_new.z);
+        cross_product(dirx_array[i], diry_array[i], dirz_array[i], a_v_new.x, a_v_new.y, a_v_new.z, &b_v_new.x, &b_v_new.y, &b_v_new.z);
+        a_new_normalized.x = a_v_new.x/(sqrt(dot_product(a_v_new.x, a_v_new.y, a_v_new.z, a_v_new.x, a_v_new.y, a_v_new.z)));
+        a_new_normalized.y = a_v_new.y/(sqrt(dot_product(a_v_new.x, a_v_new.y, a_v_new.z, a_v_new.x, a_v_new.y, a_v_new.z)));
+        a_new_normalized.z = a_v_new.z/(sqrt(dot_product(a_v_new.x, a_v_new.y, a_v_new.z, a_v_new.x, a_v_new.y, a_v_new.z)));
+        if (((a_v_new.x - ax_array[i]) >= 0.000001f) ||( (a_v_new.y - ay_array[i]) >= 0.000001f) || (a_v_new.z - az_array[i] >= 0.000001f)){ 
+            printf("Spin Test3 failed on i= %d, dir (%f, %f, %f) a (calc) = (%f, %f, %f) and a (measured (%f, %f, %f)\n",i, dirx_array[i], diry_array[i], dirz_array[i], a_v_new.x, a_v_new.y, a_v_new.z, ax_array[i], ay_array[i], az_array[i]);
+            exit(-1);     
+        }
+
+       // if (((a_new_normalized.x - ax_array[i]) >= 0.000001f) ||( (a_new_normalized.y - ay_array[i]) >= 0.000001f) || (a_new_normalized.z - az_array[i] >= 0.000001f)){ 
+       //     printf("Spin Test3 failed on ahat (calc) = (%f, %f, %f) and a (measured (%f, %f, %f)",a_new_normalized.x, a_new_normalized.y, a_new_normalized.z, ax_array[i], ay_array[i], az_array[i]);
+       //     exit(-1);     
+       // }
+        
+        if (((b_v_new.x - bx_array[i]) >= 0.000001f) ||( (b_v_new.y - by_array[i]) >= 0.000001f) || (b_v_new.z - bz_array[i] >= 0.000001f)){ 
+            printf("Spin Test3 failed on b (calc) = (%f, %f, %f) and b (measured (%f, %f, %f) \n",b_v_new.x, b_v_new.y, b_v_new.z, bx_array[i], by_array[i], bz_array[i]);
+         
+        }
         d_dot_a = dot_product(dirx_array[i], diry_array[i], dirz_array[i], a_normalized.x, a_normalized.y, a_normalized.z);
         d_dot_b = dot_product(dirx_array[i], diry_array[i], dirz_array[i], b_normalized.x, b_normalized.y, b_normalized.z);
         fprintf (results, "%f %f\n", d_dot_a, d_dot_b);
@@ -1164,9 +1199,10 @@ int spin_new(float dirx, float diry, float dirz, float ax, float ay, float az, f
 }
 
 int MC(unsigned int* x,unsigned int* c,unsigned int* a){
-    reflect(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, DIRZ, x, c, a);
-    spin(sqrt(0.5f), 0.5f, 0.5f, x, c, a, 0.5f);
-    spinCPU(sqrt(0.5f), 0.5f, 0.5f, x, c, a, 0.5f);
+    //reflect(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, DIRZ, x, c, a);
+    //spin(sqrt(0.5f), 0.5f, 0.5f, x, c, a, 0.5f);
+    spin_new(0.0f, 0.0f, 1.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, x, c ,a, 0.9f);
+    //spinCPU(sqrt(0.5f), 0.5f, 0.5f, x, c, a, 0.5f);
 
 
 }

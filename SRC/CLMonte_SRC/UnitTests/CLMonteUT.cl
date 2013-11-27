@@ -300,13 +300,16 @@ __global float* ax_array,__global float* ay_array, __global float* az_array,
 __global float* bx_array,__global float* by_array, __global float* bz_array,  
 __global unsigned int* xd,__global unsigned int* ad, __global unsigned int* cd,
 __global float* cost_array, __global float* sint_array, __global float* cosp_array, __global float* sinp_array, const float g ) {
-{
 
 
 	int global_id = get_global_id(0);
     
-    float3 dirvar, avar, bvar;
-    float3*dir, dir_a, dir_b;
+    float3 dirvar; 
+    float3 avar;
+    float3 bvar;
+    float3*dir;
+    float3* dir_a;
+    float3* dir_b;
     dirvar.x = dirx_array[global_id];
     dirvar.y =diry_array[global_id]; 
 	dirvar.z =dirz_array[global_id];
@@ -344,29 +347,36 @@ __global float* cost_array, __global float* sint_array, __global float* cosp_arr
 	b_old.y = dir_b->y;
 	b_old.z = dir_b->z;
 
+	unsigned long int x = cd[global_id];
+	x=(x<<32) + xd[global_id];
+    unsigned int a=ad[global_id];
 
 	//This is more efficient for g!=0 but of course less efficient for g==0
-	temp = divide((1.0f-(G)*(G)),(1.0f-(G)+2.0f*(G)*rand_MWC_co(x,a)));//Should be close close????!!!!!
-	cost = divide((1.0f+(G)*(G) - temp*temp),(2.0f*(G)));
+	temp = divide((1.0f-(g)*(g)),(1.0f-(g)+2.0f*(g)*rand_MWC_co(&x,&a)));//Should be close close????!!!!!
+	cost = divide((1.0f+(g)*(g) - temp*temp),(2.0f*(g)));
 	//cost = (1.0f+(G)*(G) - temp*temp)*ONE_OVER_2G;
 
-	if((G)==0.0f)
-		cost = 2.0f*rand_MWC_co(x,a) -1.0f;
+	if((g)==0.0f)
+		cost = 2.0f*rand_MWC_co(&x,&a) -1.0f;
 
 
 	sint = sqrtf(1.0f - cost*cost);
 
-	cosp= sincos(2.0f*PI*rand_MWC_co(x,a),&sinp);
+	cosp= sincos(2.0f*PI*rand_MWC_co(&x,&a),&sinp);
 
+    cost_array[global_id] = cost;
+    sint_array[global_id] = sint;
+    cosp_array[global_id] = cosp;
+    sinp_array[global_id] = sinp;
 
 
 /*    	
     float P = 2.0f* rand_MWC_co(x,a) - 1.0f;
-	if((G)==0.0f)
+	if((g)==0.0f)
 		cost = P;
     else{
-        temp = divide((1.0f-(G)*(G)),(1.0f+(G*P)));//Should be close close????!!!!!
-	    cost = divide((1.0f+(G)*(G) - temp*temp),(2.0f*(G)));
+        temp = divide((1.0f-(g)*(g)),(1.0f+(g*P)));//Should be close close????!!!!!
+	    cost = divide((1.0f+(g)*(g) - temp*temp),(2.0f*(g)));
 
 
     }
@@ -396,9 +406,9 @@ __global float* cost_array, __global float* sint_array, __global float* cosp_arr
 //	dir_b->y = sint*a_old.y + cosp*b_old.y;
 //	dir_b->z = sint*a_old.z + cosp*b_old.z;
 
-    dir_a->x = dot_product(0, sint, cosp, dir_old.x, a_old.x, b_old.x) ;
-    dir_a->y = dot_product(0, sint, cosp, dir_old.y, a_old.y, b_old.y) ;
-    dir_a->z = dot_product(0, sint, cosp, dir_old.z, a_old.z, b_old.z) ;
+    dir_b->x = dot_product(0, sint, cosp, dir_old.x, a_old.x, b_old.x) ;
+    dir_b->y = dot_product(0, sint, cosp, dir_old.y, a_old.y, b_old.y) ;
+    dir_b->z = dot_product(0, sint, cosp, dir_old.z, a_old.z, b_old.z) ;
 
 
 
