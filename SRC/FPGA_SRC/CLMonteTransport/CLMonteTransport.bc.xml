@@ -1,0 +1,111 @@
+<KERNEL_LIST>
+	<PROGRAM_GLOBAL_MEM_SIZE value="0" />
+	<KERNEL name="MCd" filename="CLMonteTransport.v" version="1" workgroup_invariant="1" has_global_atomics="1" num_vector_lanes="1" profiling_enabled="0" num_loops="1" num_basic_blocks="4">
+		<RESOURCE_INFO>
+			<ID value="0" />
+			<AGGREGATE_STATIC_LOCAL_MEM_SIZE value="0" />
+			<MAX_WORK_GROUP_SIZE value="2147483647" />
+			<REQUIRED_WORK_GROUP_SIZE x="0" y="0" z="0" />
+		</RESOURCE_INFO>
+		<CONFIGURATION>
+			<INTERFACE port="clock_reset" type="clock"/>
+			<INTERFACE port="cra_irq" type="irq"/>
+			<INTERFACE port="cra" type="slave" width="64" size="128" />
+		</CONFIGURATION>
+		<REQUIREMENTS>
+			<FILE name="acl_data_fifo.v" />
+			<FILE name="acl_debug_mem.v" />
+			<FILE name="acl_fifo.v" />
+			<FILE name="acl_fp_cmp.v" />
+			<FILE name="acl_fp_div_s5.hex" />
+			<FILE name="acl_fp_div_s5.v" />
+			<FILE name="acl_fp_floor.v" />
+			<FILE name="acl_fp_fpext.v" />
+			<FILE name="acl_fp_fptoui.v" />
+			<FILE name="acl_fp_fptrunc.v" />
+			<FILE name="acl_fp_ldexp_double_hc.v" />
+			<FILE name="acl_fp_ln_s5.v" />
+			<FILE name="acl_fp_mul_ll_s5_double.v" />
+			<FILE name="acl_fp_rsqrt_s5.v" />
+			<FILE name="acl_fp_sincos_s5.v" />
+			<FILE name="acl_fp_sqrt_s5.v" />
+			<FILE name="acl_fp_uitofp.v" />
+			<FILE name="acl_id_iterator.v" />
+			<FILE name="acl_int_mult64s_s5.v" />
+			<FILE name="acl_kernel_finish_detector.v" />
+			<FILE name="acl_ll_fifo.v" />
+			<FILE name="acl_ll_ram_fifo.v" />
+			<FILE name="acl_loop_limiter.v" />
+			<FILE name="acl_multi_fanout_adaptor.v" />
+			<FILE name="acl_staging_reg.v" />
+			<FILE name="acl_stall_free_sink.v" />
+			<FILE name="acl_toggle_detect.v" />
+			<FILE name="acl_valid_fifo_counter.v" />
+			<FILE name="acl_work_group_dispatcher.v" />
+			<FILE name="acl_work_group_limiter.v" />
+			<FILE name="acl_work_item_iterator.v" />
+			<FILE name="dspba_library.vhd" />
+			<FILE name="dspba_library_package.vhd" />
+			<FILE name="fp_ln_s5.vhd" />
+			<FILE name="fp_ln_s5_memoryC0_uid97_natLogTabGen_lutmem.hex" />
+			<FILE name="fp_ln_s5_memoryC1_uid98_natLogTabGen_lutmem.hex" />
+			<FILE name="fp_ln_s5_memoryC2_uid99_natLogTabGen_lutmem.hex" />
+			<FILE name="fp_rsqrt_s5.vhd" />
+			<FILE name="fp_rsqrt_s5_memoryC0_uid59_invSqrtTabGen_lutmem.hex" />
+			<FILE name="fp_rsqrt_s5_memoryC1_uid60_invSqrtTabGen_lutmem.hex" />
+			<FILE name="fp_rsqrt_s5_memoryC2_uid61_invSqrtTabGen_lutmem.hex" />
+			<FILE name="fp_sincos_s5.vhd" />
+			<FILE name="fp_sincos_s5_memoryC0_uid394_tableGensinPiZ_lutmem.hex" />
+			<FILE name="fp_sincos_s5_memoryC0_uid400_tableGencosPiZ_lutmem.hex" />
+			<FILE name="fp_sincos_s5_memoryC1_uid396_tableGensinPiZ_lutmem.hex" />
+			<FILE name="fp_sincos_s5_memoryC1_uid402_tableGencosPiZ_lutmem.hex" />
+			<FILE name="fp_sincos_s5_memoryC2_uid398_tableGensinPiZ_lutmem.hex" />
+			<FILE name="fp_sincos_s5_memoryC2_uid404_tableGencosPiZ_lutmem.hex" />
+			<FILE name="fp_sincos_s5_rrTable_uid194_rrx_uid34_fpSinCosXTest_lutmem.hex" />
+			<FILE name="fp_sincos_s5_rrTable_uid195_rrx_uid34_fpSinCosXTest_lutmem.hex" />
+			<FILE name="fp_sqrt_s5.vhd" />
+			<FILE name="fp_sqrt_s5_memoryC0_uid59_sqrtTableGenerator_lutmem.hex" />
+			<FILE name="fp_sqrt_s5_memoryC1_uid60_sqrtTableGenerator_lutmem.hex" />
+			<FILE name="fp_sqrt_s5_memoryC2_uid61_sqrtTableGenerator_lutmem.hex" />
+			<FILE name="lsu_atomic.v" />
+			<FILE name="lsu_basic_coalescer.v" />
+			<FILE name="lsu_burst_master.v" />
+			<FILE name="lsu_bursting_load_stores.v" />
+			<FILE name="lsu_non_aligned_wrapper.v" />
+			<FILE name="lsu_pipelined.v" />
+			<FILE name="lsu_prefetch_block.v" />
+			<FILE name="lsu_read_cache.v" />
+			<FILE name="lsu_simple.v" />
+			<FILE name="lsu_streaming.v" />
+			<FILE name="lsu_top.v" />
+			<FILE name="profile_sink.v" />
+			<FILE name="six_three_comp.v" />
+			<FILE name="sv_mult27.v" />
+			<FILE name="ternary_add.v" />
+			<FILE name="thirtysix_six_comp.v" />
+		</REQUIREMENTS>
+		<DATA>
+			<INTERFACE port="local_bb1_ld__inst0" type="master" width="512" burstwidth="5" pipelined="true" addr_space="__global" aspace_id="1" optype="read" criticality="1024" buffer_location="" group_id="0" />
+			<INTERFACE port="local_bb1_ld__u0_inst0" type="master" width="512" burstwidth="5" pipelined="true" addr_space="__global" aspace_id="1" optype="read" criticality="1024" buffer_location="" group_id="0" />
+			<INTERFACE port="local_bb1_ld__u1_inst0" type="master" width="512" burstwidth="5" pipelined="true" addr_space="__global" aspace_id="1" optype="read" criticality="1024" buffer_location="" group_id="0" />
+			<INTERFACE port="local_bb2_atomic_call69_i_inst0" type="master" width="512" burstwidth="5" pipelined="true" addr_space="__global" aspace_id="1" optype="read" criticality="1048576" buffer_location="" group_id="0" />
+			<INTERFACE port="local_bb3_st_c0_exe4_inst0" type="master" width="512" burstwidth="5" pipelined="true" addr_space="__global" aspace_id="1" optype="write" criticality="2" buffer_location="" group_id="0" />
+		</DATA>
+		<KERNEL_ARGS>
+			<ARGUMENT name="xd" opencl_access_type="ACL_ARG_ADDR_GLOBAL" opencl_type_category="ACL_ARG_MEM_OBJ" size="8" >
+		</ARGUMENT>
+			<ARGUMENT name="cd" opencl_access_type="ACL_ARG_ADDR_GLOBAL" opencl_type_category="ACL_ARG_MEM_OBJ" size="8" >
+		</ARGUMENT>
+			<ARGUMENT name="ad" opencl_access_type="ACL_ARG_ADDR_GLOBAL" opencl_type_category="ACL_ARG_MEM_OBJ" size="8" >
+		</ARGUMENT>
+			<ARGUMENT name="numd" opencl_access_type="ACL_ARG_ADDR_GLOBAL" opencl_type_category="ACL_ARG_MEM_OBJ" size="8" >
+		</ARGUMENT>
+			<ARGUMENT name="histd" opencl_access_type="ACL_ARG_ADDR_GLOBAL" opencl_type_category="ACL_ARG_MEM_OBJ" size="8" >
+		</ARGUMENT>
+		</KERNEL_ARGS>
+		<PRINTF_FORMAT_STRINGS>
+		</PRINTF_FORMAT_STRINGS>
+		<PRINTF_INTERFACES>
+		</PRINTF_INTERFACES>
+	</KERNEL>
+</KERNEL_LIST>

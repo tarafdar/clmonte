@@ -1,0 +1,31 @@
+- Version Identifier
+- Board name
+- Specifies if the kernel is a virtual fabric
+- Number of memory interfaces (DIMMS or banks) usable as device global memory
+- Number of bytes interleaved across the DIMMs
+   - Global memory start address for interface 0
+   - Global memory end address for interface 0
+   - Global memory start address for interface 1
+   - Global memory end address for interface 1
+- Size of global memory allocated by program
+- Number of kernels
+  For each kernel:
+   - Kernel name
+   - Start address of kernel control registers
+   - Size of kernel control registers
+   - 0x0 (for internal use)
+   - 0x0 (for internal use)
+   - 0/1 value to indicate if the kernel is work-group invariant (if the value is 1, kernel launch will be modified to make local_size = global_size. This is an optimization.
+   - Number of times kernel operations are vectorized. The kernel will launched with fewer work-items in each work-groups as many times as the number of vector lanes.
+   - 0/1 value to indicate if profiling has been enabled on this kernel. 
+   - Number of kernel arguments
+   For each kernel argument:
+    - internal # representing its type
+    - internal # representing its category
+    - its size
+   - Number of printf calls
+   - Number of local memory systems.
+   - X-dim of required work-group size (controlled by __attribute ((reqd_work_group_size(X, Y, Z))) )
+   - Y-dim of required work-group size
+   - Z-dim of required work-group size
+   - Maximum work-group size (controlled by  __attribute((max_work_group_size(M))))
