@@ -8,6 +8,17 @@
 #include <math.h>
 #include <limits.h>
 
+
+
+float copysign(float x, float y){
+
+	if (y >= 0)
+		return abs(x);
+	else
+		return -abs(x);
+}
+
+
 float rand_MWC_coh(unsigned long long* x, unsigned int* a)
 {
 		//this implementation seems to be faster.
@@ -57,7 +68,8 @@ void Spinh(float3* dir, float* g, unsigned long long* x, unsigned int* a, float*
     *(sint_ret) = sint;
     *(cosp_ret) = cosp;
     *(sinp_ret) = sinp;
-    if(temp==0.0f)// normal incident.
+    
+	if(temp==0.0f)// normal incident.
 	{
 		dir->x = sint*cosp;
 		dir->y = sint*sinp;
@@ -110,7 +122,8 @@ void Spinh2(float3* dir, float* g, unsigned long long* x, unsigned int* a, float
     *(sint_ret) = sint;
     *(cosp_ret) = cosp;
     *(sinp_ret) = sinp;
-    if(temp==0.0f)// normal incident.
+    
+	if(temp==0.0f)// normal incident.
 	{
 		dir->x = sint*cosp;
 		dir->y = sint*sinp;
