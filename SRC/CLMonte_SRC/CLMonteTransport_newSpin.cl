@@ -192,9 +192,9 @@ void Spin(float3* dir, unsigned long* x, unsigned int* a, float3* dir_a, float3*
 //	dir_b->y = sint*a_old.y + cosp*b_old.y;
 //	dir_b->z = sint*a_old.z + cosp*b_old.z;
 
-    dir_a->x = dot_product(0, sint, cosp, dir_old.x, a_old.x, b_old.x) ;
-    dir_a->y = dot_product(0, sint, cosp, dir_old.y, a_old.y, b_old.y) ;
-    dir_a->z = dot_product(0, sint, cosp, dir_old.z, a_old.z, b_old.z) ;
+    dir_b->x = dot_product(0, sinp, cosp, dir_old.x, a_old.x, b_old.x) ;
+    dir_b->y = dot_product(0, sinp, cosp, dir_old.y, a_old.y, b_old.y) ;
+    dir_b->z = dot_product(0, sinp, cosp, dir_old.z, a_old.z, b_old.z) ;
 
 
 
