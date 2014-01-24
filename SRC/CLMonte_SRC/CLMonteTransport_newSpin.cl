@@ -28,13 +28,13 @@
 #define G 0.9f	
 #define MUS_MAX 90.0f	//[1/cm]
 
-//#define V 0.0214f		//[cm/ps] (c=0.03 [cm/ps] v=c/n) here n=1.4
-//#define COS_CRIT 0.6999f	//the critical angle for total internal reflection at the border cos_crit=sqrt(1-(nt/ni)^2)
-//#define N 1.4f
+#define V 0.0214f		//[cm/ps] (c=0.03 [cm/ps] v=c/n) here n=1.4
+#define COS_CRIT 0.6999f	//the critical angle for total internal reflection at the border cos_crit=sqrt(1-(nt/ni)^2)
+#define N 1.4f
 
-#define V 0.03f		//[cm/ps] (c=0.03 [cm/ps] v=c/n) here n=1.4
-#define COS_CRIT 0.0f	//the critical angle for total internal reflection at the border cos_crit=sqrt(1-(nt/ni)^2)
-#define N 1.0f
+//#define V 0.03f		//[cm/ps] (c=0.03 [cm/ps] v=c/n) here n=1.4
+//#define COS_CRIT 0.0f	//the critical angle for total internal reflection at the border cos_crit=sqrt(1-(nt/ni)^2)
+//#define N 1.0f
 
 //#define ONE_OVER_2G 				0.555555556f
 //#define ONE_MINUS_N_OVER_1_PLUS_N_SQUARED   0.027777778f
@@ -228,14 +228,41 @@ void Spin(float3* dir, unsigned long* x, unsigned int* a, float3* dir_a, float3*
 	dir_b->z=dir_b->z*temp;
 }
 
+void cross_product(float3* a, float3* b, float3* c){
+    c->x = a->y*b->z - a->z*b->y;
+    c->y = a->z*b->x - a->x*b->z;
+    c->z = a->x*b->y - a->y*b->x;
+}
 
-unsigned int Reflect(float3* dir, float3* pos, float* t,  unsigned long* x, unsigned int* a, __global unsigned int* histd)
+void cross_product_unit(float3* a, int z, float3* c){
+    if(z == 1) { //0,0,1
+        c->x = a->y;
+        c->y = 0 - a->x;
+        c->z = 0;
+    }
+    else{ //cross with 0,1,0
+        c->x = 0 - a->z;
+        c->y = 0;
+        c->z = a->x;
+    }
+
+}
+
+unsigned int Reflect(float3* dir, float3* pos, float* t,  unsigned long* x, unsigned int* a, __global unsigned int* histd, float3* dir_a, float3* dir_b)
 {
 	float r;
 	float fibre_separtion=1.0f;//[cm]
 	float fibre_diameter=0.05f;//[cm]
 	float abs_return;
-	if(-dir->z<=COS_CRIT)
+    
+    float temp;
+    float3 z_unit;
+    z_unit.x = 0;
+    z_unit.y = 0;
+    z_unit.z = 1;
+	
+    
+    if(-dir->z<=COS_CRIT)
 		r=1.0f; //total internal reflection
 	else
 	{
@@ -272,20 +299,20 @@ unsigned int Reflect(float3* dir, float3* pos, float* t,  unsigned long* x, unsi
 			r= divide(pos->z,-dir->z);//dir->z must be finite since we have a boundary cross!
 			pos->x+=dir->x*r;
 			pos->y+=dir->y*r;
-			*t+= divide(r,V); //calculate the time when the photon exits
+			
+            *t+= divide(r,V); //calculate the time when the photon exits
 			//*t+= r*ONE_OVER_V;
 
 			r=sqrtf(pos->x*pos->x+pos->y*pos->y);
-			
+	        	
+             
+        
+            	
 			//check for detection here
 			if((fabs((r-fibre_separtion)))<=fibre_diameter)
 			{
 				//photon detected!
-				//atomic_add( histd + (unsigned int)(floor((divide((*t),DT)) , 1)));//&histd[(unsigned int)floorf(native_divide((t*),DT))],(unsigned int)1);
-				//unsigned int offset;
-				//offset= (unsigned int)(floor(native_divide((*t),DT)))
 				atomic_add( histd + (unsigned int)floor(divide((*t), DT)), 1);
-				//atomic_add( histd + (unsigned int)floor(*t*ONE_OVER_DT), 1);
 				return 1;
 			}
 			else
@@ -298,6 +325,22 @@ unsigned int Reflect(float3* dir, float3* pos, float* t,  unsigned long* x, unsi
 	{
 		pos->z *= -1;//mirror the z-coordinate in the z=0 plane, equal to a reflection.
 		dir->z *= -1;// do the same to the z direction vector
+        
+        if(dir->x != 0 && dir->y != 0 && dir->z != 1) 
+            cross_product_unit(dir, 1, dir_a);
+        else
+            cross_product_unit(dir, 0, dir_a); 
+	    
+        temp= rsqrtf(dir_a->x*dir_a->x+dir_a->y*dir_a->y+dir_a->z*dir_a->z);
+	    dir_a->x=dir_a->x*temp;
+	    dir_a->y=dir_a->y*temp;
+	    dir_a->z=dir_a->z*temp;
+        
+        cross_product(dir, dir_a, dir_b); 
+        temp= rsqrtf(dir_b->x*dir_b->x+dir_b->y*dir_b->y+dir_b->z*dir_b->z);
+	    dir_b->x=dir_b->x*temp;
+	    dir_b->y=dir_b->y*temp;
+	    dir_b->z=dir_b->z*temp;
 	}
 	return 0;
 }
@@ -344,7 +387,7 @@ __kernel void MCd(__global unsigned int* xd,__global unsigned int* cd,__global u
 		//Perform boundary crossing check here
 		if((pos.z+dir.z*s)<=0)//photon crosses boundary within the next step
 		{
-			flag=Reflect(&dir,&pos,&t,&x,&a,histd);
+			flag=Reflect(&dir,&pos,&t,&x,&a,histd, &dir_a, &dir_b);
 		}
 		
 		//Move (we can move the photons that have been terminated above since it improves our performance and does not affect our results)
