@@ -72,6 +72,7 @@
 #define DT 10.0f //[ps] Time binning resolution
 #define TEMP 201 //ceil(TMAX/DT), precalculated to avoid dynamic memory allocation (fulhack)
 
+//#define RUN_HOST
 #define LINUX
 //#define JORDAN
 //#define NAIF
@@ -147,7 +148,7 @@ int MC(unsigned int* x,unsigned int* c,unsigned int* a)
 	FILE *print_file;
 	FILE *build_file;
 	
-	file = fopen("outp.txt", "w");
+	file = fopen("outp_newSpin.txt", "w");
 	print_file = fopen("print_out.txt", "w");
 	build_file = fopen("build.txt", "w");
 
@@ -316,6 +317,7 @@ int MC(unsigned int* x,unsigned int* c,unsigned int* a)
 	ret = clReleaseCommandQueue(command_queue);
 
 	ret = clReleaseContext(context);
+#ifdef RUN_HOST
 	printf("\n\nRunning CPU code (sequential C++)\n");
 	fprintf(print_file, "\n\nRunning CPU code (sequential C++)\n");
 	for(i=0;i<TEMP;i++)histh[i]=0;
@@ -356,7 +358,8 @@ int MC(unsigned int* x,unsigned int* c,unsigned int* a)
 
 	printf("\n\nSpeedup: %f",(NUMSTEPS_GPU*double(CPUtime))/(NUMSTEPS_CPU*double(GPUtime)));
 	fprintf(print_file, "\n\nSpeedup: %f",(NUMSTEPS_GPU*double(CPUtime))/(NUMSTEPS_CPU*double(GPUtime)));
-	fclose(print_file);
+#endif	
+    fclose(print_file);
 }
 
 
