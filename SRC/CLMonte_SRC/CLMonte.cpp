@@ -72,13 +72,14 @@
 #define DT 10.0f //[ps] Time binning resolution
 #define TEMP 201 //ceil(TMAX/DT), precalculated to avoid dynamic memory allocation (fulhack)
 
+#define RUN_HOST
 #define LINUX
 //#define JORDAN
 //#define NAIF
 unsigned int xtest[NUM_THREADS];
 unsigned int ctest[NUM_THREADS];
 unsigned int atest[NUM_THREADS];
-
+int rmax = 0.0;
 struct float3{
 	float x;
 	float y;
@@ -129,8 +130,8 @@ int MC(unsigned int* x,unsigned int* c,unsigned int* a)
     fp = fopen("C:\\Users\\Jordan\\Documents\\GitHub\\ece496\\CLMonteTransport.cl", "r");
 #endif
 #ifdef LINUX
-    //fp = fopen("SRC/CLMonte_SRC/CLMonteTransport.cl", "r");
-    fp = fopen("SRC/CLMonte_SRC/CLMonteTransport_n1.cl", "r");
+    fp = fopen("SRC/CLMonte_SRC/CLMonteTransport.cl", "r");
+    //fp = fopen("SRC/CLMonte_SRC/CLMonteTransport_n1.cl", "r");
     //fp = fopen("SRC/CLMonte_SRC/CLMonteTransport_newSpin.cl", "r");
 
 #endif
@@ -316,7 +317,8 @@ int MC(unsigned int* x,unsigned int* c,unsigned int* a)
 	ret = clReleaseCommandQueue(command_queue);
 
 	ret = clReleaseContext(context);
-	printf("\n\nRunning CPU code (sequential C++)\n");
+#ifdef RUN_HOST	
+    printf("\n\nRunning CPU code (sequential C++)\n");
 	fprintf(print_file, "\n\nRunning CPU code (sequential C++)\n");
 	for(i=0;i<TEMP;i++)histh[i]=0;
     
@@ -356,7 +358,8 @@ int MC(unsigned int* x,unsigned int* c,unsigned int* a)
 
 	printf("\n\nSpeedup: %f",(NUMSTEPS_GPU*double(CPUtime))/(NUMSTEPS_CPU*double(GPUtime)));
 	fprintf(print_file, "\n\nSpeedup: %f",(NUMSTEPS_GPU*double(CPUtime))/(NUMSTEPS_CPU*double(GPUtime)));
-	fclose(print_file);
+#endif	
+    fclose(print_file);
 }
 
 

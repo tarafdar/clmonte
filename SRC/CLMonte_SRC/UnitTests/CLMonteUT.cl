@@ -17,7 +17,7 @@
 
 #define NUM_THREADS_PER_BLOCK 320 //Keep above 192 to eliminate global memory access overhead
 #define NUM_BLOCKS 84 //Keep numblocks a multiple of the #MP's of the GPU (8800GT=14MP)
-#define NUM_THREADS 1000
+#define NUM_THREADS 100
 #define NUM_THREADS_TIMES_THREE 80640
 #define NUMSTEPS_GPU 500000
 #define NUMSTEPS_CPU 500000
@@ -602,6 +602,7 @@ __global float* dirx_array,__global float* diry_array, __global float* dirz_arra
 __global float* ax_array,__global float* ay_array, __global float* az_array, 
 __global float* bx_array,__global float* by_array, __global float* bz_array, 
 __global unsigned int* xd,__global unsigned int* ad, __global unsigned int* cd) {
+
 	int global_id = get_global_id(0);
     
     float3 dirvar; 
@@ -628,7 +629,7 @@ __global unsigned int* xd,__global unsigned int* ad, __global unsigned int* cd) 
 	bvar.z = bz_array[global_id];
 	dir_b = &bvar;
 	
-    unsigned long int x = cd[global_id];
+  unsigned long int x = cd[global_id];
 	x=(x<<32) + xd[global_id];
     unsigned int a=ad[global_id];
 	
@@ -667,38 +668,39 @@ __global unsigned int* xd,__global unsigned int* ad, __global unsigned int* cd) 
 		//if(rand_MWC_co(x/*,c*/,a)<=r)//reflect
 		if(rand_MWC_co(&x,&a)<=r)//reflect
 			r=1.0f;
-        /*else//transmitt
-		{
-			//calculate x and y where the photon escapes the medium
-			
-			r= divide(pos->z,-dir->z);//dir->z must be finite since we have a boundary cross!
-			pos->x+=dir->x*r;
-			pos->y+=dir->y*r;
-			*t+= divide(r,V); //calculate the time when the photon exits
-			// *t+= r*ONE_OVER_V;
-
-			r=sqrtf(pos->x*pos->x+pos->y*pos->y);
-			
-			//check for detection here
-			if((fabs((r-fibre_separtion)))<=fibre_diameter)
-			{
-				//photon detected!
-				//atomic_add( histd + (unsigned int)(floor((divide((*t),DT)) , 1)));//&histd[(unsigned int)floorf(native_divide((t*),DT))],(unsigned int)1);
-				//unsigned int offset;
-				//offset= (unsigned int)(floor(native_divide((*t),DT)))
-				atomic_add( histd + (unsigned int)floor(divide((*t), DT)), 1);
-				//atomic_add( histd + (unsigned int)floor(*t*ONE_OVER_DT), 1);
-				return 1;
-			}
-			else
-			{
-				return 2;
-			}	
-		}*/
+//        else//transmitt
+//		{
+//			//calculate x and y where the photon escapes the medium
+//			
+//			r= divide(pos->z,-dir->z);//dir->z must be finite since we have a boundary cross!
+//			pos->x+=dir->x*r;
+//			pos->y+=dir->y*r;
+//			*t+= divide(r,V); //calculate the time when the photon exits
+//			// *t+= r*ONE_OVER_V;
+//
+//			r=sqrtf(pos->x*pos->x+pos->y*pos->y);
+//			
+//			//check for detection here
+//			if((fabs((r-fibre_separtion)))<=fibre_diameter)
+//			{
+//				//photon detected!
+//				//atomic_add( histd + (unsigned int)(floor((divide((*t),DT)) , 1)));//&histd[(unsigned int)floorf(native_divide((t*),DT))],(unsigned int)1);
+//				//unsigned int offset;
+//				//offset= (unsigned int)(floor(native_divide((*t),DT)))
+//				atomic_add( histd + (unsigned int)floor(divide((*t), DT)), 1);
+//				//atomic_add( histd + (unsigned int)floor(*t*ONE_OVER_DT), 1);
+//				return 1;
+//			}
+//			else
+//			{
+//				return 2;
+//			}	
+//		}
 	}
+
 	if(r==1.0f)//reflect (mirror z and dz in reflection plane)
 	{
-		pos->z *= -1;//mirror the z-coordinate in the z=0 plane, equal to a reflection.
+		//pos->z *= -1;//mirror the z-coordinate in the z=0 plane, equal to a reflection.
 		dir->z *= -1;// do the same to the z direction vector
         
         if(dir->x != 0 && dir->y != 0 && dir->z != 1) 

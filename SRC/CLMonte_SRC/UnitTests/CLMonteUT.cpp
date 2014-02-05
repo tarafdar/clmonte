@@ -55,7 +55,7 @@
 //#define NUM_BLOCKS 84 //Keep numblocks a multiple of the #MP's of the GPU (8800GT=14MP)
 //#define NUM_BLOCKS 30 //Keep numblocks a multiple of the #MP's of the GPU (8800GT=14MP)
 #define NUM_BLOCKS 48 //Keep numblocks a multiple of the #MP's of the GPU (8800GT=14MP)
-#define NUM_THREADS 1000
+#define NUM_THREADS 100
 //#define NUM_THREADS 100
 //#define NUM_THREADS 1024
 #define NUM_THREADS_TIMES_THREE 80640
@@ -636,16 +636,16 @@ int spin(float dirx, float diry, float dirz, unsigned int* x,unsigned int* c,uns
     cl_mem ad_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, size, NULL, &ret);
     check_return(ret, "create ad buff fail\n");
 
-    cl_mem sintd_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, size, NULL, &ret);
+    cl_mem sintd_mem_obj = clCreateBuffer(context, CL_MEM_READ_WRITE, size, NULL, &ret);
     check_return(ret, "create sintd buff fail\n");
     
-    cl_mem costd_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, size, NULL, &ret);
+    cl_mem costd_mem_obj = clCreateBuffer(context, CL_MEM_READ_WRITE, size, NULL, &ret);
     check_return(ret, "create costd buff fail\n");
     
-    cl_mem cospd_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, size, NULL, &ret);
+    cl_mem cospd_mem_obj = clCreateBuffer(context, CL_MEM_READ_WRITE, size, NULL, &ret);
     check_return(ret, "create cospd buff fail\n");
 	
-    cl_mem sinpd_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, size, NULL, &ret);
+    cl_mem sinpd_mem_obj = clCreateBuffer(context, CL_MEM_READ_WRITE, size, NULL, &ret);
     check_return(ret, "create sinpd buff fail\n");
     
     
@@ -1641,7 +1641,7 @@ int reflect_new(unsigned int* x,unsigned int* c,unsigned int* a)
 int MC(unsigned int* x,unsigned int* c,unsigned int* a){
     //reflect(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, DIRZ, x, c, a);
     //spin(sqrt(0.5f), 0.5f, 0.5f, x, c, a, 0.5f);
- //   spin_new(0.0f, 0.0f, 1.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, x, c ,a, 1.0f);
+    //spin_new(0.0f, 0.0f, 1.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, x, c ,a, 1.0f);
     reflect_new(x,c,a);
     //spinCPU(sqrt(0.5f), 0.5f, 0.5f, x, c, a, 0.5f);
 	return 0;

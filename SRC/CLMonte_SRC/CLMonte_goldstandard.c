@@ -221,7 +221,8 @@ unsigned int Reflecth(float3* dir, float3* pos, float* t, float* v, float* cos_c
 			*t+=r/(*v); //calculate the time when the photon exits
 
 			r=sqrtf(pos->x*pos->x+pos->y*pos->y);
-			
+		   // if(r > rmax)
+           //     rmax = r;	
 			//check for detection here
 			if(fabsf(r-fibre_separtion)<=fibre_diameter)//!!!!!!!!!!!!!!!!!!!!!!!
 			{
