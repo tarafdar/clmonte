@@ -224,6 +224,14 @@ unsigned int Reflecth(float3* dir, float3* pos, float* t, float* v, float* cos_c
 		   // if(r > rmax)
            //     rmax = r;	
 			//check for detection here
+
+#ifdef SPATIAL_HISTOGRAM
+			adr=(unsigned int)floor(r/DR)*TEMP + (unsigned int)floorf((*t)/DT);
+            if(r <= MAXR)
+				histh[adr]=histh[adr]+1;
+
+
+#else 
 			if(fabsf(r-fibre_separtion)<=fibre_diameter)//!!!!!!!!!!!!!!!!!!!!!!!
 			{
 				adr=(unsigned int)floorf((*t)/DT);
@@ -235,7 +243,8 @@ unsigned int Reflecth(float3* dir, float3* pos, float* t, float* v, float* cos_c
 			{
 				return 2;
 			}	
-		}
+#endif
+	    }
 	}
 	if(r==1.0f)//reflect (mirror z and dz in reflection plane)
 	{

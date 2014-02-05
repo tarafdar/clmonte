@@ -42,8 +42,9 @@
 //#define ONE_OVER_DT				0.1f
 //#define ONE_OVER_MUS_MAX			0.01111111111f
 
-//#define SPATIAL_HISTOGRAM  //SPATIAL HISTOGEAM IS DR*DT 2D histogram
-#define DR 0.0005
+#define SPATIAL_HISTOGRAM  //SPATIAL HISTOGEAM IS DR*DT 2D histogram
+#define DR 0.005f
+#define MAXR 1.0f
 
 float dot_product (float x1, float y1, float z1, float x2, float y2, float z2) {
     return  x1*x2 + y1*y2 + z1*z2;
@@ -313,8 +314,8 @@ unsigned int Reflect(float3* dir, float3* pos, float* t,  unsigned long* x, unsi
 #ifdef SPATIAL_HISTOGRAM
         
         
-        
-            atomic_add(spathistd + (unsigned int)floor(r/DR)*DT + (unsigned int)floor(divide((*t), DT)), 1);
+            if(r <= MAXR) 
+                atomic_add(histd + (unsigned int)floor(r/DR)*TEMP + (unsigned int)floor(divide((*t), DT)), 1);
             return 1;   
         
         

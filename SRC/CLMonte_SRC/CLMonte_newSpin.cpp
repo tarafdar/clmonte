@@ -72,6 +72,11 @@
 #define DT 10.0f //[ps] Time binning resolution
 #define TEMP 201 //ceil(TMAX/DT), precalculated to avoid dynamic memory allocation (fulhack)
 
+#define MAXR 1.0f
+#define DR 0.005f
+//#define RBUCKETS (unsigned int)(MAXR/DR)
+#define RBUCKETS 200
+#define RBUCKETSXTEMP 40200
 //#define RUN_HOST
 #define LINUX
 //#define JORDAN
@@ -109,16 +114,25 @@ unsigned int Reflecth(float3*, float3*, float*, float*, float*, float*, unsigned
 
 
 #include "CLMonte_goldstandard.c"
+#define SPATIAL_HISTOGRAM
 // wrapper for device code
 int MC(unsigned int* x,unsigned int* c,unsigned int* a)
 {
 	unsigned int num[NUM_THREADS];
 	unsigned long long num_tot, hist_tot;
-	unsigned int i;
+	unsigned int i, j;
+#ifdef SPATIAL_HISTOGRAM	
+    unsigned int hist[RBUCKETSXTEMP];
+    unsigned int hist_transpose[RBUCKETSXTEMP];
+#else
 	unsigned int hist[TEMP];
-
+#endif
 	unsigned int numh[NUM_THREADS];
+#ifdef SPATIAL_HISTOGRAM	
+	unsigned int histh[RBUCKETSXTEMP];
+#else
 	unsigned int histh[TEMP];
+#endif
 
 	FILE *fp;
     char *source_str;
@@ -187,7 +201,12 @@ int MC(unsigned int* x,unsigned int* c,unsigned int* a)
     cl_mem numd_mem_obj = clCreateBuffer(context, CL_MEM_WRITE_ONLY, size, NULL, &ret);
     check_return(ret, "create numd buff fail\n");
 
+#ifdef SPATIAL_HISTOGRAM
+    cl_mem histd_mem_obj = clCreateBuffer(context, CL_MEM_READ_WRITE, RBUCKETSXTEMP*sizeof(unsigned int), NULL, &ret);
+#else
     cl_mem histd_mem_obj = clCreateBuffer(context, CL_MEM_READ_WRITE, TEMP*sizeof(unsigned int), NULL, &ret);
+#endif
+    
     check_return(ret, "create histd buff fail\n");
 	
     ret = clEnqueueWriteBuffer(command_queue, xd_mem_obj, CL_TRUE, 0, size, xtest, 0, NULL, NULL);
@@ -199,9 +218,14 @@ int MC(unsigned int* x,unsigned int* c,unsigned int* a)
 	ret = clEnqueueWriteBuffer(command_queue, cd_mem_obj, CL_TRUE, 0, size, ctest, 0, NULL, NULL);
     check_return(ret, "write buff cd fail\n");
 
-	for(i=0;i<TEMP;i++)hist[i]=0;
 	
+#ifdef SPATIAL_HISTOGRAM
+	for(i=0;i<RBUCKETSXTEMP;i++)hist[i]=0;
+	ret = clEnqueueWriteBuffer(command_queue, histd_mem_obj, CL_TRUE, 0, RBUCKETSXTEMP*sizeof(unsigned int), hist, 0, NULL, NULL);
+#else
+	for(i=0;i<TEMP;i++)hist[i]=0;
 	ret = clEnqueueWriteBuffer(command_queue, histd_mem_obj, CL_TRUE, 0, TEMP*sizeof(unsigned int), hist, 0, NULL, NULL);
+#endif
     check_return(ret, "write buff histd fail\n");
 
 	// Create a program from the kernel source
@@ -265,14 +289,18 @@ int MC(unsigned int* x,unsigned int* c,unsigned int* a)
 	
 	time2=clock();
 
-	ret = clEnqueueReadBuffer(command_queue, histd_mem_obj, CL_TRUE, 0,TEMP*sizeof(unsigned int), hist, 1, &kern_event, NULL);
+ #ifdef SPATIAL_HISTOGRAM
+	ret = clEnqueueReadBuffer(command_queue, histd_mem_obj, CL_TRUE, 0,RBUCKETSXTEMP*sizeof(unsigned int), hist, 1, &kern_event, NULL);
+#else	
+    ret = clEnqueueReadBuffer(command_queue, histd_mem_obj, CL_TRUE, 0,TEMP*sizeof(unsigned int), hist, 1, &kern_event, NULL);
+#endif
     check_return(ret, "read buff hist fail\n");
 
 	cl_event read_buff1;
 	ret = clEnqueueReadBuffer(command_queue, numd_mem_obj, CL_TRUE, 0,size, num, 1, &kern_event, &read_buff1);
     check_return(ret, "read buff num fail\n");
 	
-	
+
 	num_tot=0;
 	for(i=0;i<NUM_THREADS;i++){
 		num_tot+=num[i];
@@ -281,14 +309,39 @@ int MC(unsigned int* x,unsigned int* c,unsigned int* a)
     
 	
 	
+
+ #ifdef SPATIAL_HISTOGRAM
+	hist_tot=0;
+	for(i=0;i<RBUCKETSXTEMP;i++)hist_tot+=hist[i];
+    for(i=0;i<RBUCKETS;i++){
+	    printf("RADIUS BUCKET %d\n", i);
+		for(j=0; j<TEMP; j++){
+            printf("%d ",hist[i*TEMP + j]);
+		    fprintf(print_file, "%d ", hist[i*TEMP + j]);
+        }
+        printf("\n\n");
+        fprintf(print_file, "\n");
+	}
+
+	for(i=0;i<RBUCKETS;i++)
+        for(j=0; j<TEMP; j++)
+            fprintf(file,"%d %d\n",i, hist[i*TEMP + j]);
+
+
+//TRANSPOSE
+    for(i=0;i<RBUCKETS;i++)
+        for(j=0; j<TEMP; j++)
+            hist_transpose[j*RBUCKETS + i] = hist[i*TEMP + j];
+#else	
 	hist_tot=0;
 	for(i=0;i<TEMP;i++)hist_tot+=hist[i];
-	for(i=0;i<TEMP;i++){
+    for(i=0;i<TEMP;i++){
 		printf("%d ",hist[i]);
 		fprintf(print_file, "%d ", hist[i]);
 	}
 
-	for(i=0;i<TEMP;i++)fprintf(file,"%d %d\n",i, hist[i]);
+   for(i=0; i<TEMP; i++)fprintf(file,"%d %d\n",i, hist[i]);
+#endif
 	fclose(file);
 	printf("\nTotal number of photons terminated (i.e. full path simulated): %llu\nNumber of photons contribution to the histogram: %llu\n",num_tot,hist_tot);
 	printf("Total number of photons steps simulated: %e\n",(double)NUM_THREADS*(double)NUMSTEPS_GPU);
@@ -320,7 +373,12 @@ int MC(unsigned int* x,unsigned int* c,unsigned int* a)
 #ifdef RUN_HOST
 	printf("\n\nRunning CPU code (sequential C++)\n");
 	fprintf(print_file, "\n\nRunning CPU code (sequential C++)\n");
-	for(i=0;i<TEMP;i++)histh[i]=0;
+	
+#ifdef SPATIAL_HISTOGRAM
+    for(i=0;i<RBUCKETSXTEMP;i++)histh[i]=0;
+#else
+    for(i=0;i<TEMP;i++)histh[i]=0;
+#endif
     
 	//run CPU code 
 	time1=clock();
@@ -331,17 +389,31 @@ int MC(unsigned int* x,unsigned int* c,unsigned int* a)
 	for(i=0;i<NUM_THREADS;i++)num_tot+=numh[i];
 
 	hist_tot=0;
-	for(i=0;i<TEMP;i++)hist_tot+=histh[i];
+#ifdef SPATIAL_HISTOGRAM
+	for(i=0;i<RBUCKETSXTEMP;i++)hist_tot+=histh[i];
+#else
+    for(i=0;i<TEMP;i++)histh[i]=0;
+#endif
 
 
-	file = fopen("outph.txt", "w");
+#ifdef SPATIAL_HISTOGRAM
+	for(i=0;i<RBUCKETS;i++){
+        for(j=0; j<TEMP; j++){
+		    printf("%d ", histh[i*TEMP + j]);
+		    fprintf(print_file, "%d ", histh[i*TEMP + j]);
+        }
+        printf("\n");
+	}
+#else
+
+    file = fopen("outph.txt", "w");
 	for(i=0;i<TEMP;i++){
 		printf("%d ", histh[i]);
 		fprintf(file,"%d %d\n",i,histh[i]);
 		fprintf(print_file, "%d ", histh[i]);
 	}
-	
 	fclose(file);
+#endif
 	printf("\n\nTotal number of photons (i.e. full path simulated): %llu\nNumber of photons contribution to the histogram: %llu\n",num_tot,hist_tot);
 	printf("Total number of photons steps simulated: %e\n",(double)NUM_THREADS*(double)NUMSTEPS_CPU);
     printf("time1=%u, time2=%u.\n",time1,time2);
