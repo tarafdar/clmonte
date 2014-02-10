@@ -21,9 +21,7 @@
 #define NUMSTEPS_CPU 500000
 #define PI 3.14159265f
 
-#define TMAX 2000.0f //[ps] Maximum time of flight
-#define DT 10.0f //[ps] Time binning resolution
-#define TEMP 201 //ceil(TMAX/DT), precalculated to avoid dynamic memory allocation (fulhack)
+
 
 #define G 0.9f	
 #define MUS_MAX 90.0f	//[1/cm]
@@ -43,8 +41,18 @@
 //#define ONE_OVER_MUS_MAX			0.01111111111f
 
 #define SPATIAL_HISTOGRAM  //SPATIAL HISTOGEAM IS DR*DT 2D histogram
-#define DR 0.005f
-#define MAXR 1.0f
+#define DR 0.00125f
+#define MAXR 0.25f
+
+#ifdef SPATIAL_HISTOGRAM
+#define TMAX 250.0f //[ps] Maximum time of flight
+#define DT 1.25f //[ps] Time binning resolution
+#else
+#define TMAX 2000.0f //[ps] Maximum time of flight
+#define DT 10.0f //[ps] Time binning resolution
+#endif
+
+#define TEMP 201 //ceil(TMAX/DT), precalculated to avoid dynamic memory allocation (fulhack)
 
 float dot_product (float x1, float y1, float z1, float x2, float y2, float z2) {
     return  x1*x2 + y1*y2 + z1*z2;

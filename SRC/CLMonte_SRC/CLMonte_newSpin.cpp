@@ -323,10 +323,12 @@ int MC(unsigned int* x,unsigned int* c,unsigned int* a)
         fprintf(print_file, "\n");
 	}
 
-	for(i=0;i<RBUCKETS;i++)
+	for(i=0;i<RBUCKETS;i++){
         for(j=0; j<TEMP; j++)
-            fprintf(file,"%d %d\n",i, hist[i*TEMP + j]);
-
+            //fprintf(file,"%d %d\n",j, hist[i*TEMP + j]);
+            fprintf(file,"%d ", hist[i*TEMP + j]);
+            fprintf(file, "\n");
+    }
 
 //TRANSPOSE
     for(i=0;i<RBUCKETS;i++)
