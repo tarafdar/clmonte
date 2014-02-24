@@ -53,4 +53,8 @@ for ind_t = 1:size(T,1)
     axis equal;
     set(hax, 'Visible', 'Off', 'CLim', [min(T(:)) max(T(:))]);
     pause(0.35);
+    
+    f = getframe;
+    animatedfilename = sprintf('images/log/test%d.gif', ind_t);
+    imwrite(f.cdata, animatedfilename);
 end
