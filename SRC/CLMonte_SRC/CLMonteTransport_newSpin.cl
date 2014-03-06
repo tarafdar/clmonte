@@ -168,64 +168,18 @@ void Spin(float3* dir, unsigned long* x, unsigned int* a, float3* dir_a, float3*
 
 	cosp= sincos(2.0f*PI*rand_MWC_co(x,a),&sinp);
 
-
-
-/*    	
-    float P = 2.0f* rand_MWC_co(x,a) - 1.0f;
-	if((G)==0.0f)
-		cost = P;
-    else{
-        temp = divide((1.0f-(G)*(G)),(1.0f+(G*P)));//Should be close close????!!!!!
-	    cost = divide((1.0f+(G)*(G) - temp*temp),(2.0f*(G)));
-
-
-    }
-
-	sint = sqrtf(1.0f - cost*cost);
-
-	cosp= sincos(2.0f*PI*rand_MWC_co(x,a),&sinp);
-*/
-	//temp = sqrtf(1.0f - dir->z*dir->z);
-//	dir->x = cost*dir_old.x + (-sint*cosp*a_old.x) + (sint*cosp*b_old.x);
-//	dir->y = cost*dir_old.y + (-sint*cosp*a_old.y) + (sint*cosp*b_old.y);
-//	dir->z = cost*dir_old.z + (-sint*cosp*a_old.z) + (sint*cosp*b_old.z);
-
     dir->x = dot_product(cost, -sint*cosp, sint*sinp, dir_old.x, a_old.x, b_old.x) ;
 	dir->y = dot_product(cost, -sint*cosp, sint*sinp, dir_old.y, a_old.y, b_old.y) ;
 	dir->z = dot_product(cost, -sint*cosp, sint*sinp, dir_old.z, a_old.z, b_old.z) ;
-	
-//  dir_a->x = sint*dir_old.x + (cost*cosp*a_old.x) + (-cost*sinp*b_old.x);
-//	dir_a->y = sint*dir_old.y + (cost*cosp*a_old.y) + (-cost*sinp*b_old.y);
-//	dir_a->z = sint*dir_old.z + (cost*cosp*a_old.z) + (-cost*sinp*b_old.z);
 	
     dir_a->x = dot_product(sint, cost*cosp, -cost*sinp, dir_old.x, a_old.x, b_old.x) ;
     dir_a->y = dot_product(sint, cost*cosp, -cost*sinp, dir_old.y, a_old.y, b_old.y) ;
     dir_a->z = dot_product(sint, cost*cosp, -cost*sinp, dir_old.z, a_old.z, b_old.z) ;
 	
-//  dir_b->x = sint*a_old.x + cosp*b_old.x;
-//	dir_b->y = sint*a_old.y + cosp*b_old.y;
-//	dir_b->z = sint*a_old.z + cosp*b_old.z;
-
     dir_b->x = dot_product(0, sinp, cosp, dir_old.x, a_old.x, b_old.x) ;
     dir_b->y = dot_product(0, sinp, cosp, dir_old.y, a_old.y, b_old.y) ;
     dir_b->z = dot_product(0, sinp, cosp, dir_old.z, a_old.z, b_old.z) ;
 
-
-
-//	if(temp==0.0f)// normal incident.
-//	{
-//		dir->x = sint*cosp;
-//		dir->y = sint*sinp;
-//		dir->z = copysign(cost,dir->z*cost);
-//	}
-//	else // regular incident.
-//	{
-//		dir->x = divide(sint*(dir->x*dir->z*cosp - dir->y*sinp),temp) + dir->x*cost;
-//		dir->y = divide(sint*(dir->y*dir->z*cosp + tempdir*sinp),temp) + dir->y*cost;
-//		dir->z = (-1)*sint*cosp*temp + dir->z*cost;
-//	}
-//
-	//normalisation seems to be required as we are using floats! Otherwise the small numerical error will accumulate
 	temp= rsqrtf(dir->x*dir->x+dir->y*dir->y+dir->z*dir->z);
 	dir->x=dir->x*temp;
 	dir->y=dir->y*temp;
