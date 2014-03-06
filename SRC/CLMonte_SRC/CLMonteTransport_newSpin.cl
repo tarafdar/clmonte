@@ -23,7 +23,7 @@
 
 
 
-#define G 0.9f	
+#define G 0.0f	
 #define MUS_MAX 90.0f	//[1/cm]
 
 #define V 0.0214f		//[cm/ps] (c=0.03 [cm/ps] v=c/n) here n=1.4
@@ -45,8 +45,8 @@
 #define MAXR 0.25f
 
 #ifdef SPATIAL_HISTOGRAM
-#define TMAX 250.0f //[ps] Maximum time of flight
-#define DT 1.25f //[ps] Time binning resolution
+#define TMAX 125.0f //[ps] Maximum time of flight
+#define DT 0.625f //[ps] Time binning resolution
 #else
 #define TMAX 2000.0f //[ps] Maximum time of flight
 #define DT 10.0f //[ps] Time binning resolution
@@ -154,13 +154,15 @@ void Spin(float3* dir, unsigned long* x, unsigned int* a, float3* dir_a, float3*
 
 
 	//This is more efficient for g!=0 but of course less efficient for g==0
-	temp = divide((1.0f-(G)*(G)),(1.0f-(G)+2.0f*(G)*rand_MWC_co(x,a)));//Should be close close????!!!!!
-	cost = divide((1.0f+(G)*(G) - temp*temp),(2.0f*(G)));
 	//cost = (1.0f+(G)*(G) - temp*temp)*ONE_OVER_2G;
 
 	if((G)==0.0f)
 		cost = 2.0f*rand_MWC_co(x,a) -1.0f;
-
+	else
+    {    
+	    temp = divide((1.0f-(G)*(G)),(1.0f-(G)+2.0f*(G)*rand_MWC_co(x,a)));//Should be close close????!!!!!
+        cost = divide((1.0f+(G)*(G) - temp*temp),(2.0f*(G)));
+    }
 
 	sint = sqrtf(1.0f - cost*cost);
 
