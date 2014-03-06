@@ -15,14 +15,16 @@
 
 
 #include <math.h>
+#include <time.h>
 #define SIGN(x) ((x)>=0 ? 1:-1)
 float rsqrtf(float x){
 	return (float)1.0/(sqrtf(x));
 
 }
 
-void MCh(unsigned int* xd,unsigned int* cd, unsigned int* ad,unsigned int* numh,unsigned int* histh)
+void MCh(unsigned int* xd,unsigned int* cd, unsigned int* ad,unsigned int* numh,unsigned int* histh, clock_t GPU_time)
 {
+    clock_t start_time, curr_time;
 	unsigned int block;
 	unsigned int thread;
 	float3 pos; //float triplet to store the position
@@ -41,13 +43,19 @@ void MCh(unsigned int* xd,unsigned int* cd, unsigned int* ad,unsigned int* numh,
 	unsigned int a;
 	unsigned int num_det_photons;
 	unsigned int flag;
-
-
+//  
+    start_time = clock();
 	for(block=0;block<NUM_BLOCKS;block++)
 	{
+
 		//printf("\nblock=%d ",block);
 		for(thread=0;thread<NUM_THREADS_PER_BLOCK;thread++)
 		{
+#ifdef RETURN_ON_GPU_TIME
+        curr_time = clock();
+        if((curr_time - start_time) > GPU_time)
+            return;
+#endif        
 		
 		x=cd[NUM_THREADS_PER_BLOCK*block+thread];
 		x=(x<<32)+xd[NUM_THREADS_PER_BLOCK*block+thread];

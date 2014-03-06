@@ -23,7 +23,7 @@
 
 
 
-#define G 0.0f	
+#define G 0.9f	
 #define MUS_MAX 90.0f	//[1/cm]
 
 #define V 0.0214f		//[cm/ps] (c=0.03 [cm/ps] v=c/n) here n=1.4
@@ -40,7 +40,7 @@
 //#define ONE_OVER_DT				0.1f
 //#define ONE_OVER_MUS_MAX			0.01111111111f
 
-//#define SPATIAL_HISTOGRAM  //SPATIAL HISTOGEAM IS DR*DT 2D histogram
+#define SPATIAL_HISTOGRAM  //SPATIAL HISTOGEAM IS DR*DT 2D histogram
 #define DR 0.00125f
 #define MAXR 0.25f
 

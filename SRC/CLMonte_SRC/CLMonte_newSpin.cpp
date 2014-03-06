@@ -16,7 +16,6 @@
 //
 //			To compile and run this code, please visit www.nvidia.com and download the necessary 
 //			CUDA Toolkit and SKD. I also highly recommend the Visual Studio wizard 
-//			(available at:http://forums.nvidia.com/index.php?showtopic=69183) 
 //			if you use Visual Studio 2005 
 //			(The express edition is available for free at: http://www.microsoft.com/express/2005/). 
 //
@@ -75,10 +74,13 @@
 #define MAXR 1.0f
 #define DR 0.005f
 //#define RBUCKETS (unsigned int)(MAXR/DR)
+
+#define SPATIAL_HISTOGRAM
 #define RBUCKETS 200
 #define RBUCKETSXTEMP 40200
-//#define RUN_HOST
+#define RUN_HOST
 #define LINUX
+#define RETURN_ON_GPU_TIME
 //#define JORDAN
 //#define NAIF
 unsigned int xtest[NUM_THREADS];
@@ -114,7 +116,6 @@ unsigned int Reflecth(float3*, float3*, float*, float*, float*, float*, unsigned
 
 
 #include "CLMonte_goldstandard.c"
-#define SPATIAL_HISTOGRAM
 // wrapper for device code
 int MC(unsigned int* x,unsigned int* c,unsigned int* a)
 {
@@ -384,7 +385,7 @@ int MC(unsigned int* x,unsigned int* c,unsigned int* a)
     
 	//run CPU code 
 	time1=clock();
-	MCh(xtest,ctest,atest,numh,histh);
+	MCh(xtest,ctest,atest,numh,histh, GPUtime);
     time2=clock();
 
 	num_tot=0;
