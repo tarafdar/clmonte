@@ -2,16 +2,21 @@ filename = 'outp_newSpin.txt';
 delimiterIn = ' ';
 X_trans = importdata(filename, delimiterIn);
 X =  X_trans';
+area = 1;
 
 for i=1:size(X,1),
    for j=1:size(X,2),
       if(X(i,j)~= 0)
           %T(i,j) = X(i,j);
-          T(i,j) = log10(X(i,j));
+          T(i,j) = log(X(i,j)/area);
+          if(T(i,j) < 0)
+              T(i,j) = 0;
+          end    
+          %T(i,j) = log10(X(i,j));
       else
           T(i,j) = 0;
       end
-       
+      area = area + 2; 
    end
     
 end
@@ -36,8 +41,10 @@ r2 = r.^2;
 
 figure('Color', 'w');
 %colormap hot
-
-for ind_t = 1:size(T,1)
+writerObj = VideoWriter('logOfDensity.avi');
+writerObj.FrameRate = 2.5;
+open(writerObj);
+for ind_t = 1:30
     for ii = 1:Nshells
         ir_find = find(rxy2<=r2(ii+1) & rxy2>r2(ii));
         z(ir_find) = T(ind_t,ii);
@@ -48,13 +55,12 @@ for ind_t = 1:size(T,1)
 
     shading interp
     set(h, 'EdgeColor', 'None');
-
+    %colorbar;
     view(0,90);
     axis equal;
     set(hax, 'Visible', 'Off', 'CLim', [min(T(:)) max(T(:))]);
     pause(0.35);
-    
     f = getframe;
-    animatedfilename = sprintf('images/log/test%d.gif', ind_t);
-    imwrite(f.cdata, animatedfilename);
+    writeVideo(writerObj, f);
 end
+close(writerObj);
