@@ -40,7 +40,7 @@
 //#define ONE_OVER_DT				0.1f
 //#define ONE_OVER_MUS_MAX			0.01111111111f
 
-#define SPATIAL_HISTOGRAM  //SPATIAL HISTOGEAM IS DR*DT 2D histogram
+//#define SPATIAL_HISTOGRAM  //SPATIAL HISTOGEAM IS DR*DT 2D histogram
 #define DR 0.00125f
 #define MAXR 0.25f
 
