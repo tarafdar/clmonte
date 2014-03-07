@@ -1,21 +1,8 @@
-/*	This file is part of CUDAMC.
-
-    CUDAMC is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    CUDAMC is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with CUDAMC.  If not, see <http://www.gnu.org/licenses/>.*/
-
-
 #include <math.h>
 #include <time.h>
+#include <limits.h>
+#include <stdio.h>
+#include "CLMonte.h"
 #define SIGN(x) ((x)>=0 ? 1:-1)
 float rsqrtf(float x){
 	return (float)1.0/(sqrtf(x));
@@ -53,8 +40,10 @@ void MCh(unsigned int* xd,unsigned int* cd, unsigned int* ad,unsigned int* numh,
 		{
 #ifdef RETURN_ON_GPU_TIME
         curr_time = clock();
-        if((curr_time - start_time) > GPU_time)
+        if((curr_time - start_time) > GPU_time) {
+            printf("Terminated early\n");
             return;
+        }
 #endif        
 		
 		x=cd[NUM_THREADS_PER_BLOCK*block+thread];
@@ -234,11 +223,15 @@ unsigned int Reflecth(float3* dir, float3* pos, float* t, float* v, float* cos_c
 			//check for detection here
 
 #ifdef SPATIAL_HISTOGRAM
-			adr=(unsigned int)floor(r/DR)*TEMP + (unsigned int)floorf((*t)/DT);
-            if(r <= MAXR)
-				histh[adr]=histh[adr]+1;
-
-
+			adr = (unsigned int)floor(r/DR)*TEMP + (unsigned int)floor((*t)/DT);
+            if(r <= MAXR) {
+                histh[adr]=histh[adr]+1;
+                return 1;
+            }
+            else
+            {
+                return 2;
+            }    
 #else 
 			if(fabsf(r-fibre_separtion)<=fibre_diameter)//!!!!!!!!!!!!!!!!!!!!!!!
 			{

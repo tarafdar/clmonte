@@ -1,19 +1,3 @@
-/*	This file is part of CUDAMC.
-
-    CUDAMC is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    CUDAMC is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with CUDAMC.  If not, see <http://www.gnu.org/licenses/>.*/
-
-
 #define NUM_THREADS_PER_BLOCK 320 //Keep above 192 to eliminate global memory access overhead
 #define NUM_BLOCKS 84 //Keep numblocks a multiple of the #MP's of the GPU (8800GT=14MP)
 #define NUM_THREADS 26880
@@ -21,9 +5,6 @@
 #define NUMSTEPS_CPU 500000
 #define PI 3.14159265f
 
-#define TMAX 2000.0f //[ps] Maximum time of flight
-#define DT 10.0f //[ps] Time binning resolution
-#define TEMP 201 //ceil(TMAX/DT), precalculated to avoid dynamic memory allocation (fulhack)
 
 #define MUS_MAX 90.0f	//[1/cm]
 #define V 0.0214f		//[cm/ps] (c=0.03 [cm/ps] v=c/n) here n=1.4

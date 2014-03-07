@@ -1,46 +1,3 @@
-/////////////////////////////////////////////////////////////
-//
-//		CUDA-based Monte Carlo simulation of photon migration in semi infinite media.
-//	
-//			This is the version of the code used in the letter submitted to JBO-letters 2008
-//			Currently the code is in an experimental state, i.e. the code is not always pretty 
-//			or efficient and some ways of implementing certain aspects of the code are far 
-//			from desirable. Still it should provide a good starting point for anyone interested 
-//			in CUDA-based Monte Carlo simulations of photon migration. 
-//
-//			For the JBO-letters article the code was run on a NVIDIA 8800GT and the number of 
-//			threads are hence optimized for this particular card.
-//
-//			We apologize for the lack of comment in the current code. We will soon re-relese 
-//			this code with detailed explanations of the implementation as well as proper commenting.
-//
-//			To compile and run this code, please visit www.nvidia.com and download the necessary 
-//			CUDA Toolkit and SKD. I also highly recommend the Visual Studio wizard 
-//			if you use Visual Studio 2005 
-//			(The express edition is available for free at: http://www.microsoft.com/express/2005/). 
-//
-//			This code is distributed under the terms of the GNU General Public Licence (see
-//			below). If you use this code for academic purposes, we would greatly appreciate a 
-//			citation of our letter describing GPU-based Monte Carlo simulations of photon migration. 
-//
-//
-///////////////////////////////////////////////////////////////
-
-/*	This file is part of CUDAMC.
-
-    CUDAMC is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    CUDAMC is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with CUDAMC.  If not, see <http://www.gnu.org/licenses/>.*/
-
 #include <CL/cl.h>
 #include <cmath>
 #include <cstring>
@@ -49,50 +6,12 @@
 #include <stdlib.h>
 #include <math.h>
 #include <limits.h>
-#define MAX_SOURCE_SIZE (0x100000)
+#include "CLMonte.h"
 
-//#define NUM_THREADS_PER_BLOCK 320 //Keep above 192 to eliminate global memory access overhead
-//#define NUM_THREADS_PER_BLOCK 448 //Keep above 192 to eliminate global memory access overhead
-#define NUM_THREADS_PER_BLOCK 560 //Keep above 192 to eliminate global memory access overhead
-//#define NUM_BLOCKS 84 //Keep numblocks a multiple of the #MP's of the GPU (8800GT=14MP)
-//#define NUM_BLOCKS 30 //Keep numblocks a multiple of the #MP's of the GPU (8800GT=14MP)
-#define NUM_BLOCKS 48 //Keep numblocks a multiple of the #MP's of the GPU (8800GT=14MP)
-#define NUM_THREADS 26880
-//#define NUM_THREADS 80640
-//#define NUM_THREADS NUM_THREADS_PER_BLOCK
-#define NUMSTEPS_GPU 500000
-#define NUMSTEPS_CPU 500000
-//#define NUMSTEPS_GPU 100
-//#define NUMSTEPS_CPU 100
-
-#define PI 3.14159265f
-
-#define TMAX 2000.0f //[ps] Maximum time of flight
-#define DT 10.0f //[ps] Time binning resolution
-#define TEMP 201 //ceil(TMAX/DT), precalculated to avoid dynamic memory allocation (fulhack)
-
-#define MAXR 1.0f
-#define DR 0.005f
-//#define RBUCKETS (unsigned int)(MAXR/DR)
-
-#define SPATIAL_HISTOGRAM
-#define RBUCKETS 200
-#define RBUCKETSXTEMP 40200
-#define RUN_HOST
-#define LINUX
-#define RETURN_ON_GPU_TIME
-//#define JORDAN
-//#define NAIF
 unsigned int xtest[NUM_THREADS];
 unsigned int ctest[NUM_THREADS];
 unsigned int atest[NUM_THREADS];
 
-struct float3{
-	float x;
-	float y;
-	float z;
-
-};
 
 // forward declaration of the device code
 
@@ -104,38 +23,27 @@ void check_return(cl_int ret, const char* message){
     }
 
 }
-
-
-// forward declaration of the host code
-void MCh(unsigned int*,unsigned int*,unsigned int*,unsigned int*,unsigned int*);
-float rand_MWC_och(unsigned long long*,unsigned int*);
-float rand_MWC_coh(unsigned long long*,unsigned int*);
-void LaunchPhotonh(float3*, float3*, float*);
-void Spinh(float3*,float*,unsigned long long*,unsigned int*);
-unsigned int Reflecth(float3*, float3*, float*, float*, float*, float*, unsigned long long*,unsigned int*,unsigned int*);
-
-
-#include "CLMonte_goldstandard.c"
+//#include "CLMonte_goldstandard.c"
 // wrapper for device code
 int MC(unsigned int* x,unsigned int* c,unsigned int* a)
 {
-	unsigned int num[NUM_THREADS];
-	unsigned long long num_tot, hist_tot;
+	unsigned long long num_tot, hist_tot, num_se_tot;
 	unsigned int i, j;
 #ifdef SPATIAL_HISTOGRAM	
     unsigned int hist[RBUCKETSXTEMP];
     unsigned int hist_transpose[RBUCKETSXTEMP];
-#else
-	unsigned int hist[TEMP];
-#endif
-	unsigned int numh[NUM_THREADS];
-#ifdef SPATIAL_HISTOGRAM	
 	unsigned int histh[RBUCKETSXTEMP];
 #else
 	unsigned int histh[TEMP];
+	unsigned int hist[TEMP];
 #endif
-
-	FILE *fp;
+#ifdef EVENT_LOGGING
+	unsigned int num[NUM_THREADS];
+    unsigned int num_scatter[NUM_THREADS]; 
+#endif    
+	unsigned int numh[NUM_THREADS];
+	
+    FILE *fp;
     char *source_str;
     size_t source_size;
 
@@ -202,6 +110,9 @@ int MC(unsigned int* x,unsigned int* c,unsigned int* a)
     cl_mem numd_mem_obj = clCreateBuffer(context, CL_MEM_WRITE_ONLY, size, NULL, &ret);
     check_return(ret, "create numd buff fail\n");
 
+    cl_mem numse_mem_obj = clCreateBuffer(context, CL_MEM_WRITE_ONLY, size, NULL, &ret);
+    check_return(ret, "create numse buff fail\n");
+
 #ifdef SPATIAL_HISTOGRAM
     cl_mem histd_mem_obj = clCreateBuffer(context, CL_MEM_READ_WRITE, RBUCKETSXTEMP*sizeof(unsigned int), NULL, &ret);
 #else
@@ -212,13 +123,13 @@ int MC(unsigned int* x,unsigned int* c,unsigned int* a)
 	
     ret = clEnqueueWriteBuffer(command_queue, xd_mem_obj, CL_TRUE, 0, size, xtest, 0, NULL, NULL);
     check_return(ret, "write buff xd fail\n");
-
+#ifdef EVENT_LOGGING
 	ret = clEnqueueWriteBuffer(command_queue, ad_mem_obj, CL_TRUE, 0, size, atest, 0, NULL, NULL);
     check_return(ret, "write buff ad fail\n");
 
 	ret = clEnqueueWriteBuffer(command_queue, cd_mem_obj, CL_TRUE, 0, size, ctest, 0, NULL, NULL);
     check_return(ret, "write buff cd fail\n");
-
+#endif
 	
 #ifdef SPATIAL_HISTOGRAM
 	for(i=0;i<RBUCKETSXTEMP;i++)hist[i]=0;
@@ -236,7 +147,7 @@ int MC(unsigned int* x,unsigned int* c,unsigned int* a)
     // Build the program
 //    ret = clBuildProgram(program, 1, &device_id, "-g -s \"C:\\Users\\Naif\\Documents\\Visual Studio 2010\\Projects\\CudaMC\\CudaMC\\CUDAMC\\CUDAMCtransport.cl\"", NULL, NULL);
 
-	ret = clBuildProgram(program, 1, &device_id, NULL, NULL, NULL);
+	ret = clBuildProgram(program, 1, &device_id, "-I SRC/CLMonte_SRC/", NULL, NULL);
 
 
 	if(ret!=CL_SUCCESS){
@@ -268,13 +179,17 @@ int MC(unsigned int* x,unsigned int* c,unsigned int* a)
 	ret = clSetKernelArg(kernel, 2, sizeof(cl_mem), (void *)&ad_mem_obj);
     check_return(ret, "set arg 2 fail\n");
     
-	ret = clSetKernelArg(kernel, 3, sizeof(cl_mem), (void *)&numd_mem_obj);
+	ret = clSetKernelArg(kernel, 3, sizeof(cl_mem), (void *)&histd_mem_obj);
     check_return(ret, "set arg 3 fail\n");
-	
-	ret = clSetKernelArg(kernel, 4, sizeof(cl_mem), (void *)&histd_mem_obj);
+#ifdef EVENT_LOGGING    
+	ret = clSetKernelArg(kernel, 4, sizeof(cl_mem), (void *)&numd_mem_obj);
     check_return(ret, "set arg 4 fail\n");
+	
+	ret = clSetKernelArg(kernel, 5, sizeof(cl_mem), (void *)&numse_mem_obj);
+    check_return(ret, "set arg 5 fail\n");
+#endif
     
-	// Execute the OpenCL kernel on the list
+    // Execute the OpenCL kernel on the list
 	cl_event kern_event;
     size_t global_item_size = NUM_THREADS; // Process the entire lists
     size_t local_item_size = NUM_THREADS_PER_BLOCK; // Process in groups of NUM_THREADS_PER_BLOCk
@@ -297,18 +212,23 @@ int MC(unsigned int* x,unsigned int* c,unsigned int* a)
 #endif
     check_return(ret, "read buff hist fail\n");
 
-	cl_event read_buff1;
-	ret = clEnqueueReadBuffer(command_queue, numd_mem_obj, CL_TRUE, 0,size, num, 1, &kern_event, &read_buff1);
+#ifdef EVENT_LOGGING
+	ret = clEnqueueReadBuffer(command_queue, numd_mem_obj, CL_TRUE, 0,size, num, 1, &kern_event, NULL);
     check_return(ret, "read buff num fail\n");
 	
+	ret = clEnqueueReadBuffer(command_queue, numse_mem_obj, CL_TRUE, 0,size, num_scatter, 1, &kern_event, NULL);
+    check_return(ret, "read buff numse fail\n");
 
 	num_tot=0;
 	for(i=0;i<NUM_THREADS;i++){
 		num_tot+=num[i];
 	}
 	
-    
-	
+    num_se_tot=0;
+    for(i=0;i<NUM_THREADS;i++){
+        num_se_tot+=num_scatter[i];
+    }
+#endif	
 	
 
  #ifdef SPATIAL_HISTOGRAM
@@ -346,14 +266,21 @@ int MC(unsigned int* x,unsigned int* c,unsigned int* a)
    for(i=0; i<TEMP; i++)fprintf(file,"%d %d\n",i, hist[i]);
 #endif
 	fclose(file);
-	printf("\nTotal number of photons terminated (i.e. full path simulated): %llu\nNumber of photons contribution to the histogram: %llu\n",num_tot,hist_tot);
+#ifdef EVENT_LOGGING
+	printf("\nTotal number of photons terminated (i.e. full path simulated): %llu\n",num_tot);
+    printf("Total number of scattering events: %llu\n", num_se_tot);
+#endif    
+    printf("Number of photons contribution to the histogram: %llu\n",hist_tot);
 	printf("Total number of photons steps simulated: %e\n",(double)NUM_THREADS*(double)NUMSTEPS_GPU);
     printf("time1=%u, time2=%u.\n",time1,time2);
 
 	printf("Photon steps per sec: %e\n",((double)NUM_THREADS*(double)NUMSTEPS_GPU)/((double(time2-time1))/CLOCKS_PER_SEC));
 
-
-	fprintf(print_file, "\nTotal number of photons terminated (i.e. full path simulated): %llu\nNumber of photons contribution to the histogram: %llu\n",num_tot,hist_tot);
+#ifdef EVENT_LOGGING
+	fprintf(print_file, "\nTotal number of photons terminated (i.e. full path simulated): %llu\n", num_tot);
+    fprintf(print_file,"Total number of scattering events: %llu\n", num_se_tot);
+#endif    
+    fprintf(print_file,"Number of photons contribution to the histogram: %llu\n",hist_tot);
 	fprintf(print_file, "Total number of photons steps simulated: %e\n",(double)NUM_THREADS*(double)NUMSTEPS_GPU);
     fprintf(print_file, "time1=%u, time2=%u.\n",time1,time2);
 
@@ -431,8 +358,8 @@ int MC(unsigned int* x,unsigned int* c,unsigned int* a)
 
 	CPUtime=time2-time1;
 
-	printf("\n\nSpeedup: %f",(NUMSTEPS_GPU*double(CPUtime))/(NUMSTEPS_CPU*double(GPUtime)));
-	fprintf(print_file, "\n\nSpeedup: %f",(NUMSTEPS_GPU*double(CPUtime))/(NUMSTEPS_CPU*double(GPUtime)));
+	printf("\n\nSpeedup: %f\n",(NUMSTEPS_GPU*double(CPUtime))/(NUMSTEPS_CPU*double(GPUtime)));
+	fprintf(print_file, "\n\nSpeedup: %f\n",(NUMSTEPS_GPU*double(CPUtime))/(NUMSTEPS_CPU*double(GPUtime)));
 #endif	
     fclose(print_file);
 }

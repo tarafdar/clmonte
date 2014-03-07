@@ -1,10 +1,10 @@
 CLSOURCES=$(CLDIR)/CLMonte.cpp
-CLSOURCES_newSpin=$(CLDIR)/CLMonte_newSpin.cpp
+CLSOURCES_newSpin=$(CLDIR)/CLMonte_newSpin.cpp $(CLDIR)/CLMonte_goldstandard.c
 CUDASOURCES=$(CUDADIR)/CUDAMC.cu
 CLOUT=CLMonte
 CLOUT_newSpin=CLMonte_newSpin
 CUDAOUT=CUDAMC
-CLFLAGS =-O3 -o
+CLFLAGS =-O3 -g -o
 CUDAFLAGS=-O3 -o
 CLLIB=-l OpenCL
 CUDAARCH=-arch=sm_11

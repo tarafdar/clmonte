@@ -1,58 +1,4 @@
-/*	This file is part of CUDAMC.
-
-    CUDAMC is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    CUDAMC is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with CUDAMC.  If not, see <http://www.gnu.org/licenses/>.*/
-
-
-#define NUM_THREADS_PER_BLOCK 320 //Keep above 192 to eliminate global memory access overhead
-#define NUM_BLOCKS 84 //Keep numblocks a multiple of the #MP's of the GPU (8800GT=14MP)
-#define NUM_THREADS 26880
-#define NUMSTEPS_GPU 500000
-#define NUMSTEPS_CPU 500000
-#define PI 3.14159265f
-
-
-
-#define G 0.9f	
-#define MUS_MAX 90.0f	//[1/cm]
-
-#define V 0.0214f		//[cm/ps] (c=0.03 [cm/ps] v=c/n) here n=1.4
-#define COS_CRIT 0.6999f	//the critical angle for total internal reflection at the border cos_crit=sqrt(1-(nt/ni)^2)
-#define N 1.4f
-
-//#define V 0.03f		//[cm/ps] (c=0.03 [cm/ps] v=c/n) here n=1.4
-//#define COS_CRIT 0.0f	//the critical angle for total internal reflection at the border cos_crit=sqrt(1-(nt/ni)^2)
-//#define N 1.0f
-
-//#define ONE_OVER_2G 				0.555555556f
-//#define ONE_MINUS_N_OVER_1_PLUS_N_SQUARED   0.027777778f
-//#define ONE_OVER_V				46.728971926f
-//#define ONE_OVER_DT				0.1f
-//#define ONE_OVER_MUS_MAX			0.01111111111f
-
-#define SPATIAL_HISTOGRAM  //SPATIAL HISTOGEAM IS DR*DT 2D histogram
-#define DR 0.00125f
-#define MAXR 0.25f
-
-#ifdef SPATIAL_HISTOGRAM
-#define TMAX 125.0f //[ps] Maximum time of flight
-#define DT 0.625f //[ps] Time binning resolution
-#else
-#define TMAX 2000.0f //[ps] Maximum time of flight
-#define DT 10.0f //[ps] Time binning resolution
-#endif
-
-#define TEMP 201 //ceil(TMAX/DT), precalculated to avoid dynamic memory allocation (fulhack)
+#include "defines.h"
 
 float dot_product (float x1, float y1, float z1, float x2, float y2, float z2) {
     return  x1*x2 + y1*y2 + z1*z2;
@@ -278,10 +224,12 @@ unsigned int Reflect(float3* dir, float3* pos, float* t,  unsigned long* x, unsi
 #ifdef SPATIAL_HISTOGRAM
         
         
-            if(r <= MAXR) 
+            if(r <= MAXR){
                 atomic_add(histd + (unsigned int)floor(r/DR)*TEMP + (unsigned int)floor(divide((*t), DT)), 1);
-            return 1;   
-        
+                return 1;   
+            }
+            else
+                return 2;
         
 
 #else	
@@ -327,7 +275,13 @@ unsigned int Reflect(float3* dir, float3* pos, float* t,  unsigned long* x, unsi
 
 
 
-__kernel void MCd(__global unsigned int* xd,__global unsigned int* cd,__global unsigned int* ad,__global unsigned int* numd,__global unsigned int* histd)
+__kernel void MCd(__global unsigned int* xd,__global unsigned int* cd,__global unsigned int* ad,
+__global unsigned int* histd
+#ifdef EVENT_LOGGING
+,__global unsigned int* numd,
+ __global unsigned int* scatteringEvents
+#endif
+)
 {
 	int global_id= get_global_id(0);
     //for loops
@@ -350,10 +304,11 @@ __kernel void MCd(__global unsigned int* xd,__global unsigned int* cd,__global u
 	float3 dir_b; //float triplet to store the position
 	float t;	//float to store the time of flight
 	float s;	//step length
-	
+#ifdef EVENT_LOGGING	
 	unsigned int num_det_photons=0;
+    unsigned int num_scatters=0;
+#endif
 	unsigned int flag=0;
-
 	LaunchPhoton(&pos, &dir, &t, &dir_a, &dir_b);//Launch the photon
 	
 	for(ii=0;ii<NUMSTEPS_GPU;ii++) //this is the main while loop
@@ -375,10 +330,14 @@ __kernel void MCd(__global unsigned int* xd,__global unsigned int* cd,__global u
 		t += divide(s,V); 
 
 		Spin(&dir,&x,&a, &dir_a, &dir_b);
-
-		if(t >= TMAX || flag>=1)//Kill photon and launch a new one
+#ifdef EVENT_LOGGING
+        num_scatters++;
+#endif		
+        if(t >= TMAX || flag>=1)//Kill photon and launch a new one
 		{
+#ifdef EVENT_LOGGING
 			num_det_photons++;
+#endif
 			flag=0;
 			LaunchPhoton(&pos, &dir, &t, &dir_a, &dir_b);//Launch the photon
 		}
@@ -390,8 +349,9 @@ __kernel void MCd(__global unsigned int* xd,__global unsigned int* cd,__global u
 	
 
 	//barrier(CLK_GLOBAL_MEM_FENCE);//necessary?
-
+#ifdef EVENT_LOGGING    
 	numd[global_id]/*[begin+tx]*/=num_det_photons; 
-
+    scatteringEvents[global_id]=num_scatters;
+#endif
 }//end MCd
 
