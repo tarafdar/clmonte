@@ -49,7 +49,11 @@ float rand_MWC_oc(unsigned long* x,//unsigned int* c,
 }//end __device__ rand_MWC_oc
 
 
-void LaunchPhoton(float3* pos, float3* dir, float* t, float3* dir_a, float3* dir_b)
+void LaunchPhoton(float3* pos, float3* dir, float* t, float3* dir_a, float3* dir_b
+#ifdef EVENT_LOGGING
+,unsigned int* numLaunched
+#endif 
+)
 {
 	pos->x=0.0f;
 	pos->y=0.0f;
@@ -68,6 +72,9 @@ void LaunchPhoton(float3* pos, float3* dir, float* t, float3* dir_a, float3* dir
 	dir_b->z=0.0f;
 
 	*t=0.0f;
+#ifdef EVENT_LOGGING
+    (*numLaunched)++;
+#endif
 }
 
 
@@ -279,7 +286,7 @@ __kernel void MCd(__global unsigned int* xd,__global unsigned int* cd,__global u
 __global unsigned int* histd
 #ifdef EVENT_LOGGING
 ,__global unsigned int* numd,
- __global unsigned int* scatteringEvents
+ __global unsigned int* numc
 #endif
 )
 {
@@ -306,10 +313,14 @@ __global unsigned int* histd
 	float s;	//step length
 #ifdef EVENT_LOGGING	
 	unsigned int num_det_photons=0;
-    unsigned int num_scatters=0;
+    unsigned int num_launched=0;
 #endif
 	unsigned int flag=0;
-	LaunchPhoton(&pos, &dir, &t, &dir_a, &dir_b);//Launch the photon
+	LaunchPhoton(&pos, &dir, &t, &dir_a, &dir_b
+#ifdef EVENT_LOGGING
+    ,&num_launched
+#endif
+    );//Launch the photon
 	
 	for(ii=0;ii<NUMSTEPS_GPU;ii++) //this is the main while loop
 	{
@@ -330,16 +341,15 @@ __global unsigned int* histd
 		t += divide(s,V); 
 
 		Spin(&dir,&x,&a, &dir_a, &dir_b);
-#ifdef EVENT_LOGGING
-        num_scatters++;
-#endif		
         if(t >= TMAX || flag>=1)//Kill photon and launch a new one
 		{
 #ifdef EVENT_LOGGING
 			num_det_photons++;
+        	LaunchPhoton(&pos, &dir, &t, &dir_a, &dir_b, &num_launched);//Launch the photon
+#else
+            LaunchPhoton(&pos, &dir, &t, &dir_a, &dir_b); //Launch the photon
 #endif
-			flag=0;
-			LaunchPhoton(&pos, &dir, &t, &dir_a, &dir_b);//Launch the photon
+			flag=0;		
 		}
 		
 
@@ -351,7 +361,7 @@ __global unsigned int* histd
 	//barrier(CLK_GLOBAL_MEM_FENCE);//necessary?
 #ifdef EVENT_LOGGING    
 	numd[global_id]/*[begin+tx]*/=num_det_photons; 
-    scatteringEvents[global_id]=num_scatters;
+    numc[global_id]=num_launched;
 #endif
 }//end MCd
 

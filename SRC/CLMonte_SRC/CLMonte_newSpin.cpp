@@ -27,7 +27,7 @@ void check_return(cl_int ret, const char* message){
 // wrapper for device code
 int MC(unsigned int* x,unsigned int* c,unsigned int* a)
 {
-	unsigned long long num_tot, hist_tot, num_se_tot;
+	unsigned long long num_tot, hist_tot, num_l_tot;
 	unsigned int i, j;
 #ifdef SPATIAL_HISTOGRAM	
     unsigned int hist[RBUCKETSXTEMP];
@@ -39,7 +39,7 @@ int MC(unsigned int* x,unsigned int* c,unsigned int* a)
 #endif
 #ifdef EVENT_LOGGING
 	unsigned int num[NUM_THREADS];
-    unsigned int num_scatter[NUM_THREADS]; 
+    unsigned int num_launched[NUM_THREADS]; 
 #endif    
 	unsigned int numh[NUM_THREADS];
 	
@@ -106,12 +106,13 @@ int MC(unsigned int* x,unsigned int* c,unsigned int* a)
 
     cl_mem ad_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, size, NULL, &ret);
     check_return(ret, "create ad buff fail\n");
-
+#ifdef EVENT_LOGGING
     cl_mem numd_mem_obj = clCreateBuffer(context, CL_MEM_WRITE_ONLY, size, NULL, &ret);
     check_return(ret, "create numd buff fail\n");
 
-    cl_mem numse_mem_obj = clCreateBuffer(context, CL_MEM_WRITE_ONLY, size, NULL, &ret);
-    check_return(ret, "create numse buff fail\n");
+    cl_mem numl_mem_obj = clCreateBuffer(context, CL_MEM_WRITE_ONLY, size, NULL, &ret);
+    check_return(ret, "create numl buff fail\n");
+#endif
 
 #ifdef SPATIAL_HISTOGRAM
     cl_mem histd_mem_obj = clCreateBuffer(context, CL_MEM_READ_WRITE, RBUCKETSXTEMP*sizeof(unsigned int), NULL, &ret);
@@ -123,13 +124,12 @@ int MC(unsigned int* x,unsigned int* c,unsigned int* a)
 	
     ret = clEnqueueWriteBuffer(command_queue, xd_mem_obj, CL_TRUE, 0, size, xtest, 0, NULL, NULL);
     check_return(ret, "write buff xd fail\n");
-#ifdef EVENT_LOGGING
-	ret = clEnqueueWriteBuffer(command_queue, ad_mem_obj, CL_TRUE, 0, size, atest, 0, NULL, NULL);
+	
+    ret = clEnqueueWriteBuffer(command_queue, ad_mem_obj, CL_TRUE, 0, size, atest, 0, NULL, NULL);
     check_return(ret, "write buff ad fail\n");
 
 	ret = clEnqueueWriteBuffer(command_queue, cd_mem_obj, CL_TRUE, 0, size, ctest, 0, NULL, NULL);
     check_return(ret, "write buff cd fail\n");
-#endif
 	
 #ifdef SPATIAL_HISTOGRAM
 	for(i=0;i<RBUCKETSXTEMP;i++)hist[i]=0;
@@ -185,7 +185,7 @@ int MC(unsigned int* x,unsigned int* c,unsigned int* a)
 	ret = clSetKernelArg(kernel, 4, sizeof(cl_mem), (void *)&numd_mem_obj);
     check_return(ret, "set arg 4 fail\n");
 	
-	ret = clSetKernelArg(kernel, 5, sizeof(cl_mem), (void *)&numse_mem_obj);
+	ret = clSetKernelArg(kernel, 5, sizeof(cl_mem), (void *)&numl_mem_obj);
     check_return(ret, "set arg 5 fail\n");
 #endif
     
@@ -216,17 +216,17 @@ int MC(unsigned int* x,unsigned int* c,unsigned int* a)
 	ret = clEnqueueReadBuffer(command_queue, numd_mem_obj, CL_TRUE, 0,size, num, 1, &kern_event, NULL);
     check_return(ret, "read buff num fail\n");
 	
-	ret = clEnqueueReadBuffer(command_queue, numse_mem_obj, CL_TRUE, 0,size, num_scatter, 1, &kern_event, NULL);
-    check_return(ret, "read buff numse fail\n");
+	ret = clEnqueueReadBuffer(command_queue, numl_mem_obj, CL_TRUE, 0,size, num_launched, 1, &kern_event, NULL);
+    check_return(ret, "read buff numl fail\n");
 
 	num_tot=0;
 	for(i=0;i<NUM_THREADS;i++){
 		num_tot+=num[i];
 	}
 	
-    num_se_tot=0;
+    num_l_tot=0;
     for(i=0;i<NUM_THREADS;i++){
-        num_se_tot+=num_scatter[i];
+        num_l_tot+=num_launched[i];
     }
 #endif	
 	
@@ -268,7 +268,8 @@ int MC(unsigned int* x,unsigned int* c,unsigned int* a)
 	fclose(file);
 #ifdef EVENT_LOGGING
 	printf("\nTotal number of photons terminated (i.e. full path simulated): %llu\n",num_tot);
-    printf("Total number of scattering events: %llu\n", num_se_tot);
+    printf("Total number of photons launched: %llu\n",num_l_tot);
+    printf("Average number of scattering events per photon: %e\n", ((double)NUM_THREADS*(double)NUMSTEPS_GPU)/num_l_tot);
 #endif    
     printf("Number of photons contribution to the histogram: %llu\n",hist_tot);
 	printf("Total number of photons steps simulated: %e\n",(double)NUM_THREADS*(double)NUMSTEPS_GPU);
@@ -278,7 +279,8 @@ int MC(unsigned int* x,unsigned int* c,unsigned int* a)
 
 #ifdef EVENT_LOGGING
 	fprintf(print_file, "\nTotal number of photons terminated (i.e. full path simulated): %llu\n", num_tot);
-    fprintf(print_file,"Total number of scattering events: %llu\n", num_se_tot);
+    fprintf(print_file, "Total number of photons launched: %llu\n",num_l_tot);
+    fprintf(print_file, "Average number of scattering events per photon: %e\n", ((double)NUM_THREADS*(double)NUMSTEPS_GPU)/num_l_tot);
 #endif    
     fprintf(print_file,"Number of photons contribution to the histogram: %llu\n",hist_tot);
 	fprintf(print_file, "Total number of photons steps simulated: %e\n",(double)NUM_THREADS*(double)NUMSTEPS_GPU);
