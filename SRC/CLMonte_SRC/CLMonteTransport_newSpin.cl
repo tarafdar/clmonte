@@ -1,5 +1,5 @@
 #include "defines.h"
-
+#define EVENT_LOGGING
 float dot_product (float x1, float y1, float z1, float x2, float y2, float z2) {
     return  x1*x2 + y1*y2 + z1*z2;
 }    
@@ -73,7 +73,7 @@ void LaunchPhoton(float3* pos, float3* dir, float* t, float3* dir_a, float3* dir
 
 	*t=0.0f;
 #ifdef EVENT_LOGGING
-    (*numLaunched)++;
+    (*numLaunched) = (*numLaunched + 1);
 #endif
 }
 

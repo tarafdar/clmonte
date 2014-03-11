@@ -18,7 +18,7 @@ unsigned int atest[NUM_THREADS];
 void check_return(cl_int ret, const char* message){
     
     if(ret!=CL_SUCCESS){
-        printf("%s\n", message);
+        printf("%d %s\n", ret,message);
         exit(-1);
     }
 
@@ -109,7 +109,7 @@ int MC(unsigned int* x,unsigned int* c,unsigned int* a)
 #ifdef EVENT_LOGGING
     cl_mem numd_mem_obj = clCreateBuffer(context, CL_MEM_WRITE_ONLY, size, NULL, &ret);
     check_return(ret, "create numd buff fail\n");
-
+    
     cl_mem numl_mem_obj = clCreateBuffer(context, CL_MEM_WRITE_ONLY, size, NULL, &ret);
     check_return(ret, "create numl buff fail\n");
 #endif
@@ -297,8 +297,11 @@ int MC(unsigned int* x,unsigned int* c,unsigned int* a)
     ret = clReleaseMemObject(xd_mem_obj);
 	ret = clReleaseMemObject(cd_mem_obj);
 	ret = clReleaseMemObject(ad_mem_obj);
+#ifdef EVENT_LOGGING
 	ret = clReleaseMemObject(numd_mem_obj);
-	ret = clReleaseMemObject(histd_mem_obj);
+	ret = clReleaseMemObject(numl_mem_obj);
+#endif	
+    ret = clReleaseMemObject(histd_mem_obj);
 	ret = clReleaseCommandQueue(command_queue);
 
 	ret = clReleaseContext(context);

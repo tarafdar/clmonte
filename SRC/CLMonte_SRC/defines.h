@@ -17,9 +17,9 @@
 #define COS_CRIT 0.6999f	//the critical angle for total internal reflection at the border cos_crit=sqrt(1-(nt/ni)^2)
 #define N 1.4f
 
-#define SPATIAL_HISTOGRAM  //SPATIAL HISTOGEAM IS DR*DT 2D histogram
-#define RUN_HOST
 #define EVENT_LOGGING
+//#define SPATIAL_HISTOGRAM  //SPATIAL HISTOGEAM IS DR*DT 2D histogram
+//#define RUN_HOST
 #define LINUX
 
 #define DR 0.00125f

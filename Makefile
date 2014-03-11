@@ -20,7 +20,7 @@ all: $(CLOUT) $(CUDAOUT)
 $(CLOUT): $(CLDIR)/CLMonte.cpp $(CLDIR)/CLMonteTransport.cl $(CLDIR)/CLMonte_goldstandard.c
 	g++ $(CLSOURCES) $(CLFLAGS) $(CLOUT) $(CLLIB)
 
-$(CLOUT_newSpin): $(CLDIR)/CLMonte_newSpin.cpp $(CLDIR)/CLMonteTransport_newSpin.cl $(CLDIR)/CLMonte_goldstandard.c
+$(CLOUT_newSpin): $(CLDIR)/CLMonte_newSpin.cpp $(CLDIR)/CLMonteTransport_newSpin.cl $(CLDIR)/CLMonte_goldstandard.c $(CLDIR)/defines.h $(CLDIR)/CLMonte.h
 	g++ $(CLSOURCES_newSpin) $(CLFLAGS) $(CLOUT_newSpin) $(CLLIB)
 
 $(CUDAOUT): $(CUDADIR)/CUDAMC.cu $(CUDADIR)/CUDAMCtransport.cu $(CUDADIR)/CUDAMC_goldstandard.c
