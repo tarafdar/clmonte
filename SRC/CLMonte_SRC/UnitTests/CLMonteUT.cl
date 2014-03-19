@@ -1,37 +1,40 @@
 
-/*	This file is part of CUDAMC.
+#define MAX_SOURCE_SIZE (0x100000)
+#define NUM_THREADS_PER_BLOCK 560 //Keep above 192 to eliminate global memory access overhead
+#define NUM_BLOCKS 48 //Keep numblocks a multiple of the #MP's of the GPU (8800GT=14MP)
+#define NUM_THREADS 26880
 
-    CUDAMC is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    CUDAMC is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with CUDAMC.  If not, see <http://www.gnu.org/licenses/>.*/
-
-
-#define NUM_THREADS_PER_BLOCK 320 //Keep above 192 to eliminate global memory access overhead
-#define NUM_BLOCKS 84 //Keep numblocks a multiple of the #MP's of the GPU (8800GT=14MP)
-#define NUM_THREADS 100
-#define NUM_THREADS_TIMES_THREE 80640
 #define NUMSTEPS_GPU 500000
 #define NUMSTEPS_CPU 500000
+
 #define PI 3.14159265f
 
-#define TMAX 2000.0f //[ps] Maximum time of flight
-#define DT 10.0f //[ps] Time binning resolution
 #define TEMP 201 //ceil(TMAX/DT), precalculated to avoid dynamic memory allocation (fulhack)
 
-
+#define G 0.9f	
 #define MUS_MAX 90.0f	//[1/cm]
 #define V 0.0214f		//[cm/ps] (c=0.03 [cm/ps] v=c/n) here n=1.4
 #define COS_CRIT 0.6999f	//the critical angle for total internal reflection at the border cos_crit=sqrt(1-(nt/ni)^2)
 #define N 1.4f
+
+#define EVENT_LOGGING
+//#define SPATIAL_HISTOGRAM  //SPATIAL HISTOGEAM IS DR*DT 2D histogram
+//#define RUN_HOST
+#define LINUX
+
+#define DR 0.00125f
+#define MAXR 0.25f
+
+#ifdef SPATIAL_HISTOGRAM
+    #define TMAX 125.0f //[ps] Maximum time of flight
+    #define DT 0.625f //[ps] Time binning resolution
+#else
+    #define TMAX 2000.0f //[ps] Maximum time of flight
+    #define DT 10.0f //[ps] Time binning resolution
+#endif
+
+#define RBUCKETS 200
+#define RBUCKETSXTEMP 40200
 
 
 float dot_product (float x1, float y1, float z1, float x2, float y2, float z2) {
@@ -373,14 +376,14 @@ __global float* cost_array, __global float* sint_array, __global float* cosp_arr
 	x=(x<<32) + xd[global_id];
     unsigned int a=ad[global_id];
 
-	//This is more efficient for g!=0 but of course less efficient for g==0
-	temp = divide((1.0f-(g)*(g)),(1.0f-(g)+2.0f*(g)*rand_MWC_co(&x,&a)));//Should be close close????!!!!!
-	cost = divide((1.0f+(g)*(g) - temp*temp),(2.0f*(g)));
-	//cost = (1.0f+(G)*(G) - temp*temp)*ONE_OVER_2G;
 
 	if((g)==0.0f)
 		cost = 2.0f*rand_MWC_co(&x,&a) -1.0f;
-
+	else
+    {    
+	    temp = divide((1.0f-(g)*(g)),(1.0f-(g)+2.0f*(g)*rand_MWC_co(&x,&a)));//Should be close close????!!!!!
+        cost = divide((1.0f+(g)*(g) - temp*temp),(2.0f*(g)));
+    }
 
 	sint = sqrtf(1.0f - cost*cost);
 
@@ -391,64 +394,20 @@ __global float* cost_array, __global float* sint_array, __global float* cosp_arr
     cosp_array[global_id] = cosp;
     sinp_array[global_id] = sinp;
 
-
-/*    	
-    float P = 2.0f* rand_MWC_co(x,a) - 1.0f;
-	if((g)==0.0f)
-		cost = P;
-    else{
-        temp = divide((1.0f-(g)*(g)),(1.0f+(g*P)));//Should be close close????!!!!!
-	    cost = divide((1.0f+(g)*(g) - temp*temp),(2.0f*(g)));
-
-
-    }
-
-	sint = sqrtf(1.0f - cost*cost);
-
-	cosp= sincos(2.0f*PI*rand_MWC_co(x,a),&sinp);
-*/
-	//temp = sqrtf(1.0f - dir->z*dir->z);
-//	dir->x = cost*dir_old.x + (-sint*cosp*a_old.x) + (sint*cosp*b_old.x);
-//	dir->y = cost*dir_old.y + (-sint*cosp*a_old.y) + (sint*cosp*b_old.y);
-//	dir->z = cost*dir_old.z + (-sint*cosp*a_old.z) + (sint*cosp*b_old.z);
+	
 
     dir->x = dot_product(cost, -sint*cosp, sint*sinp, dir_old.x, a_old.x, b_old.x) ;
 	dir->y = dot_product(cost, -sint*cosp, sint*sinp, dir_old.y, a_old.y, b_old.y) ;
 	dir->z = dot_product(cost, -sint*cosp, sint*sinp, dir_old.z, a_old.z, b_old.z) ;
 	
-//  dir_a->x = sint*dir_old.x + (cost*cosp*a_old.x) + (-cost*sinp*b_old.x);
-//	dir_a->y = sint*dir_old.y + (cost*cosp*a_old.y) + (-cost*sinp*b_old.y);
-//	dir_a->z = sint*dir_old.z + (cost*cosp*a_old.z) + (-cost*sinp*b_old.z);
-	
     dir_a->x = dot_product(sint, cost*cosp, -cost*sinp, dir_old.x, a_old.x, b_old.x) ;
     dir_a->y = dot_product(sint, cost*cosp, -cost*sinp, dir_old.y, a_old.y, b_old.y) ;
     dir_a->z = dot_product(sint, cost*cosp, -cost*sinp, dir_old.z, a_old.z, b_old.z) ;
 	
-//  dir_b->x = sint*a_old.x + cosp*b_old.x;
-//	dir_b->y = sint*a_old.y + cosp*b_old.y;
-//	dir_b->z = sint*a_old.z + cosp*b_old.z;
+    dir_b->x = dot_product(0, sinp, cosp, dir_old.x, a_old.x, b_old.x) ;
+    dir_b->y = dot_product(0, sinp, cosp, dir_old.y, a_old.y, b_old.y) ;
+    dir_b->z = dot_product(0, sinp, cosp, dir_old.z, a_old.z, b_old.z) ;
 
-    dir_b->x = dot_product(0, sint, cosp, dir_old.x, a_old.x, b_old.x) ;
-    dir_b->y = dot_product(0, sint, cosp, dir_old.y, a_old.y, b_old.y) ;
-    dir_b->z = dot_product(0, sint, cosp, dir_old.z, a_old.z, b_old.z) ;
-
-
-
-//	if(temp==0.0f)// normal incident.
-//	{
-//		dir->x = sint*cosp;
-//		dir->y = sint*sinp;
-//		dir->z = copysign(cost,dir->z*cost);
-//	}
-//	else // regular incident.
-//	{
-//		dir->x = divide(sint*(dir->x*dir->z*cosp - dir->y*sinp),temp) + dir->x*cost;
-//		dir->y = divide(sint*(dir->y*dir->z*cosp + tempdir*sinp),temp) + dir->y*cost;
-//		dir->z = (-1)*sint*cosp*temp + dir->z*cost;
-//	}
-//
-	//normalisation seems to be required as we are using floats! Otherwise the small numerical error will accumulate
-	/*
 	temp= rsqrtf(dir->x*dir->x+dir->y*dir->y+dir->z*dir->z);
 	dir->x=dir->x*temp;
 	dir->y=dir->y*temp;
@@ -458,12 +417,11 @@ __global float* cost_array, __global float* sint_array, __global float* cosp_arr
 	dir_a->x=dir_a->x*temp;
 	dir_a->y=dir_a->y*temp;
 	dir_a->z=dir_a->z*temp;
-	*/
+	
     temp= rsqrtf(dir_b->x*dir_b->x+dir_b->y*dir_b->y+dir_b->z*dir_b->z);
 	dir_b->x=dir_b->x*temp;
 	dir_b->y=dir_b->y*temp;
 	dir_b->z=dir_b->z*temp;
-	
 
 	dirx_array[global_id]=dirvar.x; 
 	diry_array[global_id]=dirvar.y; 
@@ -575,7 +533,7 @@ __global float* cost_array, __global float* sint_array, __global float* cosp_arr
     dir_a->x=dir_a->x*temp;
     dir_a->y=dir_a->y*temp;
     dir_a->z=dir_a->z*temp;
-    
+   
     temp= rsqrtf(dir_b->x*dir_b->x+dir_b->y*dir_b->y+dir_b->z*dir_b->z);
     dir_b->x=dir_b->x*temp;
     dir_b->y=dir_b->y*temp;

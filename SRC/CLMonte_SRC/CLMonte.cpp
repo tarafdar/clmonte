@@ -1,46 +1,3 @@
-/////////////////////////////////////////////////////////////
-//
-//		CUDA-based Monte Carlo simulation of photon migration in semi infinite media.
-//	
-//			This is the version of the code used in the letter submitted to JBO-letters 2008
-//			Currently the code is in an experimental state, i.e. the code is not always pretty 
-//			or efficient and some ways of implementing certain aspects of the code are far 
-//			from desirable. Still it should provide a good starting point for anyone interested 
-//			in CUDA-based Monte Carlo simulations of photon migration. 
-//
-//			For the JBO-letters article the code was run on a NVIDIA 8800GT and the number of 
-//			threads are hence optimized for this particular card.
-//
-//			We apologize for the lack of comment in the current code. We will soon re-relese 
-//			this code with detailed explanations of the implementation as well as proper commenting.
-//
-//			To compile and run this code, please visit www.nvidia.com and download the necessary 
-//			CUDA Toolkit and SKD. I also highly recommend the Visual Studio wizard 
-//			(available at:http://forums.nvidia.com/index.php?showtopic=69183) 
-//			if you use Visual Studio 2005 
-//			(The express edition is available for free at: http://www.microsoft.com/express/2005/). 
-//
-//			This code is distributed under the terms of the GNU General Public Licence (see
-//			below). If you use this code for academic purposes, we would greatly appreciate a 
-//			citation of our letter describing GPU-based Monte Carlo simulations of photon migration. 
-//
-//
-///////////////////////////////////////////////////////////////
-
-/*	This file is part of CUDAMC.
-
-    CUDAMC is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    CUDAMC is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with CUDAMC.  If not, see <http://www.gnu.org/licenses/>.*/
 
 #include <CL/cl.h>
 #include <cmath>
@@ -50,44 +7,12 @@
 #include <stdlib.h>
 #include <math.h>
 #include <limits.h>
-#define MAX_SOURCE_SIZE (0x100000)
+#include "CLMonte.h"
 
-//#define NUM_THREADS_PER_BLOCK 320 //Keep above 192 to eliminate global memory access overhead
-//#define NUM_THREADS_PER_BLOCK 448 //Keep above 192 to eliminate global memory access overhead
-#define NUM_THREADS_PER_BLOCK 560 //Keep above 192 to eliminate global memory access overhead
-//#define NUM_BLOCKS 84 //Keep numblocks a multiple of the #MP's of the GPU (8800GT=14MP)
-//#define NUM_BLOCKS 30 //Keep numblocks a multiple of the #MP's of the GPU (8800GT=14MP)
-#define NUM_BLOCKS 48 //Keep numblocks a multiple of the #MP's of the GPU (8800GT=14MP)
-#define NUM_THREADS 26880
-//#define NUM_THREADS 80640
-//#define NUM_THREADS NUM_THREADS_PER_BLOCK
-#define NUMSTEPS_GPU 500000
-#define NUMSTEPS_CPU 500000
-//#define NUMSTEPS_GPU 100
-//#define NUMSTEPS_CPU 100
-
-#define PI 3.14159265f
-
-#define TMAX 2000.0f //[ps] Maximum time of flight
-#define DT 10.0f //[ps] Time binning resolution
-#define TEMP 201 //ceil(TMAX/DT), precalculated to avoid dynamic memory allocation (fulhack)
-
-#define RUN_HOST
-#define LINUX
-//#define JORDAN
-//#define NAIF
 unsigned int xtest[NUM_THREADS];
 unsigned int ctest[NUM_THREADS];
 unsigned int atest[NUM_THREADS];
 int rmax = 0.0;
-struct float3{
-	float x;
-	float y;
-	float z;
-
-};
-
-// forward declaration of the device code
 
 void check_return(cl_int ret, const char* message){
     
@@ -98,17 +23,6 @@ void check_return(cl_int ret, const char* message){
 
 }
 
-
-// forward declaration of the host code
-void MCh(unsigned int*,unsigned int*,unsigned int*,unsigned int*,unsigned int*);
-float rand_MWC_och(unsigned long long*,unsigned int*);
-float rand_MWC_coh(unsigned long long*,unsigned int*);
-void LaunchPhotonh(float3*, float3*, float*);
-void Spinh(float3*,float*,unsigned long long*,unsigned int*);
-unsigned int Reflecth(float3*, float3*, float*, float*, float*, float*, unsigned long long*,unsigned int*,unsigned int*);
-
-
-#include "CLMonte_goldstandard.c"
 // wrapper for device code
 int MC(unsigned int* x,unsigned int* c,unsigned int* a)
 {

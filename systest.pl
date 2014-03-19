@@ -23,7 +23,7 @@ while (my $new_line = <$info>) {
 close ($info);
 $i=0;
 foreach(@orig_spin){
-    push(@sub_values, abs($_ - $new_spin[$i]));     ;
+    push(@sub_values, ($_ - $new_spin[$i]));     ;
     $i=$i + 1;
 }
 

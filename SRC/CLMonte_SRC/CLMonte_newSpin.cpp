@@ -331,24 +331,25 @@ int MC(unsigned int* x,unsigned int* c,unsigned int* a)
 #endif
 
 
+file = fopen("outph.txt", "w");
 #ifdef SPATIAL_HISTOGRAM
 	for(i=0;i<RBUCKETS;i++){
         for(j=0; j<TEMP; j++){
 		    printf("%d ", histh[i*TEMP + j]);
-		    fprintf(print_file, "%d ", histh[i*TEMP + j]);
+            fprintf(file,"%d ", histh[i*TEMP + j]);
+            fprintf(print_file, "%d ", histh[i*TEMP + j]);
         }
-        printf("\n");
+        fprintf(file,"\n");
 	}
 #else
 
-    file = fopen("outph.txt", "w");
 	for(i=0;i<TEMP;i++){
 		printf("%d ", histh[i]);
 		fprintf(file,"%d %d\n",i,histh[i]);
 		fprintf(print_file, "%d ", histh[i]);
 	}
-	fclose(file);
 #endif
+	fclose(file);
 	printf("\n\nTotal number of photons (i.e. full path simulated): %llu\nNumber of photons contribution to the histogram: %llu\n",num_tot,hist_tot);
 	printf("Total number of photons steps simulated: %e\n",(double)NUM_THREADS*(double)NUMSTEPS_CPU);
     printf("time1=%u, time2=%u.\n",time1,time2);

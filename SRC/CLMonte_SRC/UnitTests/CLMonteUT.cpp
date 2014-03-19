@@ -1,47 +1,3 @@
-/////////////////////////////////////////////////////////////
-//
-//		CUDA-based Monte Carlo simulation of photon migration in semi infinite media.
-//	
-//			This is the version of the code used in the letter submitted to JBO-letters 2008
-//			Currently the code is in an experimental state, i.e. the code is not always pretty 
-//			or efficient and some ways of implementing certain aspects of the code are far 
-//			from desirable. Still it should provide a good starting point for anyone interested 
-//			in CUDA-based Monte Carlo simulations of photon migration. 
-//
-//			For the JBO-letters article the code was run on a NVIDIA 8800GT and the number of 
-//			threads are hence optimized for this particular card.
-//
-//			We apologize for the lack of comment in the current code. We will soon re-relese 
-//			this code with detailed explanations of the implementation as well as proper commenting.
-//
-//			To compile and run this code, please visit www.nvidia.com and download the necessary 
-//			CUDA Toolkit and SKD. I also highly recommend the Visual Studio wizard 
-//			(available at:http://forums.nvidia.com/index.php?showtopic=69183) 
-//			if you use Visual Studio 2005 
-//			(The express edition is available for free at: http://www.microsoft.com/express/2005/). 
-//
-//			This code is distributed under the terms of the GNU General Public Licence (see
-//			below). If you use this code for academic purposes, we would greatly appreciate a 
-//			citation of our letter describing GPU-based Monte Carlo simulations of photon migration. 
-//
-//
-///////////////////////////////////////////////////////////////
-
-/*	This file is part of CUDAMC.
-
-    CUDAMC is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    CUDAMC is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with CUDAMC.  If not, see <http://www.gnu.org/licenses/>.*/
-
 #include <CL/cl.h>
 #include <cmath>
 #include <cstring>
@@ -1201,8 +1157,35 @@ int spin_new(float dirx, float diry, float dirz, float ax, float ay, float az, f
     float3 a_calc;
     float3 b_calc;
     float temp;
+    float3 temp3;
+    bool testcasefail = false;
     bool testcase2fail = false;
     for (i=0; i< NUM_THREADS; i++) {
+
+            temp = sqrtf(dot_product(dirx_array[i], diry_array[i], dirz_array[i], dirx_array[i], diry_array[i], dirz_array[i]));
+            if (compare_to_expected_float(results,"dir unit vector", temp, 1.0f) != 0) testcasefail = true;
+        
+            temp = sqrtf(dot_product(ax_array[i], ay_array[i], az_array[i], ax_array[i], ay_array[i], az_array[i]));
+            if (compare_to_expected_float(results,"a unit vector", temp, 1.0f) != 0) testcasefail = true;
+        
+            temp = sqrtf(dot_product(bx_array[i], by_array[i], bz_array[i], bx_array[i], by_array[i], bz_array[i]));
+            if (compare_to_expected_float(results,"b unit vector", temp, 1.0f) != 0) testcasefail = true;
+        
+            //test if d is orthog to a
+            cross_product(dirx_array[i], diry_array[i], dirz_array[i], ax_array[i], ay_array[i], az_array[i], &temp3.x, &temp3.y, &temp3.z);
+            temp = sqrtf(dot_product(temp3.x, temp3.y, temp3.z, temp3.x, temp3.y, temp3.z));
+            if (compare_to_expected_float(results,"dir cross a", temp, 1.0f) != 0) testcasefail = true;
+
+            //test if d is orthog to b
+            cross_product(dirx_array[i], diry_array[i], dirz_array[i], bx_array[i], by_array[i], bz_array[i], &temp3.x, &temp3.y, &temp3.z);
+            temp = sqrtf(dot_product(temp3.x, temp3.y, temp3.z, temp3.x, temp3.y, temp3.z));
+            if (compare_to_expected_float(results,"dir cross b", temp, 1.0f) != 0) testcasefail = true;
+	
+            //test if a is orthog to b
+            cross_product(ax_array[i], ay_array[i], az_array[i], bx_array[i], by_array[i], bz_array[i], &temp3.x, &temp3.y, &temp3.z);
+            temp = sqrtf(dot_product(temp3.x, temp3.y, temp3.z, temp3.x, temp3.y, temp3.z));
+            if (compare_to_expected_float(results,"a cross b", temp, 1.0f) != 0) testcasefail = true;
+
 
         d_exp.x = dot_product(cost_array[i], -sint_array[i]*cosp_array[i], sint_array[i]*sinp_array[i], dirx, ax, bx) ;
 	    d_exp.y = dot_product(cost_array[i], -sint_array[i]*cosp_array[i], sint_array[i]*sinp_array[i], diry, ay, by) ;
@@ -1212,9 +1195,9 @@ int spin_new(float dirx, float diry, float dirz, float ax, float ay, float az, f
         a_exp.y = dot_product(sint_array[i], cost_array[i]*cosp_array[i], -cost_array[i]*sinp_array[i], diry, ay, by) ;
         a_exp.z = dot_product(sint_array[i], cost_array[i]*cosp_array[i], -cost_array[i]*sinp_array[i], dirz, az, bz) ;
 	
-        b_exp.x = dot_product(0, sint_array[i], cosp_array[i], dirx, ax, bx) ;
-        b_exp.y = dot_product(0, sint_array[i], cosp_array[i], diry, ay, by) ;
-        b_exp.z = dot_product(0, sint_array[i], cosp_array[i], dirz, az, bz) ;
+        b_exp.x = dot_product(0, sinp_array[i], cosp_array[i], dirx, ax, bx) ;
+        b_exp.y = dot_product(0, sinp_array[i], cosp_array[i], diry, ay, by) ;
+        b_exp.z = dot_product(0, sinp_array[i], cosp_array[i], dirz, az, bz) ;
     
     
 	    temp= rsqrtf(d_exp.x*d_exp.x + d_exp.y*d_exp.y + d_exp.z*d_exp.z);
@@ -1257,6 +1240,10 @@ int spin_new(float dirx, float diry, float dirz, float ax, float ay, float az, f
         printf ("Spin Test 2 failed - tested expected value of direction, a, and b unit vectors, difference between vectors found\n");
     else 
         printf ("Spin Test 2 passed - tested expected value of direction, a, and b unit vectors, no difference between vectors found\n");    
+    if (testcasefail) 
+        printf ("Spin Test 3 failed - tested that all a, b, and d vectors are unit and orthogonal - discrepancy found\n");
+    else 
+        printf ("Spin Test 3 passed - tested that all a, b, and d vectors are unit and othoganal\n");    
 	
     ret = clFlush(command_queue);
     ret = clFinish(command_queue);
@@ -1623,9 +1610,9 @@ int reflect_new(unsigned int* x,unsigned int* c,unsigned int* a)
         }
     }
     if (testcasefail) 
-        printf ("Reflect Test 2 failed - tested that direction, a, and b are unit vectors, and orthogonal. Inconsistency found\n");
+        printf ("Reflect Test 3 failed - tested that direction, a, and b are unit vectors, and orthogonal. Inconsistency found\n");
     else 
-        printf ("Reflect Test 2 passed - tested that direction, a, and b are unit vectors, and orthogonal. No inconsistency found\n");
+        printf ("Reflect Test 3 passed - tested that direction, a, and b are unit vectors, and orthogonal. No inconsistency found\n");
 	
     ret = clFlush(command_queue);
     ret = clFinish(command_queue);
@@ -1641,7 +1628,7 @@ int reflect_new(unsigned int* x,unsigned int* c,unsigned int* a)
 int MC(unsigned int* x,unsigned int* c,unsigned int* a){
     //reflect(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, DIRZ, x, c, a);
     //spin(sqrt(0.5f), 0.5f, 0.5f, x, c, a, 0.5f);
-    //spin_new(0.0f, 0.0f, 1.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, x, c ,a, 1.0f);
+  //  spin_new(0.0f, 0.0f, 1.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, x, c ,a, 0.9f);
     reflect_new(x,c,a);
     //spinCPU(sqrt(0.5f), 0.5f, 0.5f, x, c, a, 0.5f);
 	return 0;
