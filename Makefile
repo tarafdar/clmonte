@@ -1,4 +1,4 @@
-CLSOURCES=$(CLDIR)/CLMonte.cpp
+CLSOURCES=$(CLDIR)/CLMonte.cpp $(CLDIR)/CLMonte_goldstandard.c 
 CLSOURCES_newSpin=$(CLDIR)/CLMonte_newSpin.cpp $(CLDIR)/CLMonte_goldstandard.c
 CUDASOURCES=$(CUDADIR)/CUDAMC.cu
 CLOUT=CLMonte
@@ -17,7 +17,7 @@ UTSOURCES=$(CLDIR_UNITTESTS)/CLMonteUT.cpp
 
 all: $(CLOUT) $(CUDAOUT)
 
-$(CLOUT): $(CLDIR)/CLMonte.cpp $(CLDIR)/CLMonteTransport.cl $(CLDIR)/CLMonte_goldstandard.c
+$(CLOUT): $(CLDIR)/CLMonte.cpp $(CLDIR)/CLMonteTransport.cl $(CLDIR)/CLMonte_goldstandard.c $(CLDIR)/defines.h $(CLDIR)/CLMonte.h
 	g++ $(CLSOURCES) $(CLFLAGS) $(CLOUT) $(CLLIB)
 
 $(CLOUT_newSpin): $(CLDIR)/CLMonte_newSpin.cpp $(CLDIR)/CLMonteTransport_newSpin.cl $(CLDIR)/CLMonte_goldstandard.c $(CLDIR)/defines.h $(CLDIR)/CLMonte.h

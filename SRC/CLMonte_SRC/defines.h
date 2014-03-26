@@ -18,8 +18,8 @@
 #define N 1.4f
 
 #define EVENT_LOGGING
-//#define SPATIAL_HISTOGRAM  //SPATIAL HISTOGEAM IS DR*DT 2D histogram
-//#define RUN_HOST
+#define SPATIAL_HISTOGRAM  //SPATIAL HISTOGEAM IS DR*DT 2D histogram
+#define RUN_HOST
 #define LINUX
 
 #define DR 0.00125f
