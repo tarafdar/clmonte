@@ -5,6 +5,7 @@
 #define NUM_BLOCKS 48 //Keep numblocks a multiple of the #MP's of the GPU (8800GT=14MP)
 #define NUM_THREADS 26880
 
+//#define INPUT_PARAMETERS
 #define NUMSTEPS_GPU 500000
 //#define NUMSTEPS_GPU 270
 //#define NUMSTEPS_GPU  25000
@@ -14,11 +15,13 @@
 
 #define TEMP 201 //ceil(TMAX/DT), precalculated to avoid dynamic memory allocation (fulhack)
 
-#define G 0.9f	
-#define MUS_MAX 90.0f	//[1/cm]
-#define V 0.0214f		//[cm/ps] (c=0.03 [cm/ps] v=c/n) here n=1.4
-#define COS_CRIT 0.6999f	//the critical angle for total internal reflection at the border cos_crit=sqrt(1-(nt/ni)^2)
-#define N 1.4f
+#ifndef INPUT_PARAMETERS
+    #define G 0.9f	
+    #define MUS_MAX 90.0f	//[1/cm]
+    #define V 0.0214f		//[cm/ps] (c=0.03 [cm/ps] v=c/n) here n=1.4
+    #define COS_CRIT 0.6999f	//the critical angle for total internal reflection at the border cos_crit=sqrt(1-(nt/ni)^2)
+    #define N 1.4f
+#endif
 
 #define EVENT_LOGGING
 //#define SPATIAL_HISTOGRAM  //SPATIAL HISTOGEAM IS DR*DT 2D histogram
@@ -117,8 +120,11 @@ void LaunchPhoton(float3* pos, float3* dir, float* t, float3* dir_a, float3* dir
 }
 
 
-
+#ifndef INPUT_PARAMETERS
 void Spin(float3* dir, unsigned long* x, unsigned int* a, float3* dir_a, float3* dir_b)
+#else
+void Spin(float3* dir, unsigned long* x, unsigned int* a, float3* dir_a, float3* dir_b, const float G)
+#endif
 {
 	float cost, sint;	// cosine and sine of the 
 						// polar deflection angle theta. 
@@ -207,8 +213,12 @@ void cross_product_unit(float3* a, int z, float3* c){
     }
 
 }
-
+#ifndef INPUT_PARAMETERS
 unsigned int Reflect(float3* dir, float3* pos, float* t,  unsigned long* x, unsigned int* a, __global unsigned int* histd, float3* dir_a, float3* dir_b)
+#else
+unsigned int Reflect(float3* dir, float3* pos, float* t,  unsigned long* x, unsigned int* a, __global unsigned int* histd, float3* dir_a, float3* dir_b, 
+                   const float N, const float COS_CRIT, const float V)
+#endif 
 {
 	float r;
 	float fibre_separtion=1.0f;//[cm]
@@ -320,7 +330,7 @@ unsigned int Reflect(float3* dir, float3* pos, float* t,  unsigned long* x, unsi
 
 
 
-
+#ifndef INPUT_PARAMETERS
 __kernel void MCd(__global unsigned int* xd,__global unsigned int* cd,__global unsigned int* ad,
 __global unsigned int* histd
 #ifdef EVENT_LOGGING
@@ -328,6 +338,17 @@ __global unsigned int* histd
  __global unsigned int* numc
 #endif
 )
+#else
+__kernel void MCd(__global unsigned int* xd,__global unsigned int* cd,__global unsigned int* ad,
+__global unsigned int* histd, const float N, const float COS_CRIT, const float V, const float MUS_MAX, const float G
+#ifdef EVENT_LOGGING
+,__global unsigned int* numd,
+ __global unsigned int* numc
+#endif
+)
+
+
+#endif
 {
 	int global_id= get_global_id(0);
     //for loops
@@ -370,7 +391,11 @@ __global unsigned int* histd
 		//Perform boundary crossing check here
 		if((pos.z+dir.z*s)<=0)//photon crosses boundary within the next step
 		{
+#ifndef INPUT_PARAMETERS
 			flag=Reflect(&dir,&pos,&t,&x,&a,histd, &dir_a, &dir_b);
+#else            
+			flag=Reflect(&dir,&pos,&t,&x,&a,histd, &dir_a, &dir_b, N, COS_CRIT, V);
+#endif            
 		}
 		
 		//Move (we can move the photons that have been terminated above since it improves our performance and does not affect our results)
@@ -379,7 +404,12 @@ __global unsigned int* histd
 		pos.z += s*dir.z;
 		t += divide(s,V); 
 
+#ifndef INPUT_PARAMETERS
 		Spin(&dir,&x,&a, &dir_a, &dir_b);
+#else            
+		Spin(&dir,&x,&a, &dir_a, &dir_b, G);
+
+#endif            
         if(t >= TMAX || flag>=1)//Kill photon and launch a new one
 		{
 #ifdef EVENT_LOGGING

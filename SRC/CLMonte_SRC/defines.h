@@ -1,4 +1,6 @@
 
+//#define INPUT_PARAMETERS
+
 #define MAX_SOURCE_SIZE (0x100000)
 #define NUM_THREADS_PER_BLOCK 560 //Keep above 192 to eliminate global memory access overhead
 #define NUM_BLOCKS 48 //Keep numblocks a multiple of the #MP's of the GPU (8800GT=14MP)
@@ -13,11 +15,13 @@
 
 #define TEMP 201 //ceil(TMAX/DT), precalculated to avoid dynamic memory allocation (fulhack)
 
-#define G 0.9f	
-#define MUS_MAX 90.0f	//[1/cm]
-#define V 0.0214f		//[cm/ps] (c=0.03 [cm/ps] v=c/n) here n=1.4
-#define COS_CRIT 0.6999f	//the critical angle for total internal reflection at the border cos_crit=sqrt(1-(nt/ni)^2)
-#define N 1.4f
+#ifndef INPUT_PARAMETERS
+    #define G 0.9f	
+    #define MUS_MAX 90.0f	//[1/cm]
+    #define V 0.0214f		//[cm/ps] (c=0.03 [cm/ps] v=c/n) here n=1.4
+    #define COS_CRIT 0.6999f	//the critical angle for total internal reflection at the border cos_crit=sqrt(1-(nt/ni)^2)
+    #define N 1.4f
+#endif
 
 #define EVENT_LOGGING
 //#define SPATIAL_HISTOGRAM  //SPATIAL HISTOGEAM IS DR*DT 2D histogram

@@ -90,6 +90,16 @@ int MC(unsigned int* x,unsigned int* c,unsigned int* a)
             &device_id, &ret_num_devices);
 
 
+#ifdef INPUT_PARAMETERS
+    float G = 0.9f;	
+    float MUS_MAX = 90.0f;	//[1/cm]
+    float V = 0.0214f;		//[cm/ps] (c=0.03 [cm/ps] v=c/n) here n=1.4
+    float COS_CRIT = 0.6999f;	//the critical angle for total internal reflection at the border cos_crit=sqrt(1-(nt/ni)^2)
+    float N = 1.4f;
+#endif
+
+
+
 	// Create an OpenCL context
     cl_context context = clCreateContext( NULL, 1, &device_id, NULL, NULL, &ret);
 
@@ -168,25 +178,43 @@ int MC(unsigned int* x,unsigned int* c,unsigned int* a)
     cl_kernel kernel = clCreateKernel(program, "MCd", &ret);
     check_return(ret, "create kernel MCd fail\n");
 
-    // Set the arguments of the kernel
-    ret = clSetKernelArg(kernel, 0, sizeof(cl_mem), (void *)&xd_mem_obj);
-    check_return(ret, "set arg 0 fail\n");
-    
+    int argval = 0;
 
-	ret = clSetKernelArg(kernel, 1, sizeof(cl_mem), (void *)&cd_mem_obj);
-    check_return(ret, "set arg 1 fail\n");
+    // Set the arguments of the kernel
+    ret = clSetKernelArg(kernel, argval++, sizeof(cl_mem), (void *)&xd_mem_obj);
+    check_return(ret, "set arg fail\n");
+
+	ret = clSetKernelArg(kernel, argval++, sizeof(cl_mem), (void *)&cd_mem_obj);
+    check_return(ret, "set arg fail\n");
     
-	ret = clSetKernelArg(kernel, 2, sizeof(cl_mem), (void *)&ad_mem_obj);
-    check_return(ret, "set arg 2 fail\n");
+	ret = clSetKernelArg(kernel, argval++, sizeof(cl_mem), (void *)&ad_mem_obj);
+    check_return(ret, "set arg fail\n");
     
-	ret = clSetKernelArg(kernel, 3, sizeof(cl_mem), (void *)&histd_mem_obj);
-    check_return(ret, "set arg 3 fail\n");
-#ifdef EVENT_LOGGING    
-	ret = clSetKernelArg(kernel, 4, sizeof(cl_mem), (void *)&numd_mem_obj);
-    check_return(ret, "set arg 4 fail\n");
+	ret = clSetKernelArg(kernel, argval++, sizeof(cl_mem), (void *)&histd_mem_obj);
+    check_return(ret, "set arg fail\n");
+#ifdef INPUT_PARAMETERS
+	ret = clSetKernelArg(kernel, argval++, sizeof(float), (void *)&N);
+    check_return(ret, "set arg fail\n");
+
+	ret = clSetKernelArg(kernel, argval++, sizeof(float), (void *)&COS_CRIT);
+    check_return(ret, "set arg fail\n");
+
+
+	ret = clSetKernelArg(kernel, argval++, sizeof(float), (void *)&V);
+    check_return(ret, "set arg fail\n");
+
+	ret = clSetKernelArg(kernel, argval++, sizeof(float), (void *)&MUS_MAX);
+    check_return(ret, "set arg fail\n");
 	
-	ret = clSetKernelArg(kernel, 5, sizeof(cl_mem), (void *)&numl_mem_obj);
-    check_return(ret, "set arg 5 fail\n");
+    ret = clSetKernelArg(kernel, argval++, sizeof(float), (void *)&G);
+    check_return(ret, "set arg fail\n");
+#endif
+#ifdef EVENT_LOGGING    
+	ret = clSetKernelArg(kernel, argval++, sizeof(cl_mem), (void *)&numd_mem_obj);
+    check_return(ret, "set arg fail\n");
+	
+	ret = clSetKernelArg(kernel, argval++, sizeof(cl_mem), (void *)&numl_mem_obj);
+    check_return(ret, "set arg fail\n");
 #endif
     
     // Execute the OpenCL kernel on the list
