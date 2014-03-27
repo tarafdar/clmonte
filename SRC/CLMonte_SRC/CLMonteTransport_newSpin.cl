@@ -6,6 +6,8 @@
 #define NUM_THREADS 26880
 
 #define NUMSTEPS_GPU 500000
+//#define NUMSTEPS_GPU 270
+//#define NUMSTEPS_GPU  25000
 #define NUMSTEPS_CPU 500000
 
 #define PI 3.14159265f
@@ -19,8 +21,8 @@
 #define N 1.4f
 
 #define EVENT_LOGGING
-#define SPATIAL_HISTOGRAM  //SPATIAL HISTOGEAM IS DR*DT 2D histogram
-#define RUN_HOST
+//#define SPATIAL_HISTOGRAM  //SPATIAL HISTOGEAM IS DR*DT 2D histogram
+//#define RUN_HOST
 #define LINUX
 
 #define DR 0.00125f

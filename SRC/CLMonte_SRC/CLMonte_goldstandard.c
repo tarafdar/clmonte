@@ -38,13 +38,6 @@ void MCh(unsigned int* xd,unsigned int* cd, unsigned int* ad,unsigned int* numh,
 		//printf("\nblock=%d ",block);
 		for(thread=0;thread<NUM_THREADS_PER_BLOCK;thread++)
 		{
-#ifdef RETURN_ON_GPU_TIME
-        curr_time = clock();
-        if((curr_time - start_time) > GPU_time) {
-            printf("Terminated early\n");
-            return;
-        }
-#endif        
 		
 		x=cd[NUM_THREADS_PER_BLOCK*block+thread];
 		x=(x<<32)+xd[NUM_THREADS_PER_BLOCK*block+thread];
@@ -82,6 +75,13 @@ void MCh(unsigned int* xd,unsigned int* cd, unsigned int* ad,unsigned int* numh,
 				flag=0;
 				LaunchPhotonh(&pos, &dir, &t);//Launch the photon
 			}
+#ifdef RETURN_ON_GPU_TIME
+            curr_time = clock();
+            if((curr_time - start_time) > GPU_time) {
+                printf("Terminated early\n");
+            return;
+        }
+#endif        
 			
 
 		}//end main for loop!

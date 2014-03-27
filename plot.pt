@@ -2,7 +2,7 @@
 reset
 #set multiplot layout 1,2 title "Time Histogram Comparison"
 set term png truecolor
-set output "cl.png"
+set output "Gequal0.9.png"
 #
 #set title "Revised Spin Time Histogram"
 #set xlabel "Time of Exit"
@@ -14,4 +14,4 @@ set title "OpenCL Time Histogram"
 set xlabel "Time of Exit"
 set ylabel "Photons"
 unset key
-plot "outp_cl.txt" u 1:2 w boxes lc rgb"black"
+plot "outp_newSpin.txt" u 1:2 w boxes lc rgb"black"

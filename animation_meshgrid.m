@@ -41,7 +41,7 @@ r2 = r.^2;
 
 figure('Color', 'w');
 %colormap hot
-writerObj = VideoWriter('logOfDensity.avi');
+writerObj = VideoWriter('logOfDensity_GPU_g0.avi');
 writerObj.FrameRate = 2.5;
 open(writerObj);
 for ind_t = 1:30
@@ -59,7 +59,7 @@ for ind_t = 1:30
     view(0,90);
     axis equal;
     set(hax, 'Visible', 'Off', 'CLim', [min(T(:)) max(T(:))]);
-    pause(0.35);
+    pause(0.4);
     f = getframe;
     writeVideo(writerObj, f);
 end
