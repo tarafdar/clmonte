@@ -1,5 +1,5 @@
 
-//#define INPUT_PARAMETERS
+#define INPUT_PARAMETERS
 
 #define MAX_SOURCE_SIZE (0x100000)
 #define NUM_THREADS_PER_BLOCK 560 //Keep above 192 to eliminate global memory access overhead

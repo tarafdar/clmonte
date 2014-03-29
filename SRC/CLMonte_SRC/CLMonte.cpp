@@ -9,6 +9,7 @@
 #include <limits.h>
 #include "CLMonte.h"
 
+std::string output_file;
 unsigned int xtest[NUM_THREADS];
 unsigned int ctest[NUM_THREADS];
 unsigned int atest[NUM_THREADS];
@@ -62,7 +63,8 @@ int MC(unsigned int* x,unsigned int* c,unsigned int* a)
 	FILE *print_file;
 	FILE *build_file;
 	
-	file = fopen("outp.txt", "w");
+	//file = fopen("outp.txt", "w");
+	file = fopen(output_file.c_str(), "w");
 	print_file = fopen("print_out.txt", "w");
 	build_file = fopen("build.txt", "w");
 
@@ -328,7 +330,14 @@ void initialize(void)//Straight from Steven Gratton's code
 int main(int argc,char* argv[])
 {
 	//do all the initialization for the RNG's (one MWC per thread)
+    float g = atof(arg[1]);
+    float mus_max = atof(arg[2]);
+    float v = atof(arg[3]); 
+    float cos_crit = atof(arg[4]); 
+    float n = atof(arg[5]); 
+    output_file = argv[6];    
     initialize();
+    
     MC(xtest,ctest,atest);
 	return 0;
     

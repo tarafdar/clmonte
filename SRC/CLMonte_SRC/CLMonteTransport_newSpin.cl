@@ -5,7 +5,7 @@
 #define NUM_BLOCKS 48 //Keep numblocks a multiple of the #MP's of the GPU (8800GT=14MP)
 #define NUM_THREADS 26880
 
-//#define INPUT_PARAMETERS
+#define INPUT_PARAMETERS
 #define NUMSTEPS_GPU 500000
 //#define NUMSTEPS_GPU 270
 //#define NUMSTEPS_GPU  25000
@@ -16,7 +16,7 @@
 #define TEMP 201 //ceil(TMAX/DT), precalculated to avoid dynamic memory allocation (fulhack)
 
 #ifndef INPUT_PARAMETERS
-    #define G 0.9f	
+    #define G 0.0f	
     #define MUS_MAX 90.0f	//[1/cm]
     #define V 0.0214f		//[cm/ps] (c=0.03 [cm/ps] v=c/n) here n=1.4
     #define COS_CRIT 0.6999f	//the critical angle for total internal reflection at the border cos_crit=sqrt(1-(nt/ni)^2)

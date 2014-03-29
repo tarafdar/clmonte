@@ -7,11 +7,12 @@
 #include <math.h>
 #include <limits.h>
 #include "CLMonte.h"
-
+#include <string>
 unsigned int xtest[NUM_THREADS];
 unsigned int ctest[NUM_THREADS];
 unsigned int atest[NUM_THREADS];
 
+std::string output_file;
 
 // forward declaration of the device code
 
@@ -25,7 +26,11 @@ void check_return(cl_int ret, const char* message){
 }
 //#include "CLMonte_goldstandard.c"
 // wrapper for device code
+#ifndef INPUT_PARAMETERS
 int MC(unsigned int* x,unsigned int* c,unsigned int* a)
+#else
+int MC(unsigned int* x,unsigned int* c,unsigned int* a, float g, float mus_max, float v, float cos_crit, float n)
+#endif
 {
 	unsigned long long num_tot, hist_tot, num_l_tot;
 	unsigned int i, j;
@@ -71,7 +76,8 @@ int MC(unsigned int* x,unsigned int* c,unsigned int* a)
 	FILE *print_file;
 	FILE *build_file;
 	
-	file = fopen("outp_newSpin.txt", "w");
+	//file = fopen("outp_newSpin.txt", "w");
+	file = fopen(output_file.c_str(), "w");
 	print_file = fopen("print_out.txt", "w");
 	build_file = fopen("build.txt", "w");
 
@@ -91,11 +97,11 @@ int MC(unsigned int* x,unsigned int* c,unsigned int* a)
 
 
 #ifdef INPUT_PARAMETERS
-    float G = 0.9f;	
-    float MUS_MAX = 90.0f;	//[1/cm]
-    float V = 0.0214f;		//[cm/ps] (c=0.03 [cm/ps] v=c/n) here n=1.4
-    float COS_CRIT = 0.6999f;	//the critical angle for total internal reflection at the border cos_crit=sqrt(1-(nt/ni)^2)
-    float N = 1.4f;
+    float G = g;	
+    float MUS_MAX = mus_max;	//[1/cm]
+    float V = v;		//[cm/ps] (c=0.03 [cm/ps] v=c/n) here n=1.4
+    float COS_CRIT = cos_crit;	//the critical angle for total internal reflection at the border cos_crit=sqrt(1-(nt/ni)^2)
+    float N = n;
 #endif
 
 
@@ -450,8 +456,19 @@ void initialize(void)//Straight from Steven Gratton's code
 int main(int argc,char* argv[])
 {
 	//do all the initialization for the RNG's (one MWC per thread)
+    float g = atof(argv[1]);
+    float mus_max = atof(argv[2]);
+    float v = atof(argv[3]); 
+    float cos_crit = atof(argv[4]); 
+    float n = atof(argv[5]); 
+    output_file = argv[6];    
+    
     initialize();
+#ifndef INPUT_PARAMETERS    
     MC(xtest,ctest,atest);
+#else
+    MC(xtest,ctest,atest, g, mus_max, v, cos_crit, n);
+#endif
 	return 0;
     
 }
