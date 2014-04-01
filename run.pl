@@ -1,30 +1,31 @@
-$input_file = "input.txt";
 $CLMonte_outFile = "output_newSpin.txt";
-$plot_pic = "newPlot.png";
+$plot_pic = "obs.png";
+$plot_title = "Observed Photon Exit Times";
+$Nair = 1.0;
 
 open my $info, $input_file or die "Could not open $file ";
 
-#input parameters = (G, MUS_MAX, V, COS_CRIT, N);
-@input_params = ("0.9" , "90.0" , "0.0214" , "0.6999", "1.4"); 
-while(my $line = <$info>){
-    my @values = split(' ', $line);
-    if($values[0] eq 'G'){
-        $input_params[0] = $values[1];
-     }
-    elsif($values[0] eq 'MUS_MAX'){
-        $input_params[1] = $values[1];
-     }
-    elsif($values[0] eq 'V') {
-        $input_params[2] = $values[1];
-     }
-    elsif($values[0] eq 'COS_CRIT'){
-        $input_params[3] = $values[1];
-     }
-    elsif($values[0] eq 'N'){
-        $input_params[4] = $values[1];
-     }
-}
-
-print "input parameters\nG = $input_params[0] \nMUS_MAX = $input_params[1] \nV = $input_params[2] \nCOS_CRIT = $input_params[3] \nN = $input_params[4]\n";
-system("./CLMonte_newSpin $input_params[0] $input_params[1] $input_params[2] $input_params[3] $input_params[4] $CLMonte_outFile");
-system("gnuplot -e \"filename = \'$CLMonte_outFile\';plot_out=\'$plot_pic\' ;\" plot.pt"); 
+print "Please enter parameters\nG (anisotropic factor) = ";
+$G = <>;
+chomp($G);
+print "MUS_MAX (Scattering coeffcient) = ";
+$MUS_MAX = <>;
+chomp($MUS_MAX);
+print "N (reflective index) = ";
+$N = <>;
+chomp($N);
+$V = 0.03/$N;
+$COS_CRIT = sqrt(1-($Nair/$N)**2);
+print "Please enter filename to store histogram text: ";
+$CLMonte_outFile = <>;
+chomp($CLMonte_outFile);
+print "Please enter filename of the output plot: ";
+$plot_pic = <>;
+chomp ($plot_pic);
+print "Please enter title of output plot: ";
+$plot_title = <>;
+chomp($plot_title);
+print "Tissue Properties\nG = $G \nMUS_MAX = $MUS_MAX \nV = $V \nCOS_CRIT = $COS_CRIT \nN = $N\n";
+system("./CLMonte_newSpin $G $MUS_MAX $V $COS_CRIT $N $CLMonte_outFile");
+system("gnuplot -e \"filename = \'$CLMonte_outFile\';plot_out=\'$plot_pic\' ; plot_title = \'$plot_title\';\" plot.pt"); 
+print "Please check $plot_pic for output histogram";

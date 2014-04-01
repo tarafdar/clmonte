@@ -11,7 +11,7 @@ set output plot_out
 #unset key
 #plot "outp_new.txt" u 1:2 w boxes lc rgb"blue"
 #
-set title "OpenCL Time Histogram"
+set title plot_title
 set xlabel "Time of Exit"
 set ylabel "Photons"
 unset key
