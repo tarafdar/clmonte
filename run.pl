@@ -3,8 +3,6 @@ $plot_pic = "obs.png";
 $plot_title = "Observed Photon Exit Times";
 $Nair = 1.0;
 
-open my $info, $input_file or die "Could not open $file ";
-
 print "Please enter parameters\nG (anisotropic factor) = ";
 $G = <>;
 chomp($G);
@@ -28,4 +26,5 @@ chomp($plot_title);
 print "Tissue Properties\nG = $G \nMUS_MAX = $MUS_MAX \nV = $V \nCOS_CRIT = $COS_CRIT \nN = $N\n";
 system("./CLMonte_newSpin $G $MUS_MAX $V $COS_CRIT $N $CLMonte_outFile");
 system("gnuplot -e \"filename = \'$CLMonte_outFile\';plot_out=\'$plot_pic\' ; plot_title = \'$plot_title\';\" plot.pt"); 
-print "Please check $plot_pic for output histogram";
+#print "Please check $plot_pic for output histogram";
+system("xdg-open $plot_pic");
