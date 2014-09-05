@@ -8,6 +8,7 @@
 #include <math.h>
 #include <limits.h>
 #include "CLMonte.h"
+#include <string>
 
 std::string output_file;
 unsigned int xtest[NUM_THREADS];
@@ -330,11 +331,11 @@ void initialize(void)//Straight from Steven Gratton's code
 int main(int argc,char* argv[])
 {
 	//do all the initialization for the RNG's (one MWC per thread)
-    float g = atof(arg[1]);
-    float mus_max = atof(arg[2]);
-    float v = atof(arg[3]); 
-    float cos_crit = atof(arg[4]); 
-    float n = atof(arg[5]); 
+    float g = atof(argv[1]);
+    float mus_max = atof(argv[2]);
+    float v = atof(argv[3]); 
+    float cos_crit = atof(argv[4]); 
+    float n = atof(argv[5]); 
     output_file = argv[6];    
     initialize();
     
