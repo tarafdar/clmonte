@@ -1,0 +1,55 @@
+
+====================================
+EXECUTION MODE:
+  ignore A-detection:      NO
+  seed:                    1406084486
+====================================
+
+No. of layers=7
+Upper refractive index=1.000000
+n=1.530000, mua=0.200000, mus=1000.000000, g=0.900000, d=0.002000
+n=1.340000, mua=0.150000, mus=400.000000, g=0.850000, d=0.008000
+n=1.400000, mua=0.700000, mus=300.000000, g=0.800000, d=0.010000
+n=1.390000, mua=1.000000, mus=350.000000, g=0.900000, d=0.008000
+n=1.400000, mua=0.700000, mus=200.000000, g=0.760000, d=0.162000
+n=1.390000, mua=1.000000, mus=350.000000, g=0.950000, d=0.020000
+n=1.440000, mua=0.300000, mus=150.000000, g=0.800000, d=0.590000
+Lower refractive index=1.000000
+No. of layers=7
+Upper refractive index=1.000000
+n=1.530000, mua=0.200000, mus=1000.000000, g=0.900000, d=0.002000
+n=1.340000, mua=0.150000, mus=400.000000, g=0.850000, d=0.008000
+n=1.400000, mua=0.700000, mus=300.000000, g=0.800000, d=0.010000
+n=1.390000, mua=1.000000, mus=350.000000, g=0.900000, d=0.008000
+n=1.400000, mua=0.700000, mus=200.000000, g=0.760000, d=0.162000
+n=1.390000, mua=1.000000, mus=350.000000, g=0.950000, d=0.020000
+n=1.440000, mua=0.300000, mus=150.000000, g=0.800000, d=0.590000
+Lower refractive index=1.000000
+Read 2 simulations
+Using the MWC random number generator ...
+
+------------------------------------------------------------
+        Simulation #0
+        - number_of_photons = 100000
+------------------------------------------------------------
+
+[GPU] batch     1, number of photons left          0
+[GPU] simulation done!
+
+
+>>>>>>Simulation time: 218.255997 (ms)
+
+------------------------------------------------------------
+        Simulation #1
+        - number_of_photons = 1000000
+------------------------------------------------------------
+
+[GPU] batch     1, number of photons left     778752
+[GPU] batch     2, number of photons left     559075
+[GPU] batch     3, number of photons left     339445
+[GPU] batch     4, number of photons left     118804
+[GPU] batch     5, number of photons left          0
+[GPU] simulation done!
+
+
+>>>>>>Simulation time: 978.619995 (ms)

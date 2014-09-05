@@ -1,0 +1,1166 @@
+# 107 "gpumcml.h"
+struct SimState;
+# 134 "gpumcml_kernel.h"
+struct SimParamGPU;
+# 148 "gpumcml_kernel.h"
+struct LayerStructGPU;
+# 177 "gpumcml_kernel.h"
+struct GPUThreadStates;
+# 199 "gpumcml_kernel.h"
+struct PhotonStructGPU;
+# 213 "/usr/lib/gcc/x86_64-linux-gnu/4.7/include/stddef.h" 3
+typedef unsigned size_t;
+#include "crt/device_runtime.h"
+# 31 "gpumcml.h"
+typedef unsigned long long UINT64;
+# 32 "gpumcml.h"
+typedef unsigned UINT32;
+# 35 "gpumcml.h"
+typedef float FLOAT;
+# 107 "gpumcml.h"
+struct SimState {
+# 110 "gpumcml.h"
+UINT32 *n_photons_left;
+# 117 "gpumcml.h"
+UINT64 *x;
+# 118 "gpumcml.h"
+UINT32 *a;
+# 121 "gpumcml.h"
+UINT64 *Rd_ra;
+# 122 "gpumcml.h"
+UINT64 *A_rz;
+# 123 "gpumcml.h"
+UINT64 *Tt_ra;};
+# 124 "gpumcml.h"
+typedef struct SimState SimState;
+# 134 "gpumcml_kernel.h"
+struct SimParamGPU {
+# 135 "gpumcml_kernel.h"
+FLOAT init_photon_w;
+# 137 "gpumcml_kernel.h"
+FLOAT dz;
+# 138 "gpumcml_kernel.h"
+FLOAT dr;
+# 140 "gpumcml_kernel.h"
+UINT32 na;
+# 141 "gpumcml_kernel.h"
+UINT32 nz;
+# 142 "gpumcml_kernel.h"
+UINT32 nr;
+# 144 "gpumcml_kernel.h"
+UINT32 num_layers;
+# 144 "gpumcml_kernel.h"
+char __nv_no_debug_dummy_end_padding_0[4];} __align__(16) ;
+# 145 "gpumcml_kernel.h"
+typedef struct SimParamGPU SimParamGPU;
+# 148 "gpumcml_kernel.h"
+struct LayerStructGPU {
+# 149 "gpumcml_kernel.h"
+FLOAT z0;
+# 149 "gpumcml_kernel.h"
+FLOAT z1;
+# 150 "gpumcml_kernel.h"
+FLOAT n;
+# 152 "gpumcml_kernel.h"
+FLOAT muas;
+# 153 "gpumcml_kernel.h"
+FLOAT rmuas;
+# 154 "gpumcml_kernel.h"
+FLOAT mua_muas;
+# 156 "gpumcml_kernel.h"
+FLOAT g;
+# 158 "gpumcml_kernel.h"
+FLOAT cos_crit0;
+# 158 "gpumcml_kernel.h"
+FLOAT cos_crit1;
+# 158 "gpumcml_kernel.h"
+char __nv_no_debug_dummy_end_padding_0[12];} __align__(16) ;
+# 159 "gpumcml_kernel.h"
+typedef struct LayerStructGPU LayerStructGPU;
+# 177 "gpumcml_kernel.h"
+struct GPUThreadStates {
+# 179 "gpumcml_kernel.h"
+FLOAT *photon_x;
+# 180 "gpumcml_kernel.h"
+FLOAT *photon_y;
+# 181 "gpumcml_kernel.h"
+FLOAT *photon_z;
+# 184 "gpumcml_kernel.h"
+FLOAT *photon_ux;
+# 185 "gpumcml_kernel.h"
+FLOAT *photon_uy;
+# 186 "gpumcml_kernel.h"
+FLOAT *photon_uz;
+# 188 "gpumcml_kernel.h"
+FLOAT *photon_w;
+# 189 "gpumcml_kernel.h"
+FLOAT *photon_sleft;
+# 192 "gpumcml_kernel.h"
+UINT32 *photon_layer;
+# 194 "gpumcml_kernel.h"
+UINT32 *is_active;};
+# 195 "gpumcml_kernel.h"
+typedef struct GPUThreadStates GPUThreadStates;
+# 199 "gpumcml_kernel.h"
+struct PhotonStructGPU {
+# 201 "gpumcml_kernel.h"
+FLOAT x;
+# 202 "gpumcml_kernel.h"
+FLOAT y;
+# 203 "gpumcml_kernel.h"
+FLOAT z;
+# 206 "gpumcml_kernel.h"
+FLOAT ux;
+# 207 "gpumcml_kernel.h"
+FLOAT uy;
+# 208 "gpumcml_kernel.h"
+FLOAT uz;
+# 210 "gpumcml_kernel.h"
+FLOAT w;
+# 212 "gpumcml_kernel.h"
+FLOAT s;
+# 213 "gpumcml_kernel.h"
+FLOAT sleft;
+# 216 "gpumcml_kernel.h"
+UINT32 layer;
+# 219 "gpumcml_kernel.h"
+UINT32 hit;};
+# 220 "gpumcml_kernel.h"
+typedef struct PhotonStructGPU PhotonStructGPU;
+#if !defined(__CUDABE__)
+# 227 "/usr/local/cuda/include/math_functions.h"
+ __device_builtin__ ___device__(extern  __no_sc__) __attribute__((__nothrow__)) __attribute__((__const__)) float fabsf(float);
+#endif
+#if !defined(__CUDABE__)
+# 247 "/usr/local/cuda/include/math_functions.h"
+ __device_builtin__ ___device__(extern  __no_sc__) __attribute__((__nothrow__)) float fminf(float, float);
+#endif
+#if !defined(__CUDABE__)
+# 283 "/usr/local/cuda/include/math_functions.h"
+ __device_builtin__ ___device__(extern  __no_sc__) __attribute__((__nothrow__)) float fmaxf(float, float);
+#endif
+#if !defined(__CUDABE__)
+# 652 "/usr/local/cuda/include/math_functions.h"
+ __device_builtin__ ___device__(extern  __no_sc__) float rsqrtf(float);
+#endif
+#if !defined(__CUDABE__)
+# 5988 "/usr/local/cuda/include/math_functions.h"
+ __device_builtin__ ___device__(extern  __no_sc__) __attribute__((__nothrow__)) __attribute__((__const__)) float copysignf(float, float);
+#endif
+#if !defined(__CUDABE__)
+# 6464 "/usr/local/cuda/include/math_functions.h"
+ __device_builtin__ ___device__(extern  __no_sc__) __attribute__((__nothrow__)) float acosf(float);
+#endif
+#if !defined(__CUDABE__)
+# 7364 "/usr/local/cuda/include/math_functions.h"
+ __device_builtin__ ___device__(extern  __no_sc__) __attribute__((__nothrow__)) float sqrtf(float);
+#endif
+#if !defined(__CUDABE__)
+# 458 "/usr/local/cuda/include/device_functions.h"
+ __device_builtin__ ___device__(extern  __no_sc__) __attribute__((__nothrow__)) void __sincosf(float, float *, float *);
+#endif
+#if !defined(__CUDABE__)
+# 638 "/usr/local/cuda/include/device_functions.h"
+ __device_builtin__ ___device__(extern  __no_sc__) __attribute__((__nothrow__)) float __logf(float);
+#endif
+#if !defined(__CUDABE__)
+# 131 "/usr/local/cuda/include/device_functions.h"
+ __device_builtin__ ___device__(extern  __no_sc__) void __syncthreads(void);
+#endif
+#if !defined(__CUDABE__)
+# 404 "/usr/local/cuda/include/device_functions.h"
+ __device_builtin__ ___device__(extern  __no_sc__) float __fdividef(float, float);
+#endif
+#if !defined(__CUDABE__)
+# 807 "/usr/local/cuda/include/device_functions.h"
+ __device_builtin__ ___device__(extern  __no_sc__) float __uint2float_rz(unsigned);
+#endif
+#if !defined(__CUDABE__)
+# 69 "/usr/local/cuda/include/sm_11_atomic_functions.h"
+ __device_builtin__ ___device__(extern  __no_sc__) unsigned __uAtomicAdd(unsigned *, unsigned);
+#endif
+#if !defined(__CUDABE__)
+# 68 "/usr/local/cuda/include/sm_12_atomic_functions.h"
+ __device_builtin__ ___device__(extern  __no_sc__) unsigned long long __ullAtomicAdd(unsigned long long *, unsigned long long);
+#endif
+# 81 "/usr/local/cuda/include/sm_12_atomic_functions.h"
+___device__(static  __no_sc__) __inline__ unsigned long long _Z9atomicAddPyy(unsigned long long *, unsigned long long);
+# 31 "gpumcml_rng.cu"
+___device__(extern  __no_sc__) FLOAT _Z11rand_MWC_coPyPj(UINT64 *, UINT32 *);
+# 44 "gpumcml_rng.cu"
+___device__(extern  __no_sc__) FLOAT _Z11rand_MWC_ocPyPj(UINT64 *, UINT32 *);
+# 40 "gpumcml_kernel.cu"
+___device__(extern  __no_sc__) void _Z12AtomicAddULLPyj(UINT64 *, UINT32);
+# 57 "gpumcml_kernel.cu"
+___device__(extern  __no_sc__) void _Z12LaunchPhotonP15PhotonStructGPU(PhotonStructGPU *);
+# 72 "gpumcml_kernel.cu"
+___device__(extern  __no_sc__) void _Z15ComputeStepSizeP15PhotonStructGPUPyPj(PhotonStructGPU *, UINT64 *, UINT32 *);
+# 95 "gpumcml_kernel.cu"
+___device__(extern  __no_sc__) int _Z11HitBoundaryP15PhotonStructGPU(PhotonStructGPU *);
+# 120 "gpumcml_kernel.cu"
+___device__(extern  __no_sc__) void _Z3HopP15PhotonStructGPU(PhotonStructGPU *);
+# 130 "gpumcml_kernel.cu"
+___device__(extern  __no_sc__) void _Z4DropjP15PhotonStructGPUPy(UINT32, PhotonStructGPU *, UINT64 *);
+# 159 "gpumcml_kernel.cu"
+___device__(extern  __no_sc__) void _Z19FastReflectTransmitP15PhotonStructGPUP8SimStatePyPj(PhotonStructGPU *, SimState *, UINT64 *, UINT32 *);
+# 266 "gpumcml_kernel.cu"
+___device__(extern  __no_sc__) void _Z4SpinfP15PhotonStructGPUPyPj(FLOAT, PhotonStructGPU *, UINT64 *, UINT32 *);
+# 368 "gpumcml_kernel.cu"
+___device__(extern  __no_sc__) void _Z15SaveThreadStateP8SimStateP15GPUThreadStatesP15PhotonStructGPUyjj(SimState *, GPUThreadStates *, PhotonStructGPU *, UINT64, UINT32, UINT32);
+# 395 "gpumcml_kernel.cu"
+___device__(extern  __no_sc__) void _Z18RestoreThreadStateP8SimStateP15GPUThreadStatesP15PhotonStructGPUPyPjS6_(SimState *, GPUThreadStates *, PhotonStructGPU *, UINT64 *, UINT32 *, UINT32 *);
+# 341 "gpumcml_kernel.cu"
+__global__ __var_used__ extern void _Z15InitThreadState15GPUThreadStates(GPUThreadStates);
+# 426 "gpumcml_kernel.cu"
+__global__ __var_used__ extern void _Z10MCMLKernelILi1EEv8SimState15GPUThreadStates(SimState, GPUThreadStates);
+# 426 "gpumcml_kernel.cu"
+__global__ __var_used__ extern void _Z10MCMLKernelILi0EEv8SimState15GPUThreadStates(SimState, GPUThreadStates);
+# 164 "gpumcml_kernel.h"
+static  __constant__  __var_used__ SimParamGPU d_simparam;
+# 165 "gpumcml_kernel.h"
+static  __constant__  __var_used__ LayerStructGPU d_layerspecs[100];
+#include "common_functions.h"
+#if !defined(__CUDABE__)
+#endif
+#if !defined(__CUDABE__)
+#endif
+#if !defined(__CUDABE__)
+#endif
+#if !defined(__CUDABE__)
+#endif
+#if !defined(__CUDABE__)
+#endif
+#if !defined(__CUDABE__)
+#endif
+#if !defined(__CUDABE__)
+#endif
+#if !defined(__CUDABE__)
+#endif
+#if !defined(__CUDABE__)
+#endif
+#if !defined(__CUDABE__)
+#endif
+#if !defined(__CUDABE__)
+#endif
+#if !defined(__CUDABE__)
+#endif
+#if !defined(__CUDABE__)
+#endif
+#if !defined(__CUDABE__)
+#endif
+# 81 "/usr/local/cuda/include/sm_12_atomic_functions.h"
+___device__(static  __no_sc__) __inline__ unsigned long long _Z9atomicAddPyy(
+# 81 "/usr/local/cuda/include/sm_12_atomic_functions.h"
+unsigned long long *address, 
+# 81 "/usr/local/cuda/include/sm_12_atomic_functions.h"
+unsigned long long val){
+# 81 "/usr/local/cuda/include/sm_12_atomic_functions.h"
+{
+# 82 "/usr/local/cuda/include/sm_12_atomic_functions.h"
+{
+# 83 "/usr/local/cuda/include/sm_12_atomic_functions.h"
+return __ullAtomicAdd(address, val);
+# 84 "/usr/local/cuda/include/sm_12_atomic_functions.h"
+}
+# 84 "/usr/local/cuda/include/sm_12_atomic_functions.h"
+}}
+# 31 "gpumcml_rng.cu"
+___device__( __no_sc__) FLOAT _Z11rand_MWC_coPyPj(
+# 31 "gpumcml_rng.cu"
+UINT64 *x, 
+# 31 "gpumcml_rng.cu"
+UINT32 *a){
+# 31 "gpumcml_rng.cu"
+{
+# 32 "gpumcml_rng.cu"
+{
+# 33 "gpumcml_rng.cu"
+(*x) = ((((*x) & 4294967295ULL) * ((unsigned long long)(*a))) + ((*x) >> 32));
+# 34 "gpumcml_rng.cu"
+return __fdividef((__uint2float_rz(((UINT32)(*x)))), (4294967296.0F));
+# 39 "gpumcml_rng.cu"
+}
+# 39 "gpumcml_rng.cu"
+}}
+# 44 "gpumcml_rng.cu"
+___device__( __no_sc__) FLOAT _Z11rand_MWC_ocPyPj(
+# 44 "gpumcml_rng.cu"
+UINT64 *x, 
+# 44 "gpumcml_rng.cu"
+UINT32 *a){
+# 44 "gpumcml_rng.cu"
+{
+# 45 "gpumcml_rng.cu"
+{
+# 46 "gpumcml_rng.cu"
+return (1.0F) - (_Z11rand_MWC_coPyPj(x, a));
+# 47 "gpumcml_rng.cu"
+}
+# 47 "gpumcml_rng.cu"
+}}
+# 40 "gpumcml_kernel.cu"
+___device__( __no_sc__) void _Z12AtomicAddULLPyj(
+# 40 "gpumcml_kernel.cu"
+UINT64 *address, 
+# 40 "gpumcml_kernel.cu"
+UINT32 add){
+# 40 "gpumcml_kernel.cu"
+{
+# 41 "gpumcml_kernel.cu"
+{
+# 48 "gpumcml_kernel.cu"
+_Z9atomicAddPyy(address, ((UINT64)add));
+# 50 "gpumcml_kernel.cu"
+} 
+# 50 "gpumcml_kernel.cu"
+}}
+# 57 "gpumcml_kernel.cu"
+___device__( __no_sc__) void _Z12LaunchPhotonP15PhotonStructGPU(
+# 57 "gpumcml_kernel.cu"
+PhotonStructGPU *photon){
+# 57 "gpumcml_kernel.cu"
+{
+# 58 "gpumcml_kernel.cu"
+{
+# 59 "gpumcml_kernel.cu"
+(photon->x) = ((photon->y) = ((photon->z) = (0.0F)));
+# 60 "gpumcml_kernel.cu"
+(photon->ux) = ((photon->uy) = (0.0F));
+# 61 "gpumcml_kernel.cu"
+(photon->uz) = (1.0F);
+# 62 "gpumcml_kernel.cu"
+(photon->w) = (d_simparam.init_photon_w);
+# 63 "gpumcml_kernel.cu"
+(photon->sleft) = (0.0F);
+# 64 "gpumcml_kernel.cu"
+(photon->layer) = 1U;
+# 65 "gpumcml_kernel.cu"
+} 
+# 65 "gpumcml_kernel.cu"
+}}
+# 72 "gpumcml_kernel.cu"
+___device__( __no_sc__) void _Z15ComputeStepSizeP15PhotonStructGPUPyPj(
+# 72 "gpumcml_kernel.cu"
+PhotonStructGPU *photon, 
+# 73 "gpumcml_kernel.cu"
+UINT64 *rnd_x, 
+# 73 "gpumcml_kernel.cu"
+UINT32 *rnd_a){
+# 73 "gpumcml_kernel.cu"
+{
+# 74 "gpumcml_kernel.cu"
+{
+# 76 "gpumcml_kernel.cu"
+if ((photon->sleft) == (0.0F))
+# 77 "gpumcml_kernel.cu"
+{
+# 78 "gpumcml_kernel.cu"
+ FLOAT __cuda_local_var_37690_11_non_const_rand;
+# 78 "gpumcml_kernel.cu"
+__cuda_local_var_37690_11_non_const_rand = (_Z11rand_MWC_ocPyPj(rnd_x, rnd_a));
+# 80 "gpumcml_kernel.cu"
+(photon->s) = ((-(__logf(__cuda_local_var_37690_11_non_const_rand))) * (((d_layerspecs)[(photon->layer)]).rmuas));
+# 81 "gpumcml_kernel.cu"
+}
+# 82 "gpumcml_kernel.cu"
+else 
+# 82 "gpumcml_kernel.cu"
+{
+# 83 "gpumcml_kernel.cu"
+(photon->s) = ((photon->sleft) * (((d_layerspecs)[(photon->layer)]).rmuas));
+# 84 "gpumcml_kernel.cu"
+(photon->sleft) = (0.0F);
+# 85 "gpumcml_kernel.cu"
+}
+# 86 "gpumcml_kernel.cu"
+} 
+# 86 "gpumcml_kernel.cu"
+}}
+# 95 "gpumcml_kernel.cu"
+___device__( __no_sc__) int _Z11HitBoundaryP15PhotonStructGPU(
+# 95 "gpumcml_kernel.cu"
+PhotonStructGPU *photon){
+# 95 "gpumcml_kernel.cu"
+{
+# 96 "gpumcml_kernel.cu"
+{
+# 98 "gpumcml_kernel.cu"
+ FLOAT __cuda_local_var_37703_9_non_const_dl_b;
+# 101 "gpumcml_kernel.cu"
+ FLOAT __cuda_local_var_37706_9_non_const_z_bound;
+# 105 "gpumcml_kernel.cu"
+ UINT32 __cuda_local_var_37710_10_non_const_hit_boundary;
+# 101 "gpumcml_kernel.cu"
+__cuda_local_var_37706_9_non_const_z_bound = (((photon->uz) > (0.0F)) ? (((d_layerspecs)[(photon->layer)]).z1) : (((d_layerspecs)[(photon->layer)]).z0));
+# 103 "gpumcml_kernel.cu"
+__cuda_local_var_37703_9_non_const_dl_b = (__fdividef((__cuda_local_var_37706_9_non_const_z_bound - (photon->z)), (photon->uz)));
+# 105 "gpumcml_kernel.cu"
+__cuda_local_var_37710_10_non_const_hit_boundary = ((UINT32)(((photon->uz) != (0.0F)) && ((photon->s) > __cuda_local_var_37703_9_non_const_dl_b)));
+# 106 "gpumcml_kernel.cu"
+if (__cuda_local_var_37710_10_non_const_hit_boundary)
+# 107 "gpumcml_kernel.cu"
+{
+# 110 "gpumcml_kernel.cu"
+(photon->sleft) = (((photon->s) - __cuda_local_var_37703_9_non_const_dl_b) * (((d_layerspecs)[(photon->layer)]).muas));
+# 111 "gpumcml_kernel.cu"
+(photon->s) = __cuda_local_var_37703_9_non_const_dl_b;
+# 112 "gpumcml_kernel.cu"
+}
+# 114 "gpumcml_kernel.cu"
+return (int)__cuda_local_var_37710_10_non_const_hit_boundary;
+# 115 "gpumcml_kernel.cu"
+}
+# 115 "gpumcml_kernel.cu"
+}}
+# 120 "gpumcml_kernel.cu"
+___device__( __no_sc__) void _Z3HopP15PhotonStructGPU(
+# 120 "gpumcml_kernel.cu"
+PhotonStructGPU *photon){
+# 120 "gpumcml_kernel.cu"
+{
+# 121 "gpumcml_kernel.cu"
+{
+# 122 "gpumcml_kernel.cu"
+(photon->x) += ((photon->s) * (photon->ux));
+# 123 "gpumcml_kernel.cu"
+(photon->y) += ((photon->s) * (photon->uy));
+# 124 "gpumcml_kernel.cu"
+(photon->z) += ((photon->s) * (photon->uz));
+# 125 "gpumcml_kernel.cu"
+} 
+# 125 "gpumcml_kernel.cu"
+}}
+# 130 "gpumcml_kernel.cu"
+___device__( __no_sc__) void _Z4DropjP15PhotonStructGPUPy(
+# 130 "gpumcml_kernel.cu"
+UINT32 ignoreDetection, 
+# 130 "gpumcml_kernel.cu"
+PhotonStructGPU *photon, 
+# 130 "gpumcml_kernel.cu"
+UINT64 *g_A_rz){
+# 130 "gpumcml_kernel.cu"
+{
+# 131 "gpumcml_kernel.cu"
+{
+# 133 "gpumcml_kernel.cu"
+ FLOAT __cuda_local_var_37738_9_non_const_dwa;
+# 133 "gpumcml_kernel.cu"
+__cuda_local_var_37738_9_non_const_dwa = ((photon->w) * (((d_layerspecs)[(photon->layer)]).mua_muas));
+# 134 "gpumcml_kernel.cu"
+(photon->w) -= __cuda_local_var_37738_9_non_const_dwa;
+# 137 "gpumcml_kernel.cu"
+if (ignoreDetection == 0U)
+# 137 "gpumcml_kernel.cu"
+{
+# 138 "gpumcml_kernel.cu"
+ UINT32 __cuda_local_var_37743_12_non_const_iz;
+# 139 "gpumcml_kernel.cu"
+ UINT32 __cuda_local_var_37744_12_non_const_ir;
+# 138 "gpumcml_kernel.cu"
+__cuda_local_var_37743_12_non_const_iz = ((UINT32)(__float2uint_rz(((double)((float)(__fdividef((photon->z), (d_simparam.dz))))))));
+# 139 "gpumcml_kernel.cu"
+__cuda_local_var_37744_12_non_const_ir = ((UINT32)(__float2uint_rz(((double)((float)(__fdividef((sqrtf((((photon->x) * (photon->x)) + ((photon->y) * (photon->y))))), (d_simparam.dr))))))));
+# 143 "gpumcml_kernel.cu"
+if ((__cuda_local_var_37743_12_non_const_iz < (d_simparam.nz)) && (__cuda_local_var_37744_12_non_const_ir < (d_simparam.nr)))
+# 144 "gpumcml_kernel.cu"
+{
+# 145 "gpumcml_kernel.cu"
+ UINT32 __cuda_local_var_37750_14_non_const_addr;
+# 145 "gpumcml_kernel.cu"
+__cuda_local_var_37750_14_non_const_addr = ((__cuda_local_var_37744_12_non_const_ir * (d_simparam.nz)) + __cuda_local_var_37743_12_non_const_iz);
+# 148 "gpumcml_kernel.cu"
+_Z12AtomicAddULLPyj((g_A_rz + __cuda_local_var_37750_14_non_const_addr), ((UINT32)((UINT64)(__float2ull_rz(((double)((float)(__cuda_local_var_37738_9_non_const_dwa * (12000000.0F)))))))));
+# 149 "gpumcml_kernel.cu"
+}
+# 150 "gpumcml_kernel.cu"
+}
+# 152 "gpumcml_kernel.cu"
+} 
+# 152 "gpumcml_kernel.cu"
+}}
+# 159 "gpumcml_kernel.cu"
+___device__( __no_sc__) void _Z19FastReflectTransmitP15PhotonStructGPUP8SimStatePyPj(
+# 159 "gpumcml_kernel.cu"
+PhotonStructGPU *photon, 
+# 159 "gpumcml_kernel.cu"
+SimState *d_state_ptr, 
+# 160 "gpumcml_kernel.cu"
+UINT64 *rnd_x, 
+# 160 "gpumcml_kernel.cu"
+UINT32 *rnd_a){
+# 160 "gpumcml_kernel.cu"
+{
+# 161 "gpumcml_kernel.cu"
+{
+# 163 "gpumcml_kernel.cu"
+ FLOAT __cuda_local_var_37768_9_non_const_cos_crit;
+# 164 "gpumcml_kernel.cu"
+ UINT32 __cuda_local_var_37769_10_non_const_new_layer;
+# 177 "gpumcml_kernel.cu"
+ FLOAT __cuda_local_var_37782_9_non_const_ca1;
+# 165 "gpumcml_kernel.cu"
+if ((photon->uz) > (0.0F))
+# 166 "gpumcml_kernel.cu"
+{
+# 167 "gpumcml_kernel.cu"
+__cuda_local_var_37768_9_non_const_cos_crit = (((d_layerspecs)[(photon->layer)]).cos_crit1);
+# 168 "gpumcml_kernel.cu"
+__cuda_local_var_37769_10_non_const_new_layer = ((photon->layer) + 1U);
+# 169 "gpumcml_kernel.cu"
+}
+# 171 "gpumcml_kernel.cu"
+else 
+# 171 "gpumcml_kernel.cu"
+{
+# 172 "gpumcml_kernel.cu"
+__cuda_local_var_37768_9_non_const_cos_crit = (((d_layerspecs)[(photon->layer)]).cos_crit0);
+# 173 "gpumcml_kernel.cu"
+__cuda_local_var_37769_10_non_const_new_layer = ((photon->layer) - 1U);
+# 174 "gpumcml_kernel.cu"
+}
+# 177 "gpumcml_kernel.cu"
+__cuda_local_var_37782_9_non_const_ca1 = (fabsf((photon->uz)));
+# 180 "gpumcml_kernel.cu"
+(photon->uz) = (-(photon->uz));
+# 185 "gpumcml_kernel.cu"
+if (__cuda_local_var_37782_9_non_const_ca1 > __cuda_local_var_37768_9_non_const_cos_crit)
+# 186 "gpumcml_kernel.cu"
+{
+# 190 "gpumcml_kernel.cu"
+ FLOAT __cuda_local_var_37795_11_non_const_ni;
+# 191 "gpumcml_kernel.cu"
+ FLOAT __cuda_local_var_37796_11_non_const_nt;
+# 192 "gpumcml_kernel.cu"
+ FLOAT __cuda_local_var_37797_11_non_const_ni_nt;
+# 194 "gpumcml_kernel.cu"
+ FLOAT __cuda_local_var_37799_11_non_const_sa1;
+# 196 "gpumcml_kernel.cu"
+ FLOAT __cuda_local_var_37801_11_non_const_sa2;
+# 197 "gpumcml_kernel.cu"
+ FLOAT __cuda_local_var_37802_11_non_const_uz1;
+# 199 "gpumcml_kernel.cu"
+ FLOAT __cuda_local_var_37804_11_non_const_ca1ca2;
+# 200 "gpumcml_kernel.cu"
+ FLOAT __cuda_local_var_37805_11_non_const_sa1sa2;
+# 201 "gpumcml_kernel.cu"
+ FLOAT __cuda_local_var_37806_11_non_const_sa1ca2;
+# 202 "gpumcml_kernel.cu"
+ FLOAT __cuda_local_var_37807_11_non_const_ca1sa2;
+# 212 "gpumcml_kernel.cu"
+ FLOAT __cuda_local_var_37817_11_non_const_cam;
+# 213 "gpumcml_kernel.cu"
+ FLOAT __cuda_local_var_37818_11_non_const_sap;
+# 214 "gpumcml_kernel.cu"
+ FLOAT __cuda_local_var_37819_11_non_const_sam;
+# 216 "gpumcml_kernel.cu"
+ FLOAT __cuda_local_var_37821_11_non_const_rFresnel;
+# 223 "gpumcml_kernel.cu"
+ FLOAT __cuda_local_var_37828_11_non_const_rand;
+# 190 "gpumcml_kernel.cu"
+__cuda_local_var_37795_11_non_const_ni = (((d_layerspecs)[(photon->layer)]).n);
+# 191 "gpumcml_kernel.cu"
+__cuda_local_var_37796_11_non_const_nt = (((d_layerspecs)[__cuda_local_var_37769_10_non_const_new_layer]).n);
+# 192 "gpumcml_kernel.cu"
+__cuda_local_var_37797_11_non_const_ni_nt = (__fdividef(__cuda_local_var_37795_11_non_const_ni, __cuda_local_var_37796_11_non_const_nt));
+# 194 "gpumcml_kernel.cu"
+__cuda_local_var_37799_11_non_const_sa1 = (sqrtf(((1.0F) - (__cuda_local_var_37782_9_non_const_ca1 * __cuda_local_var_37782_9_non_const_ca1))));
+# 195 "gpumcml_kernel.cu"
+if (__cuda_local_var_37782_9_non_const_ca1 > (0.9999989867F))
+# 195 "gpumcml_kernel.cu"
+{
+# 195 "gpumcml_kernel.cu"
+__cuda_local_var_37799_11_non_const_sa1 = (0.0F);
+# 195 "gpumcml_kernel.cu"
+}
+# 196 "gpumcml_kernel.cu"
+__cuda_local_var_37801_11_non_const_sa2 = (fminf((__cuda_local_var_37797_11_non_const_ni_nt * __cuda_local_var_37799_11_non_const_sa1), (1.0F)));
+# 197 "gpumcml_kernel.cu"
+__cuda_local_var_37802_11_non_const_uz1 = (sqrtf(((1.0F) - (__cuda_local_var_37801_11_non_const_sa2 * __cuda_local_var_37801_11_non_const_sa2))));
+# 199 "gpumcml_kernel.cu"
+__cuda_local_var_37804_11_non_const_ca1ca2 = (__cuda_local_var_37782_9_non_const_ca1 * __cuda_local_var_37802_11_non_const_uz1);
+# 200 "gpumcml_kernel.cu"
+__cuda_local_var_37805_11_non_const_sa1sa2 = (__cuda_local_var_37799_11_non_const_sa1 * __cuda_local_var_37801_11_non_const_sa2);
+# 201 "gpumcml_kernel.cu"
+__cuda_local_var_37806_11_non_const_sa1ca2 = (__cuda_local_var_37799_11_non_const_sa1 * __cuda_local_var_37802_11_non_const_uz1);
+# 202 "gpumcml_kernel.cu"
+__cuda_local_var_37807_11_non_const_ca1sa2 = (__cuda_local_var_37782_9_non_const_ca1 * __cuda_local_var_37801_11_non_const_sa2);
+# 206 "gpumcml_kernel.cu"
+if (__cuda_local_var_37782_9_non_const_ca1 > (0.9999989867F))
+# 207 "gpumcml_kernel.cu"
+{
+# 208 "gpumcml_kernel.cu"
+__cuda_local_var_37806_11_non_const_sa1ca2 = (1.0F);
+# 209 "gpumcml_kernel.cu"
+__cuda_local_var_37807_11_non_const_ca1sa2 = __cuda_local_var_37797_11_non_const_ni_nt;
+# 210 "gpumcml_kernel.cu"
+}
+# 212 "gpumcml_kernel.cu"
+__cuda_local_var_37817_11_non_const_cam = (__cuda_local_var_37804_11_non_const_ca1ca2 + __cuda_local_var_37805_11_non_const_sa1sa2);
+# 213 "gpumcml_kernel.cu"
+__cuda_local_var_37818_11_non_const_sap = (__cuda_local_var_37806_11_non_const_sa1ca2 + __cuda_local_var_37807_11_non_const_ca1sa2);
+# 214 "gpumcml_kernel.cu"
+__cuda_local_var_37819_11_non_const_sam = (__cuda_local_var_37806_11_non_const_sa1ca2 - __cuda_local_var_37807_11_non_const_ca1sa2);
+# 216 "gpumcml_kernel.cu"
+__cuda_local_var_37821_11_non_const_rFresnel = (__fdividef(__cuda_local_var_37819_11_non_const_sam, (__cuda_local_var_37818_11_non_const_sap * __cuda_local_var_37817_11_non_const_cam)));
+# 217 "gpumcml_kernel.cu"
+__cuda_local_var_37821_11_non_const_rFresnel *= __cuda_local_var_37821_11_non_const_rFresnel;
+# 218 "gpumcml_kernel.cu"
+__cuda_local_var_37821_11_non_const_rFresnel *= ((__cuda_local_var_37804_11_non_const_ca1ca2 * __cuda_local_var_37804_11_non_const_ca1ca2) + (__cuda_local_var_37805_11_non_const_sa1sa2 * __cuda_local_var_37805_11_non_const_sa1sa2));
+# 221 "gpumcml_kernel.cu"
+if ((__cuda_local_var_37782_9_non_const_ca1 < (9.999999975e-07F)) || (__cuda_local_var_37801_11_non_const_sa2 == (1.0F)))
+# 221 "gpumcml_kernel.cu"
+{
+# 221 "gpumcml_kernel.cu"
+__cuda_local_var_37821_11_non_const_rFresnel = (1.0F);
+# 221 "gpumcml_kernel.cu"
+}
+# 223 "gpumcml_kernel.cu"
+__cuda_local_var_37828_11_non_const_rand = (_Z11rand_MWC_coPyPj(rnd_x, rnd_a));
+# 225 "gpumcml_kernel.cu"
+if (__cuda_local_var_37821_11_non_const_rFresnel < __cuda_local_var_37828_11_non_const_rand)
+# 226 "gpumcml_kernel.cu"
+{
+# 228 "gpumcml_kernel.cu"
+(photon->layer) = __cuda_local_var_37769_10_non_const_new_layer;
+# 231 "gpumcml_kernel.cu"
+(photon->ux) *= __cuda_local_var_37797_11_non_const_ni_nt;
+# 232 "gpumcml_kernel.cu"
+(photon->uy) *= __cuda_local_var_37797_11_non_const_ni_nt;
+# 233 "gpumcml_kernel.cu"
+(photon->uz) = (-(copysignf(__cuda_local_var_37802_11_non_const_uz1, (photon->uz))));
+# 235 "gpumcml_kernel.cu"
+if (((photon->layer) == 0U) || ((photon->layer) > (d_simparam.num_layers)))
+# 236 "gpumcml_kernel.cu"
+{
+# 238 "gpumcml_kernel.cu"
+ FLOAT __cuda_local_var_37843_15_non_const_uz2;
+# 239 "gpumcml_kernel.cu"
+ UINT64 *__cuda_local_var_37844_17_non_const_ra_arr;
+# 247 "gpumcml_kernel.cu"
+ UINT32 __cuda_local_var_37852_16_non_const_ia;
+# 248 "gpumcml_kernel.cu"
+ UINT32 __cuda_local_var_37853_16_non_const_ir;
+# 238 "gpumcml_kernel.cu"
+__cuda_local_var_37843_15_non_const_uz2 = (photon->uz);
+# 239 "gpumcml_kernel.cu"
+__cuda_local_var_37844_17_non_const_ra_arr = (d_state_ptr->Tt_ra);
+# 240 "gpumcml_kernel.cu"
+if ((photon->layer) == 0U)
+# 241 "gpumcml_kernel.cu"
+{
+# 243 "gpumcml_kernel.cu"
+__cuda_local_var_37843_15_non_const_uz2 = (-__cuda_local_var_37843_15_non_const_uz2);
+# 244 "gpumcml_kernel.cu"
+__cuda_local_var_37844_17_non_const_ra_arr = (d_state_ptr->Rd_ra);
+# 245 "gpumcml_kernel.cu"
+}
+# 247 "gpumcml_kernel.cu"
+__cuda_local_var_37852_16_non_const_ia = ((UINT32)(__float2uint_rz(((double)((float)((((acosf(__cuda_local_var_37843_15_non_const_uz2)) * (2.0F)) * (0.3183098733F)) * ((float)(d_simparam.na))))))));
+# 248 "gpumcml_kernel.cu"
+__cuda_local_var_37853_16_non_const_ir = ((UINT32)(__float2uint_rz(((double)((float)(__fdividef((sqrtf((((photon->x) * (photon->x)) + ((photon->y) * (photon->y))))), (d_simparam.dr))))))));
+# 249 "gpumcml_kernel.cu"
+if (__cuda_local_var_37853_16_non_const_ir >= (d_simparam.nr))
+# 249 "gpumcml_kernel.cu"
+{
+# 249 "gpumcml_kernel.cu"
+__cuda_local_var_37853_16_non_const_ir = ((d_simparam.nr) - 1U);
+# 249 "gpumcml_kernel.cu"
+}
+# 251 "gpumcml_kernel.cu"
+_Z12AtomicAddULLPyj((__cuda_local_var_37844_17_non_const_ra_arr + ((__cuda_local_var_37852_16_non_const_ia * (d_simparam.nr)) + __cuda_local_var_37853_16_non_const_ir)), ((UINT32)(__float2uint_rz(((double)((float)((photon->w) * (12000000.0F))))))));
+# 255 "gpumcml_kernel.cu"
+(photon->w) = (0.0F);
+# 256 "gpumcml_kernel.cu"
+}
+# 257 "gpumcml_kernel.cu"
+}
+# 258 "gpumcml_kernel.cu"
+}
+# 259 "gpumcml_kernel.cu"
+} 
+# 259 "gpumcml_kernel.cu"
+}}
+# 266 "gpumcml_kernel.cu"
+___device__( __no_sc__) void _Z4SpinfP15PhotonStructGPUPyPj(
+# 266 "gpumcml_kernel.cu"
+FLOAT g, 
+# 266 "gpumcml_kernel.cu"
+PhotonStructGPU *photon, 
+# 267 "gpumcml_kernel.cu"
+UINT64 *rnd_x, 
+# 267 "gpumcml_kernel.cu"
+UINT32 *rnd_a){
+# 267 "gpumcml_kernel.cu"
+{
+# 268 "gpumcml_kernel.cu"
+{
+# 269 "gpumcml_kernel.cu"
+ FLOAT __cuda_local_var_37874_9_non_const_cost;
+# 269 "gpumcml_kernel.cu"
+ FLOAT __cuda_local_var_37874_15_non_const_sint;
+# 270 "gpumcml_kernel.cu"
+ FLOAT __cuda_local_var_37875_9_non_const_cosp;
+# 270 "gpumcml_kernel.cu"
+ FLOAT __cuda_local_var_37875_15_non_const_sinp;
+# 271 "gpumcml_kernel.cu"
+ FLOAT __cuda_local_var_37876_9_non_const_psi;
+# 272 "gpumcml_kernel.cu"
+ FLOAT __cuda_local_var_37877_9_non_const_SIGN;
+# 273 "gpumcml_kernel.cu"
+ FLOAT __cuda_local_var_37878_9_non_const_temp;
+# 274 "gpumcml_kernel.cu"
+ FLOAT __cuda_local_var_37879_9_non_const_last_ux;
+# 274 "gpumcml_kernel.cu"
+ FLOAT __cuda_local_var_37879_18_non_const_last_uy;
+# 274 "gpumcml_kernel.cu"
+ FLOAT __cuda_local_var_37879_27_non_const_last_uz;
+# 275 "gpumcml_kernel.cu"
+ FLOAT __cuda_local_var_37880_9_non_const_rand;
+# 309 "gpumcml_kernel.cu"
+ FLOAT __cuda_local_var_37901_9_non_const_stcp;
+# 310 "gpumcml_kernel.cu"
+ FLOAT __cuda_local_var_37902_9_non_const_stsp;
+# 290 "gpumcml_kernel.cu"
+__cuda_local_var_37880_9_non_const_rand = (_Z11rand_MWC_coPyPj(rnd_x, rnd_a));
+# 292 "gpumcml_kernel.cu"
+__cuda_local_var_37874_9_non_const_cost = (((2.0F) * __cuda_local_var_37880_9_non_const_rand) - (1.0F));
+# 294 "gpumcml_kernel.cu"
+if (g != (0.0F))
+# 295 "gpumcml_kernel.cu"
+{
+# 296 "gpumcml_kernel.cu"
+__cuda_local_var_37878_9_non_const_temp = (__fdividef(((1.0F) - (g * g)), ((1.0F) + (g * __cuda_local_var_37874_9_non_const_cost))));
+# 297 "gpumcml_kernel.cu"
+__cuda_local_var_37874_9_non_const_cost = (__fdividef((((1.0F) + (g * g)) - (__cuda_local_var_37878_9_non_const_temp * __cuda_local_var_37878_9_non_const_temp)), ((2.0F) * g)));
+# 298 "gpumcml_kernel.cu"
+__cuda_local_var_37874_9_non_const_cost = (fmaxf(__cuda_local_var_37874_9_non_const_cost, (-1.0F)));
+# 299 "gpumcml_kernel.cu"
+__cuda_local_var_37874_9_non_const_cost = (fminf(__cuda_local_var_37874_9_non_const_cost, (1.0F)));
+# 300 "gpumcml_kernel.cu"
+}
+# 301 "gpumcml_kernel.cu"
+__cuda_local_var_37874_15_non_const_sint = (sqrtf(((1.0F) - (__cuda_local_var_37874_9_non_const_cost * __cuda_local_var_37874_9_non_const_cost))));
+# 304 "gpumcml_kernel.cu"
+__cuda_local_var_37880_9_non_const_rand = (_Z11rand_MWC_coPyPj(rnd_x, rnd_a));
+# 306 "gpumcml_kernel.cu"
+__cuda_local_var_37876_9_non_const_psi = ((6.283185005F) * __cuda_local_var_37880_9_non_const_rand);
+# 307 "gpumcml_kernel.cu"
+__sincosf(__cuda_local_var_37876_9_non_const_psi, (&__cuda_local_var_37875_15_non_const_sinp), (&__cuda_local_var_37875_9_non_const_cosp));
+# 309 "gpumcml_kernel.cu"
+__cuda_local_var_37901_9_non_const_stcp = (__cuda_local_var_37874_15_non_const_sint * __cuda_local_var_37875_9_non_const_cosp);
+# 310 "gpumcml_kernel.cu"
+__cuda_local_var_37902_9_non_const_stsp = (__cuda_local_var_37874_15_non_const_sint * __cuda_local_var_37875_15_non_const_sinp);
+# 312 "gpumcml_kernel.cu"
+__cuda_local_var_37879_9_non_const_last_ux = (photon->ux);
+# 313 "gpumcml_kernel.cu"
+__cuda_local_var_37879_18_non_const_last_uy = (photon->uy);
+# 314 "gpumcml_kernel.cu"
+__cuda_local_var_37879_27_non_const_last_uz = (photon->uz);
+# 316 "gpumcml_kernel.cu"
+if ((fabsf(__cuda_local_var_37879_27_non_const_last_uz)) > (0.9999989867F))
+# 318 "gpumcml_kernel.cu"
+{
+# 319 "gpumcml_kernel.cu"
+(photon->ux) = __cuda_local_var_37901_9_non_const_stcp;
+# 320 "gpumcml_kernel.cu"
+(photon->uy) = __cuda_local_var_37902_9_non_const_stsp;
+# 321 "gpumcml_kernel.cu"
+__cuda_local_var_37877_9_non_const_SIGN = ((__cuda_local_var_37879_27_non_const_last_uz >= (0.0F)) ? (1.0F) : (-1.0F));
+# 322 "gpumcml_kernel.cu"
+(photon->uz) = (__cuda_local_var_37874_9_non_const_cost * __cuda_local_var_37877_9_non_const_SIGN);
+# 323 "gpumcml_kernel.cu"
+}
+# 326 "gpumcml_kernel.cu"
+else 
+# 326 "gpumcml_kernel.cu"
+{
+# 327 "gpumcml_kernel.cu"
+__cuda_local_var_37878_9_non_const_temp = (rsqrtf(((1.0F) - (__cuda_local_var_37879_27_non_const_last_uz * __cuda_local_var_37879_27_non_const_last_uz))));
+# 328 "gpumcml_kernel.cu"
+(photon->ux) = (((((__cuda_local_var_37901_9_non_const_stcp * __cuda_local_var_37879_9_non_const_last_ux) * __cuda_local_var_37879_27_non_const_last_uz) - (__cuda_local_var_37902_9_non_const_stsp * __cuda_local_var_37879_18_non_const_last_uy)) * __cuda_local_var_37878_9_non_const_temp) + (__cuda_local_var_37879_9_non_const_last_ux * __cuda_local_var_37874_9_non_const_cost));
+# 330 "gpumcml_kernel.cu"
+(photon->uy) = (((((__cuda_local_var_37901_9_non_const_stcp * __cuda_local_var_37879_18_non_const_last_uy) * __cuda_local_var_37879_27_non_const_last_uz) + (__cuda_local_var_37902_9_non_const_stsp * __cuda_local_var_37879_9_non_const_last_ux)) * __cuda_local_var_37878_9_non_const_temp) + (__cuda_local_var_37879_18_non_const_last_uy * __cuda_local_var_37874_9_non_const_cost));
+# 332 "gpumcml_kernel.cu"
+(photon->uz) = ((__fdividef((-__cuda_local_var_37901_9_non_const_stcp), __cuda_local_var_37878_9_non_const_temp)) + (__cuda_local_var_37879_27_non_const_last_uz * __cuda_local_var_37874_9_non_const_cost));
+# 333 "gpumcml_kernel.cu"
+}
+# 334 "gpumcml_kernel.cu"
+} 
+# 334 "gpumcml_kernel.cu"
+}}
+# 368 "gpumcml_kernel.cu"
+___device__( __no_sc__) void _Z15SaveThreadStateP8SimStateP15GPUThreadStatesP15PhotonStructGPUyjj(
+# 368 "gpumcml_kernel.cu"
+SimState *d_state, 
+# 368 "gpumcml_kernel.cu"
+GPUThreadStates *tstates, 
+# 369 "gpumcml_kernel.cu"
+PhotonStructGPU *photon, 
+# 370 "gpumcml_kernel.cu"
+UINT64 rnd_x, 
+# 370 "gpumcml_kernel.cu"
+UINT32 rnd_a, 
+# 371 "gpumcml_kernel.cu"
+UINT32 is_active){
+# 371 "gpumcml_kernel.cu"
+{
+# 372 "gpumcml_kernel.cu"
+{
+# 373 "gpumcml_kernel.cu"
+ UINT32 __cuda_local_var_37965_10_non_const_tid;
+# 373 "gpumcml_kernel.cu"
+__cuda_local_var_37965_10_non_const_tid = (((blockIdx.x) * 512U) + (threadIdx.x));
+# 375 "gpumcml_kernel.cu"
+((d_state->x)[__cuda_local_var_37965_10_non_const_tid]) = rnd_x;
+# 376 "gpumcml_kernel.cu"
+((d_state->a)[__cuda_local_var_37965_10_non_const_tid]) = rnd_a;
+# 378 "gpumcml_kernel.cu"
+((tstates->photon_x)[__cuda_local_var_37965_10_non_const_tid]) = (photon->x);
+# 379 "gpumcml_kernel.cu"
+((tstates->photon_y)[__cuda_local_var_37965_10_non_const_tid]) = (photon->y);
+# 380 "gpumcml_kernel.cu"
+((tstates->photon_z)[__cuda_local_var_37965_10_non_const_tid]) = (photon->z);
+# 381 "gpumcml_kernel.cu"
+((tstates->photon_ux)[__cuda_local_var_37965_10_non_const_tid]) = (photon->ux);
+# 382 "gpumcml_kernel.cu"
+((tstates->photon_uy)[__cuda_local_var_37965_10_non_const_tid]) = (photon->uy);
+# 383 "gpumcml_kernel.cu"
+((tstates->photon_uz)[__cuda_local_var_37965_10_non_const_tid]) = (photon->uz);
+# 384 "gpumcml_kernel.cu"
+((tstates->photon_w)[__cuda_local_var_37965_10_non_const_tid]) = (photon->w);
+# 385 "gpumcml_kernel.cu"
+((tstates->photon_sleft)[__cuda_local_var_37965_10_non_const_tid]) = (photon->sleft);
+# 386 "gpumcml_kernel.cu"
+((tstates->photon_layer)[__cuda_local_var_37965_10_non_const_tid]) = (photon->layer);
+# 388 "gpumcml_kernel.cu"
+((tstates->is_active)[__cuda_local_var_37965_10_non_const_tid]) = is_active;
+# 389 "gpumcml_kernel.cu"
+} 
+# 389 "gpumcml_kernel.cu"
+}}
+# 395 "gpumcml_kernel.cu"
+___device__( __no_sc__) void _Z18RestoreThreadStateP8SimStateP15GPUThreadStatesP15PhotonStructGPUPyPjS6_(
+# 395 "gpumcml_kernel.cu"
+SimState *d_state, 
+# 395 "gpumcml_kernel.cu"
+GPUThreadStates *tstates, 
+# 396 "gpumcml_kernel.cu"
+PhotonStructGPU *photon, 
+# 397 "gpumcml_kernel.cu"
+UINT64 *rnd_x, 
+# 397 "gpumcml_kernel.cu"
+UINT32 *rnd_a, 
+# 398 "gpumcml_kernel.cu"
+UINT32 *is_active){
+# 398 "gpumcml_kernel.cu"
+{
+# 399 "gpumcml_kernel.cu"
+{
+# 400 "gpumcml_kernel.cu"
+ UINT32 __cuda_local_var_37992_10_non_const_tid;
+# 400 "gpumcml_kernel.cu"
+__cuda_local_var_37992_10_non_const_tid = (((blockIdx.x) * 512U) + (threadIdx.x));
+# 402 "gpumcml_kernel.cu"
+(*rnd_x) = ((d_state->x)[__cuda_local_var_37992_10_non_const_tid]);
+# 403 "gpumcml_kernel.cu"
+(*rnd_a) = ((d_state->a)[__cuda_local_var_37992_10_non_const_tid]);
+# 405 "gpumcml_kernel.cu"
+(photon->x) = ((tstates->photon_x)[__cuda_local_var_37992_10_non_const_tid]);
+# 406 "gpumcml_kernel.cu"
+(photon->y) = ((tstates->photon_y)[__cuda_local_var_37992_10_non_const_tid]);
+# 407 "gpumcml_kernel.cu"
+(photon->z) = ((tstates->photon_z)[__cuda_local_var_37992_10_non_const_tid]);
+# 408 "gpumcml_kernel.cu"
+(photon->ux) = ((tstates->photon_ux)[__cuda_local_var_37992_10_non_const_tid]);
+# 409 "gpumcml_kernel.cu"
+(photon->uy) = ((tstates->photon_uy)[__cuda_local_var_37992_10_non_const_tid]);
+# 410 "gpumcml_kernel.cu"
+(photon->uz) = ((tstates->photon_uz)[__cuda_local_var_37992_10_non_const_tid]);
+# 411 "gpumcml_kernel.cu"
+(photon->w) = ((tstates->photon_w)[__cuda_local_var_37992_10_non_const_tid]);
+# 412 "gpumcml_kernel.cu"
+(photon->sleft) = ((tstates->photon_sleft)[__cuda_local_var_37992_10_non_const_tid]);
+# 413 "gpumcml_kernel.cu"
+(photon->layer) = ((tstates->photon_layer)[__cuda_local_var_37992_10_non_const_tid]);
+# 415 "gpumcml_kernel.cu"
+(*is_active) = ((tstates->is_active)[__cuda_local_var_37992_10_non_const_tid]);
+# 416 "gpumcml_kernel.cu"
+} 
+# 416 "gpumcml_kernel.cu"
+}}
+# 341 "gpumcml_kernel.cu"
+__global__ __var_used__ void _Z15InitThreadState15GPUThreadStates(
+# 341 "gpumcml_kernel.cu"
+GPUThreadStates tstates){
+# 341 "gpumcml_kernel.cu"
+{
+# 342 "gpumcml_kernel.cu"
+{
+# 343 "gpumcml_kernel.cu"
+ PhotonStructGPU __cuda_local_var_37935_19_non_const_photon_temp;
+# 349 "gpumcml_kernel.cu"
+ UINT32 __cuda_local_var_37941_10_non_const_tid;
+# 346 "gpumcml_kernel.cu"
+_Z12LaunchPhotonP15PhotonStructGPU((&__cuda_local_var_37935_19_non_const_photon_temp));
+# 349 "gpumcml_kernel.cu"
+__cuda_local_var_37941_10_non_const_tid = (((blockIdx.x) * 512U) + (threadIdx.x));
+# 351 "gpumcml_kernel.cu"
+((tstates.photon_x)[__cuda_local_var_37941_10_non_const_tid]) = (__cuda_local_var_37935_19_non_const_photon_temp.x);
+# 352 "gpumcml_kernel.cu"
+((tstates.photon_y)[__cuda_local_var_37941_10_non_const_tid]) = (__cuda_local_var_37935_19_non_const_photon_temp.y);
+# 353 "gpumcml_kernel.cu"
+((tstates.photon_z)[__cuda_local_var_37941_10_non_const_tid]) = (__cuda_local_var_37935_19_non_const_photon_temp.z);
+# 354 "gpumcml_kernel.cu"
+((tstates.photon_ux)[__cuda_local_var_37941_10_non_const_tid]) = (__cuda_local_var_37935_19_non_const_photon_temp.ux);
+# 355 "gpumcml_kernel.cu"
+((tstates.photon_uy)[__cuda_local_var_37941_10_non_const_tid]) = (__cuda_local_var_37935_19_non_const_photon_temp.uy);
+# 356 "gpumcml_kernel.cu"
+((tstates.photon_uz)[__cuda_local_var_37941_10_non_const_tid]) = (__cuda_local_var_37935_19_non_const_photon_temp.uz);
+# 357 "gpumcml_kernel.cu"
+((tstates.photon_w)[__cuda_local_var_37941_10_non_const_tid]) = (__cuda_local_var_37935_19_non_const_photon_temp.w);
+# 358 "gpumcml_kernel.cu"
+((tstates.photon_sleft)[__cuda_local_var_37941_10_non_const_tid]) = (__cuda_local_var_37935_19_non_const_photon_temp.sleft);
+# 359 "gpumcml_kernel.cu"
+((tstates.photon_layer)[__cuda_local_var_37941_10_non_const_tid]) = (__cuda_local_var_37935_19_non_const_photon_temp.layer);
+# 361 "gpumcml_kernel.cu"
+((tstates.is_active)[__cuda_local_var_37941_10_non_const_tid]) = 1U;
+# 362 "gpumcml_kernel.cu"
+} 
+# 362 "gpumcml_kernel.cu"
+}}
+# 426 "gpumcml_kernel.cu"
+__global__ __var_used__ void _Z10MCMLKernelILi1EEv8SimState15GPUThreadStates(
+# 426 "gpumcml_kernel.cu"
+SimState __val_param(d_state), 
+# 426 "gpumcml_kernel.cu"
+GPUThreadStates __val_param(tstates)){__copy_param(SimState d_state,__val_param(d_state));__copy_param(GPUThreadStates tstates,__val_param(tstates));
+# 426 "gpumcml_kernel.cu"
+{
+# 426 "gpumcml_kernel.cu"
+;
+# 426 "gpumcml_kernel.cu"
+;
+# 427 "gpumcml_kernel.cu"
+{
+# 429 "gpumcml_kernel.cu"
+ PhotonStructGPU __cuda_local_var_38014_19_non_const_photon;
+# 432 "gpumcml_kernel.cu"
+ UINT64 __cuda_local_var_38017_10_non_const_rnd_x;
+# 433 "gpumcml_kernel.cu"
+ UINT32 __cuda_local_var_38018_10_non_const_rnd_a;
+# 436 "gpumcml_kernel.cu"
+ UINT32 __cuda_local_var_38021_10_non_const_is_active;
+# 439 "gpumcml_kernel.cu"
+_Z18RestoreThreadStateP8SimStateP15GPUThreadStatesP15PhotonStructGPUPyPjS6_((&d_state), (&tstates), (&__cuda_local_var_38014_19_non_const_photon), (&__cuda_local_var_38017_10_non_const_rnd_x), (&__cuda_local_var_38018_10_non_const_rnd_a), (&__cuda_local_var_38021_10_non_const_is_active));
+# 439 "gpumcml_kernel.cu"
+{
+# 443 "gpumcml_kernel.cu"
+ int iIndex;
+# 443 "gpumcml_kernel.cu"
+iIndex = 0;
+# 443 "gpumcml_kernel.cu"
+for (; (iIndex < 50000); ++iIndex)
+# 444 "gpumcml_kernel.cu"
+{
+# 446 "gpumcml_kernel.cu"
+if (__cuda_local_var_38021_10_non_const_is_active)
+# 447 "gpumcml_kernel.cu"
+{
+# 449 "gpumcml_kernel.cu"
+_Z15ComputeStepSizeP15PhotonStructGPUPyPj((&__cuda_local_var_38014_19_non_const_photon), (&__cuda_local_var_38017_10_non_const_rnd_x), (&__cuda_local_var_38018_10_non_const_rnd_a));
+# 452 "gpumcml_kernel.cu"
+(__cuda_local_var_38014_19_non_const_photon.hit) = ((UINT32)(_Z11HitBoundaryP15PhotonStructGPU((&__cuda_local_var_38014_19_non_const_photon))));
+# 454 "gpumcml_kernel.cu"
+_Z3HopP15PhotonStructGPU((&__cuda_local_var_38014_19_non_const_photon));
+# 456 "gpumcml_kernel.cu"
+if (__cuda_local_var_38014_19_non_const_photon.hit)
+# 456 "gpumcml_kernel.cu"
+{
+# 457 "gpumcml_kernel.cu"
+_Z19FastReflectTransmitP15PhotonStructGPUP8SimStatePyPj((&__cuda_local_var_38014_19_non_const_photon), (&d_state), (&__cuda_local_var_38017_10_non_const_rnd_x), (&__cuda_local_var_38018_10_non_const_rnd_a));
+# 457 "gpumcml_kernel.cu"
+}
+# 459 "gpumcml_kernel.cu"
+else 
+# 459 "gpumcml_kernel.cu"
+{
+# 460 "gpumcml_kernel.cu"
+_Z4DropjP15PhotonStructGPUPy(1U, (&__cuda_local_var_38014_19_non_const_photon), (d_state.A_rz));
+# 462 "gpumcml_kernel.cu"
+_Z4SpinfP15PhotonStructGPUPyPj((((d_layerspecs)[(__cuda_local_var_38014_19_non_const_photon.layer)]).g), (&__cuda_local_var_38014_19_non_const_photon), (&__cuda_local_var_38017_10_non_const_rnd_x), (&__cuda_local_var_38018_10_non_const_rnd_a));
+# 463 "gpumcml_kernel.cu"
+}
+# 470 "gpumcml_kernel.cu"
+if ((__cuda_local_var_38014_19_non_const_photon.w) < (9.999999747e-05F))
+# 471 "gpumcml_kernel.cu"
+{
+# 472 "gpumcml_kernel.cu"
+ FLOAT __cuda_local_var_38057_15_non_const_rand;
+# 472 "gpumcml_kernel.cu"
+__cuda_local_var_38057_15_non_const_rand = (_Z11rand_MWC_coPyPj((&__cuda_local_var_38017_10_non_const_rnd_x), (&__cuda_local_var_38018_10_non_const_rnd_a)));
+# 475 "gpumcml_kernel.cu"
+if (((__cuda_local_var_38014_19_non_const_photon.w) != (0.0F)) && (__cuda_local_var_38057_15_non_const_rand < (0.1000000015F)))
+# 475 "gpumcml_kernel.cu"
+{
+# 476 "gpumcml_kernel.cu"
+(__cuda_local_var_38014_19_non_const_photon.w) *= (10.0F);
+# 476 "gpumcml_kernel.cu"
+}
+# 476 "gpumcml_kernel.cu"
+else 
+# 476 "gpumcml_kernel.cu"
+{
+# 476 "gpumcml_kernel.cu"
+ unsigned *__T20;
+# 478 "gpumcml_kernel.cu"
+if (((__T20 = (d_state.n_photons_left)) , (__uAtomicAdd(__T20, 4294967295U))) > 15360U)
+# 478 "gpumcml_kernel.cu"
+{
+# 479 "gpumcml_kernel.cu"
+_Z12LaunchPhotonP15PhotonStructGPU((&__cuda_local_var_38014_19_non_const_photon));
+# 479 "gpumcml_kernel.cu"
+}
+# 479 "gpumcml_kernel.cu"
+else 
+# 479 "gpumcml_kernel.cu"
+{
+# 482 "gpumcml_kernel.cu"
+__cuda_local_var_38021_10_non_const_is_active = 0U;
+# 482 "gpumcml_kernel.cu"
+}
+# 482 "gpumcml_kernel.cu"
+}
+# 483 "gpumcml_kernel.cu"
+}
+# 484 "gpumcml_kernel.cu"
+}
+# 487 "gpumcml_kernel.cu"
+}
+# 487 "gpumcml_kernel.cu"
+}
+# 489 "gpumcml_kernel.cu"
+__syncthreads();
+# 493 "gpumcml_kernel.cu"
+_Z15SaveThreadStateP8SimStateP15GPUThreadStatesP15PhotonStructGPUyjj((&d_state), (&tstates), (&__cuda_local_var_38014_19_non_const_photon), __cuda_local_var_38017_10_non_const_rnd_x, __cuda_local_var_38018_10_non_const_rnd_a, __cuda_local_var_38021_10_non_const_is_active);
+# 494 "gpumcml_kernel.cu"
+} 
+# 494 "gpumcml_kernel.cu"
+}}
+# 426 "gpumcml_kernel.cu"
+__global__ __var_used__ void _Z10MCMLKernelILi0EEv8SimState15GPUThreadStates(
+# 426 "gpumcml_kernel.cu"
+SimState __val_param(d_state), 
+# 426 "gpumcml_kernel.cu"
+GPUThreadStates __val_param(tstates)){__copy_param(SimState d_state,__val_param(d_state));__copy_param(GPUThreadStates tstates,__val_param(tstates));
+# 426 "gpumcml_kernel.cu"
+{
+# 426 "gpumcml_kernel.cu"
+;
+# 426 "gpumcml_kernel.cu"
+;
+# 427 "gpumcml_kernel.cu"
+{
+# 429 "gpumcml_kernel.cu"
+ PhotonStructGPU __cuda_local_var_38014_19_non_const_photon;
+# 432 "gpumcml_kernel.cu"
+ UINT64 __cuda_local_var_38017_10_non_const_rnd_x;
+# 433 "gpumcml_kernel.cu"
+ UINT32 __cuda_local_var_38018_10_non_const_rnd_a;
+# 436 "gpumcml_kernel.cu"
+ UINT32 __cuda_local_var_38021_10_non_const_is_active;
+# 439 "gpumcml_kernel.cu"
+_Z18RestoreThreadStateP8SimStateP15GPUThreadStatesP15PhotonStructGPUPyPjS6_((&d_state), (&tstates), (&__cuda_local_var_38014_19_non_const_photon), (&__cuda_local_var_38017_10_non_const_rnd_x), (&__cuda_local_var_38018_10_non_const_rnd_a), (&__cuda_local_var_38021_10_non_const_is_active));
+# 439 "gpumcml_kernel.cu"
+{
+# 443 "gpumcml_kernel.cu"
+ int iIndex;
+# 443 "gpumcml_kernel.cu"
+iIndex = 0;
+# 443 "gpumcml_kernel.cu"
+for (; (iIndex < 50000); ++iIndex)
+# 444 "gpumcml_kernel.cu"
+{
+# 446 "gpumcml_kernel.cu"
+if (__cuda_local_var_38021_10_non_const_is_active)
+# 447 "gpumcml_kernel.cu"
+{
+# 449 "gpumcml_kernel.cu"
+_Z15ComputeStepSizeP15PhotonStructGPUPyPj((&__cuda_local_var_38014_19_non_const_photon), (&__cuda_local_var_38017_10_non_const_rnd_x), (&__cuda_local_var_38018_10_non_const_rnd_a));
+# 452 "gpumcml_kernel.cu"
+(__cuda_local_var_38014_19_non_const_photon.hit) = ((UINT32)(_Z11HitBoundaryP15PhotonStructGPU((&__cuda_local_var_38014_19_non_const_photon))));
+# 454 "gpumcml_kernel.cu"
+_Z3HopP15PhotonStructGPU((&__cuda_local_var_38014_19_non_const_photon));
+# 456 "gpumcml_kernel.cu"
+if (__cuda_local_var_38014_19_non_const_photon.hit)
+# 456 "gpumcml_kernel.cu"
+{
+# 457 "gpumcml_kernel.cu"
+_Z19FastReflectTransmitP15PhotonStructGPUP8SimStatePyPj((&__cuda_local_var_38014_19_non_const_photon), (&d_state), (&__cuda_local_var_38017_10_non_const_rnd_x), (&__cuda_local_var_38018_10_non_const_rnd_a));
+# 457 "gpumcml_kernel.cu"
+}
+# 459 "gpumcml_kernel.cu"
+else 
+# 459 "gpumcml_kernel.cu"
+{
+# 460 "gpumcml_kernel.cu"
+_Z4DropjP15PhotonStructGPUPy(0U, (&__cuda_local_var_38014_19_non_const_photon), (d_state.A_rz));
+# 462 "gpumcml_kernel.cu"
+_Z4SpinfP15PhotonStructGPUPyPj((((d_layerspecs)[(__cuda_local_var_38014_19_non_const_photon.layer)]).g), (&__cuda_local_var_38014_19_non_const_photon), (&__cuda_local_var_38017_10_non_const_rnd_x), (&__cuda_local_var_38018_10_non_const_rnd_a));
+# 463 "gpumcml_kernel.cu"
+}
+# 470 "gpumcml_kernel.cu"
+if ((__cuda_local_var_38014_19_non_const_photon.w) < (9.999999747e-05F))
+# 471 "gpumcml_kernel.cu"
+{
+# 472 "gpumcml_kernel.cu"
+ FLOAT __cuda_local_var_38057_15_non_const_rand;
+# 472 "gpumcml_kernel.cu"
+__cuda_local_var_38057_15_non_const_rand = (_Z11rand_MWC_coPyPj((&__cuda_local_var_38017_10_non_const_rnd_x), (&__cuda_local_var_38018_10_non_const_rnd_a)));
+# 475 "gpumcml_kernel.cu"
+if (((__cuda_local_var_38014_19_non_const_photon.w) != (0.0F)) && (__cuda_local_var_38057_15_non_const_rand < (0.1000000015F)))
+# 475 "gpumcml_kernel.cu"
+{
+# 476 "gpumcml_kernel.cu"
+(__cuda_local_var_38014_19_non_const_photon.w) *= (10.0F);
+# 476 "gpumcml_kernel.cu"
+}
+# 476 "gpumcml_kernel.cu"
+else 
+# 476 "gpumcml_kernel.cu"
+{
+# 476 "gpumcml_kernel.cu"
+ unsigned *__T21;
+# 478 "gpumcml_kernel.cu"
+if (((__T21 = (d_state.n_photons_left)) , (__uAtomicAdd(__T21, 4294967295U))) > 15360U)
+# 478 "gpumcml_kernel.cu"
+{
+# 479 "gpumcml_kernel.cu"
+_Z12LaunchPhotonP15PhotonStructGPU((&__cuda_local_var_38014_19_non_const_photon));
+# 479 "gpumcml_kernel.cu"
+}
+# 479 "gpumcml_kernel.cu"
+else 
+# 479 "gpumcml_kernel.cu"
+{
+# 482 "gpumcml_kernel.cu"
+__cuda_local_var_38021_10_non_const_is_active = 0U;
+# 482 "gpumcml_kernel.cu"
+}
+# 482 "gpumcml_kernel.cu"
+}
+# 483 "gpumcml_kernel.cu"
+}
+# 484 "gpumcml_kernel.cu"
+}
+# 487 "gpumcml_kernel.cu"
+}
+# 487 "gpumcml_kernel.cu"
+}
+# 489 "gpumcml_kernel.cu"
+__syncthreads();
+# 493 "gpumcml_kernel.cu"
+_Z15SaveThreadStateP8SimStateP15GPUThreadStatesP15PhotonStructGPUyjj((&d_state), (&tstates), (&__cuda_local_var_38014_19_non_const_photon), __cuda_local_var_38017_10_non_const_rnd_x, __cuda_local_var_38018_10_non_const_rnd_a, __cuda_local_var_38021_10_non_const_is_active);
+# 494 "gpumcml_kernel.cu"
+} 
+# 494 "gpumcml_kernel.cu"
+}}
