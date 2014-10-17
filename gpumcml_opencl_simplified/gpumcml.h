@@ -140,12 +140,11 @@ extern void usage(const char *prog_name);
 
 // Parse the command-line arguments.
 // Return 0 if successfull or a +ive error code.
-extern int interpret_arg(int argc, char* argv[], char **fpath_p,
+extern int interpret_arg(int argc, char* argv[], char **fpath_p, unsigned long *number_of_photons,
         unsigned long long* seed,
         int* ignoreAdetection);
-
 extern int read_simulation_data(char* filename,
-        SimulationStruct** simulations, int ignoreAdetection);
+        SimulationStruct** simulations, int ignoreAdetection, unsigned long nPhotons);
 
 extern int Write_Simulation_Results(SimState* HostMem,
         SimulationStruct* sim, clock_t simulation_time);

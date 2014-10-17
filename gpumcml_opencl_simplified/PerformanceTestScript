@@ -1,0 +1,90 @@
+#!/bin/bash
+declare -i nPhotons=90000
+for i in {10000..15000..1000};
+do
+  ./gpumcml_opencl test.mci $i
+  ./gpumcml_opencl test.mci $i
+  ./gpumcml_opencl test.mci $i
+  ./gpumcml_opencl test.mci $i
+  ./gpumcml_opencl test.mci $i
+done
+for i in {15100..15300..100};
+do
+  ./gpumcml_opencl test.mci $i
+  ./gpumcml_opencl test.mci $i
+  ./gpumcml_opencl test.mci $i
+  ./gpumcml_opencl test.mci $i
+  ./gpumcml_opencl test.mci $i
+done
+for i in {15310..15350..10};
+do
+  ./gpumcml_opencl test.mci $i
+  ./gpumcml_opencl test.mci $i
+  ./gpumcml_opencl test.mci $i
+  ./gpumcml_opencl test.mci $i
+  ./gpumcml_opencl test.mci $i
+done
+for i in {15351..15370..1};
+do
+  ./gpumcml_opencl test.mci $i
+  ./gpumcml_opencl test.mci $i
+  ./gpumcml_opencl test.mci $i
+  ./gpumcml_opencl test.mci $i
+  ./gpumcml_opencl test.mci $i
+done
+for i in {15380..15400..10};
+do
+  ./gpumcml_opencl test.mci $i
+  ./gpumcml_opencl test.mci $i
+  ./gpumcml_opencl test.mci $i
+  ./gpumcml_opencl test.mci $i
+  ./gpumcml_opencl test.mci $i
+done
+for i in {15500..16000..100};
+do
+  ./gpumcml_opencl test.mci $i
+  ./gpumcml_opencl test.mci $i
+  ./gpumcml_opencl test.mci $i
+  ./gpumcml_opencl test.mci $i
+  ./gpumcml_opencl test.mci $i
+done
+for i in {17000..20000..1000};
+do
+  ./gpumcml_opencl test.mci $i
+  ./gpumcml_opencl test.mci $i
+  ./gpumcml_opencl test.mci $i
+  ./gpumcml_opencl test.mci $i
+  ./gpumcml_opencl test.mci $i
+done
+for i in {30000..100000..10000};
+do
+  ./gpumcml_opencl test.mci $i
+  ./gpumcml_opencl test.mci $i
+  ./gpumcml_opencl test.mci $i
+  ./gpumcml_opencl test.mci $i
+  ./gpumcml_opencl test.mci $i
+done
+for i in {200000..1000000..100000};
+do
+  ./gpumcml_opencl test.mci $i
+  ./gpumcml_opencl test.mci $i
+  ./gpumcml_opencl test.mci $i
+  ./gpumcml_opencl test.mci $i
+  ./gpumcml_opencl test.mci $i
+done
+for i in {2000000..10000000..1000000};
+do
+  ./gpumcml_opencl test.mci $i
+  ./gpumcml_opencl test.mci $i
+  ./gpumcml_opencl test.mci $i
+  ./gpumcml_opencl test.mci $i
+  ./gpumcml_opencl test.mci $i
+done
+for i in {20000000..100000000..10000000};
+do
+  ./gpumcml_opencl test.mci $i
+  ./gpumcml_opencl test.mci $i
+  ./gpumcml_opencl test.mci $i
+  ./gpumcml_opencl test.mci $i
+  ./gpumcml_opencl test.mci $i
+done

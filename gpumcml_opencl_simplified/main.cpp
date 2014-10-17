@@ -550,7 +550,9 @@ static void DoOneSimulation(int sim_id, SimulationStruct* simulation,
   float elapsedTime = ((float) end - start)/CLOCKS_PER_SEC;
   printf( "\n\n>>>>>>Simulation time: %f (s)\n", elapsedTime);
   printf( ">>>>>>Simulation Speed: %e photon events per second\n", NUM_STEPS*NUM_THREADS/elapsedTime);
-  
+  printf( ">>>>>>NUM_STEPS: %d, NUM_THREADS: %d, Simulation Speed: %e photon events per second\n", NUM_STEPS, NUM_THREADS, NUM_STEPS*NUM_THREADS/elapsedTime);
+  FILE* p2t = fopen("photon2time.csv", "a");
+  fprintf(p2t, "%d,%f,%e\n", *(hss->n_photons_left), elapsedTime, NUM_STEPS*NUM_THREADS/elapsedTime);
   Write_Simulation_Results(hss, simulation, elapsedTime);
 
   //CUT_SAFE_CALL( cutDeleteTimer(execTimer) );
@@ -566,8 +568,9 @@ static void DoOneSimulation(int sim_id, SimulationStruct* simulation,
 int main(int argc, char* argv[])
 {
 
-
+  printf("Start: NUM_THREADS: %d\n", NUM_THREADS);
   char* filename = NULL;
+  unsigned long number_of_photons = 0;
   unsigned long long seed = (unsigned long long) time(NULL);
   int ignoreAdetection = 0;
   
@@ -577,7 +580,7 @@ int main(int argc, char* argv[])
   int i;
 
   // Parse command-line arguments.
-  if (interpret_arg(argc, argv, &filename,&seed, &ignoreAdetection))
+  if (interpret_arg(argc, argv, &filename, &number_of_photons, &seed, &ignoreAdetection))
   {
     usage(argv[0]);
     return 1;
@@ -591,7 +594,7 @@ int main(int argc, char* argv[])
   printf("====================================\n\n");
 
   // Read the simulation inputs.
-  n_simulations = read_simulation_data(filename, &simulations, ignoreAdetection);
+  n_simulations = read_simulation_data(filename, &simulations, ignoreAdetection, number_of_photons);
   if(n_simulations == 0)
   {
     printf("Something wrong with read_simulation_data!\n");

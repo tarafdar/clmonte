@@ -54,13 +54,13 @@ void usage(const char *prog_name)
 //////////////////////////////////////////////////////////////////////////////
 //   Parse command line arguments
 //////////////////////////////////////////////////////////////////////////////
-int interpret_arg(int argc, char* argv[], char **fpath_p,
+int interpret_arg(int argc, char* argv[], char **fpath_p, unsigned long *number_of_photons,
                   unsigned long long* seed,
                   int* ignoreAdetection)
 {
   int i;
   char *fpath = NULL;
-
+  *number_of_photons = 0;
   for (i = 1; i < argc; ++i)
   {
     char *arg = argv[i];
@@ -69,6 +69,10 @@ int interpret_arg(int argc, char* argv[], char **fpath_p,
     {
       // This is the input file path.
       fpath = arg;
+      if (i < argc-1)
+      {
+        *number_of_photons = (unsigned long)atoi(argv[i+1]);
+      }
       // Ignore the remaining args.
       break;
     }
@@ -86,7 +90,6 @@ int interpret_arg(int argc, char* argv[], char **fpath_p,
       // <seed> has been set.
     }
   }
-
   if (fpath_p != NULL) *fpath_p = fpath;
 
   return (fpath == NULL);
@@ -382,7 +385,7 @@ int ischar(char a)
 //////////////////////////////////////////////////////////////////////////////
 //   Parse simulation input file
 //////////////////////////////////////////////////////////////////////////////
-int read_simulation_data(char* filename, SimulationStruct** simulations, int ignoreAdetection)
+int read_simulation_data(char* filename, SimulationStruct** simulations, int ignoreAdetection, unsigned long nPhotons)
 {
   int i=0;
   int ii=0;
@@ -452,7 +455,9 @@ int read_simulation_data(char* filename, SimulationStruct** simulations, int ign
       fgets(mystring , STR_LEN , pFile);
       number_of_photons=0;
       ii=sscanf(mystring,"%lu",&number_of_photons);
-      if(feof(pFile) || ii>1){perror("Error reading number of photons");return 0;} 
+      if(feof(pFile) || ii>1){perror("Error reading number of photons");return 0;}
+      if (nPhotons > 0)
+        number_of_photons = nPhotons;
       //if we reach EOF or read more number than defined something is wrong with the file!
       //printf("ii=%d temp=%f %f %f %f %f\n",ii,temp[0],temp[1],temp[2],temp[3],temp[4]);
     }
