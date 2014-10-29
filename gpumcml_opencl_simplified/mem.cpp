@@ -284,17 +284,17 @@ int CopyDeviceToHostMem(SimState* HostMem,SimulationStruct* sim, cl_command_queu
 
   // Copy A_rz, Rd_ra and Tt_ra
   cl_int ret;
-  ret = clEnqueueReadBuffer(command_queue, A_rz_mem_obj, CL_TRUE, 0, rz_size*sizeof(UINT32), HostMem->A_rz, 0, NULL, NULL);
+  ret = clEnqueueReadBuffer(command_queue, A_rz_mem_obj, CL_TRUE, 0, rz_size*sizeof(UINT64), HostMem->A_rz, 0, NULL, NULL);
   if(ret != CL_SUCCESS){
     printf("Error reading A_rz buffer, exiting\n");
     exit(-1);
   }
-  ret = clEnqueueReadBuffer(command_queue, Rd_ra_mem_obj, CL_TRUE, 0, ra_size*sizeof(UINT32), HostMem->Rd_ra, 0, NULL, NULL);
+  ret = clEnqueueReadBuffer(command_queue, Rd_ra_mem_obj, CL_TRUE, 0, ra_size*sizeof(UINT64), HostMem->Rd_ra, 0, NULL, NULL);
   if(ret != CL_SUCCESS){
     printf("Error reading Rd_ra buffer, exiting\n");
     exit(-1);
   }
-  ret = clEnqueueReadBuffer(command_queue, Tt_ra_mem_obj, CL_TRUE, 0, ra_size*sizeof(UINT32), HostMem->Tt_ra, 0, NULL, NULL);
+  ret = clEnqueueReadBuffer(command_queue, Tt_ra_mem_obj, CL_TRUE, 0, ra_size*sizeof(UINT64), HostMem->Tt_ra, 0, NULL, NULL);
   if(ret != CL_SUCCESS){
     printf("Error reading Tt_ra buffer, exiting\n");
     exit(-1);
