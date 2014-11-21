@@ -486,7 +486,7 @@ static void RunGPUi(HostThreadState *hstate)
 	//for (int i = 1; *HostMem->n_photons_left > 0; ++i)
 	// {
 	// // Run the kernel.
-	ret = clEnqueueNDRangeKernel(command_queue, kernel, 1, NULL, &global_size, &local_size, 0, NULL, NULL);
+	ret = clEnqueueNDRangeKernel(command_queue, kernel, 1, NULL, &global_size, /*&local_size*/NULL, 0, NULL, NULL);
 	//if(ret != CL_SUCCESS){
 	//  printf("Error enqueundrange of kernel in loop iteration %d, exiting\n", i);
 	//  exit(-1);
