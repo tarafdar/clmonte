@@ -168,7 +168,7 @@ int InitSimStates(SimState* HostMem, SimulationStruct* sim, cl_context context, 
 		fprintf(stderr, "Error allocating HostMem->A_rz");
 		exit(1);
 	}
-	for (int i = 0; i<ra_size; i++){
+	for (int i = 0; i<rz_size; i++){
 		HostMem->A_rz[i] = 0;
 	}
 	ret = clEnqueueWriteBuffer(command_queue, *A_rz_mem_obj, CL_TRUE, 0, size, HostMem->A_rz, 0, NULL, NULL);

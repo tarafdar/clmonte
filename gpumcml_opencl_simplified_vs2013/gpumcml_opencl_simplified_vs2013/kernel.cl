@@ -679,8 +679,8 @@ __kernel void InitThreadState(__global float *tstates_photon_x, __global float *
 __kernel void MCMLKernel(__global const SimParamGPU *d_simparam_addr,__global const LayerStructGPU *d_layerspecs,
                                   //__global SimState d_state, 
                                   __global UINT32 *d_state_n_photons_left_addr, __global UINT64 *d_state_x, 
-                                  __global UINT32 *d_state_a,__global UINT32 *d_state_Rd_ra, 
-                                  __global UINT32 *d_state_A_rz, __global UINT32 *d_state_Tt_ra
+                                  __global UINT32 *d_state_a,__global UINT64 *d_state_Rd_ra, 
+                                  __global UINT64 *d_state_A_rz, __global UINT64 *d_state_Tt_ra
                                   //__global GPUThreadStates tstates
                                 // __global float *tstates_photon_x, __global float *tstates_photon_y, __global float *tstates_photon_z,
                                 // __global float *tstates_photon_ux, __global float *tstates_photon_uy, __global float *tstates_photon_uz,
