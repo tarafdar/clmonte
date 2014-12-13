@@ -54,7 +54,8 @@ void usage(const char *prog_name)
 //////////////////////////////////////////////////////////////////////////////
 //   Parse command line arguments
 //////////////////////////////////////////////////////////////////////////////
-int interpret_arg(int argc, char* argv[], char **fpath_p,
+int interpret_arg(int argc, char* argv[], char **fpath_p, char **outfpath_p,
+                  unsigned long* number_of_photons,
                   unsigned long long* seed,
                   int* ignoreAdetection)
 {
@@ -88,7 +89,19 @@ int interpret_arg(int argc, char* argv[], char **fpath_p,
   }
 
   if (fpath_p != NULL) *fpath_p = fpath;
-
+  
+  // process output file, if it exists.
+  if (i < argc - 1)
+  {
+    i++;
+    *outfpath_p = argv[i];
+  }
+  
+  if (i < argc - 1)
+  {
+    i++;
+    *number_of_photons = atoi(argv[i]);
+  }
   return (fpath == NULL);
 }
 
@@ -165,7 +178,7 @@ int Write_Simulation_Results(SimState* HostMem, SimulationStruct* sim, clock_t s
   if (pFile_outp == NULL){perror ("Error opening output file");return 0;}
 
   // Write other stuff here first!
-
+/*LICHEN
   fprintf(pFile_outp,"A1 	# Version number of the file format.\n\n");
   fprintf(pFile_outp,"####\n");
   fprintf(pFile_outp,"# Data categories include: \n");
@@ -178,6 +191,7 @@ int Write_Simulation_Results(SimState* HostMem, SimulationStruct* sim, clock_t s
   fprintf(pFile_outp,"# User time: %.2f sec\n\n",(double)simulation_time/CLOCKS_PER_SEC);
 
   WriteInParm (pFile_outp, sim); 
+LICHEN*/
   //fprintf(pFile_outp,"InParam\t\t# Input parameters:\n");
   //// Copy the input data from inp_filename
   ////printf("pos=%d\n",ftell(pFile_inp));
@@ -194,7 +208,7 @@ int Write_Simulation_Results(SimState* HostMem, SimulationStruct* sim, clock_t s
 
   for(i=0;i<rz_size;i++)A+= HostMem->A_rz[i];
   for(i=0;i<ra_size;i++){T += HostMem->Tt_ra[i];Rd += HostMem->Rd_ra[i];}
-
+/*LICHEN
   fprintf(pFile_outp,"\nRAT #Reflectance, absorption transmission\n");
   fprintf(pFile_outp,"%G \t\t #Specular reflectance [-]\n", 1.0F - sim->start_weight);
   fprintf(pFile_outp,"%G \t\t #Diffuse reflectance [-]\n",(double)Rd/scale1);
@@ -207,7 +221,9 @@ int Write_Simulation_Results(SimState* HostMem, SimulationStruct* sim, clock_t s
 
   // Calculate and write A_l
   fprintf(pFile_outp,"\nA_l #Absorption as a function of layer. [-]\n");
+LICHEN*/
   z=0;
+/*LICHEN
   for(l=1;l<=sim->n_layers;l++)
   {
     temp=0;
@@ -277,51 +293,58 @@ int Write_Simulation_Results(SimState* HostMem, SimulationStruct* sim, clock_t s
     scale2=scale1*4*PI_const*sin((a+0.5)*da)*sin(da/2);
     fprintf(pFile_outp,"%E\n",(double)temp/scale2);
   }
-
-
+LICHEN*/
+  double A_rz_sum=0;
+  double Rd_ra_sum=0;
+  double Tt_ra_sum=0;
   // Scale and write A_rz
   i=0;
-  fprintf(pFile_outp,"\n# A[r][z]. [1/cm3]\n# A[0][0], [0][1],..[0][nz-1]\n# A[1][0], [1][1],..[1][nz-1]\n# ...\n# A[nr-1][0], [nr-1][1],..[nr-1][nz-1]\nA_rz\n");
+//  fprintf(pFile_outp,"\n# A[r][z]. [1/cm3]\n# A[0][0], [0][1],..[0][nz-1]\n# A[1][0], [1][1],..[1][nz-1]\n# ...\n# A[nr-1][0], [nr-1][1],..[nr-1][nz-1]\nA_rz\n");
   for(r=0;r<nr;r++)
   {
     for(z=0;z<nz;z++)
     {
       scale2=scale1*2*PI_const*(r+0.5)*dr*dr*dz;
+/*LICHEN
 #if 0
       fprintf(pFile_outp," %E ",(double)HostMem->A_rz[z*nr+r]/scale2);
 #else
       fprintf(pFile_outp, " %E ", (double)HostMem->A_rz[r*nz + z] / scale2);
 #endif
-      if((i++)==4){i=0;fprintf(pFile_outp,"\n");}
+LICHEN*/
+//      if((i++)==4){i=0;fprintf(pFile_outp,"\n");}
+      A_rz_sum = A_rz_sum+(double)HostMem->A_rz[r*nz + z] / scale2;
     }
   }
-
+  fprintf(pFile_outp, "%E\n",A_rz_sum/(nr*nz));
   // Scale and write Rd_ra 
   i=0;
-  fprintf(pFile_outp,"\n\n# Rd[r][angle]. [1/(cm2sr)].\n# Rd[0][0], [0][1],..[0][na-1]\n# Rd[1][0], [1][1],..[1][na-1]\n# ...\n# Rd[nr-1][0], [nr-1][1],..[nr-1][na-1]\nRd_ra\n");
+//  fprintf(pFile_outp,"\n\n# Rd[r][angle]. [1/(cm2sr)].\n# Rd[0][0], [0][1],..[0][na-1]\n# Rd[1][0], [1][1],..[1][na-1]\n# ...\n# Rd[nr-1][0], [nr-1][1],..[nr-1][na-1]\nRd_ra\n");
   for(r=0;r<nr;r++)
   {
     for(a=0;a<na;a++)
     {
       scale2=scale1*2*PI_const*(r+0.5)*dr*dr*cos((a+0.5)*da)*4*PI_const*sin((a+0.5)*da)*sin(da/2);
-      fprintf(pFile_outp," %E ",(double)HostMem->Rd_ra[a*nr+r]/scale2);
-      if((i++)==4){i=0;fprintf(pFile_outp,"\n");}
+//      fprintf(pFile_outp," %E ",(double)HostMem->Rd_ra[a*nr+r]/scale2);
+//      if((i++)==4){i=0;fprintf(pFile_outp,"\n");}
+      Rd_ra_sum = Rd_ra_sum+(double)HostMem->Rd_ra[a*nr+r]/scale2;
     }
   }
-
+  fprintf(pFile_outp, "%E\n",Rd_ra_sum/(nr*na));
   // Scale and write Tt_ra
   i=0;
-  fprintf(pFile_outp,"\n\n# Tt[r][angle]. [1/(cm2sr)].\n# Tt[0][0], [0][1],..[0][na-1]\n# Tt[1][0], [1][1],..[1][na-1]\n# ...\n# Tt[nr-1][0], [nr-1][1],..[nr-1][na-1]\nTt_ra\n");
+//  fprintf(pFile_outp,"\n\n# Tt[r][angle]. [1/(cm2sr)].\n# Tt[0][0], [0][1],..[0][na-1]\n# Tt[1][0], [1][1],..[1][na-1]\n# ...\n# Tt[nr-1][0], [nr-1][1],..[nr-1][na-1]\nTt_ra\n");
   for(r=0;r<nr;r++)
   {
     for(a=0;a<na;a++)
     {
       scale2=scale1*2*PI_const*(r+0.5)*dr*dr*cos((a+0.5)*da)*4*PI_const*sin((a+0.5)*da)*sin(da/2);
-      fprintf(pFile_outp," %E ",(double)HostMem->Tt_ra[a*nr+r]/scale2);
-      if((i++)==4){i=0;fprintf(pFile_outp,"\n");}
+//      fprintf(pFile_outp," %E ",(double)HostMem->Tt_ra[a*nr+r]/scale2);
+//      if((i++)==4){i=0;fprintf(pFile_outp,"\n");}
+      Tt_ra_sum=Tt_ra_sum+(double)HostMem->Tt_ra[a*nr+r]/scale2;
     }
   }
-
+  fprintf(pFile_outp, "%E\n",Tt_ra_sum/(nr*na));
   fclose(pFile_outp);
   return 0;
 }
@@ -382,7 +405,7 @@ int ischar(char a)
 //////////////////////////////////////////////////////////////////////////////
 //   Parse simulation input file
 //////////////////////////////////////////////////////////////////////////////
-int read_simulation_data(char* filename, SimulationStruct** simulations, int ignoreAdetection)
+int read_simulation_data(char* filename, char* outfilename, unsigned long num_of_photons, SimulationStruct** simulations, int ignoreAdetection)
 {
   int i=0;
   int ii=0;
@@ -441,6 +464,13 @@ int read_simulation_data(char* filename, SimulationStruct** simulations, int ign
     // Echo the Filename and AorB
     //printf("Output filename: %s, AorB=%c\n",str,AorB);
     strcpy((*simulations)[i].outp_filename,str);
+    
+    //The output file name in the command argument will overwrite the one in input file. 
+    if (outfilename != NULL)
+    {
+      strcpy((*simulations)[i].outp_filename, outfilename);
+    }
+    
     (*simulations)[i].AorB=AorB;
 
     //printf("begin=%d\n",(*simulations)[i].begin);
@@ -458,6 +488,11 @@ int read_simulation_data(char* filename, SimulationStruct** simulations, int ign
     }
     //printf("Number of photons: %lu\n",number_of_photons);
     (*simulations)[i].number_of_photons=number_of_photons;
+    //If the number of photons is given in command argument, use it instead of the one in input file.
+    if (num_of_photons != 0)
+    {
+      (*simulations)[i].number_of_photons=num_of_photons;
+    }
 
     // Read dr and dz (2x float)
     if(!readfloats(2, ftemp, pFile)){perror ("Error reading dr and dz");return 0;}
