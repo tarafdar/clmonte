@@ -4,7 +4,7 @@
 
 //#include "gpumcml.h"
 
-#define NUM_STEPS 500000  //Use 5000 for faster response time
+#define NUM_STEPS 50000  //Use 5000 for faster response time
 
 #define NUM_BLOCKS 30
 #define NUM_THREADS_PER_BLOCK 512

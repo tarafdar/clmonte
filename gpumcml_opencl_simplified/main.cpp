@@ -190,7 +190,7 @@ int init_RNG(UINT64 *x, UINT32 *a,
 //   Supports 1 GPU only
 //   Calls RunGPU with HostThreadState parameters
 //////////////////////////////////////////////////////////////////////////////
-int RunGPUi(HostThreadState *hstate)
+static void RunGPUi(HostThreadState *hstate)
 {
   SimState *HostMem = &(hstate->host_sim_state);
 
@@ -480,42 +480,26 @@ int RunGPUi(HostThreadState *hstate)
 //    printf("num photons left %d after initthreadstate\n", *HostMem->n_photons_left);
     //exit(0);
   // Initialize the remaining thread states.
- 
-  int i=0;  
-  for (i=0; *HostMem->n_photons_left > 0; ++i)
-  {
-    // Run the kernel.
-    ret = clEnqueueNDRangeKernel(command_queue, kernel, 1, NULL, &global_size, &local_size, 0, NULL, NULL);
-    if(ret != CL_SUCCESS){
-      printf("Error enqueundrange of kernel in loop iteration %d, exiting\n", i);
-      exit(-1);
-    }
-    clFinish(command_queue); //good practice for synchronization purposes in OpenCL
+
+
+  //for (int i = 1; *HostMem->n_photons_left > 0; ++i)
+ // {
+   // // Run the kernel.
+      ret = clEnqueueNDRangeKernel(command_queue, kernel, 1, NULL, &global_size, &local_size, 0, NULL, NULL);
+      //if(ret != CL_SUCCESS){
+      //  printf("Error enqueundrange of kernel in loop iteration %d, exiting\n", i);
+      //  exit(-1);
+      //}
+
 
     // Copy the number of photons left from device to host.
-    ret = clEnqueueReadBuffer(command_queue, num_photons_left_mem_obj, CL_TRUE, 0, sizeof(UINT32), HostMem->n_photons_left, 0, NULL, NULL);
-    if(ret != CL_SUCCESS){
-      printf("Error reading number of photons left of kernel in loop iteration %d, exiting %d\n", i, ret);
-      exit(-1);
-    }
-
-    ret = clEnqueueReadBuffer(command_queue, x_mem_obj, CL_TRUE, 0, NUM_THREADS * sizeof(UINT64), HostMem->x, 0, NULL, NULL);
-    if(ret != CL_SUCCESS){
-      printf("Error reading x buffer, exiting\n");
-      exit(-1);
-    }
-    printf("x[1] = %E\n", (double)HostMem->x[1]);
-
-    ret = clEnqueueReadBuffer(command_queue, a_mem_obj, CL_TRUE, 0, NUM_THREADS * sizeof(UINT32), HostMem->a, 0, NULL, NULL);
-    if(ret != CL_SUCCESS){
-      printf("Error reading a buffer, exiting\n");
-      exit(-1);
-    }
-    printf("a[1] = %E\n", (double)HostMem->a[1]);
-////////////////////////////////////////////////////////////
-
-    printf("[GPU] batch %d, number of photons left %d\n",i, *HostMem->n_photons_left);
-  }
+    //ret = clEnqueueReadBuffer(command_queue, num_photons_left_mem_obj, CL_TRUE, 0, sizeof(UINT32), HostMem->n_photons_left, 0, NULL, NULL);
+    //if(ret != CL_SUCCESS){
+    //  printf("Error reading number of photons left of kernel in loop iteration %d, exiting %d\n", i, ret);
+    //  exit(-1);
+    //}
+    //printf("[GPU] batch %5d, number of photons left %10u\n",i, *(HostMem->n_photons_left));
+ // }
 
   printf("[GPU] simulation done!\n");
 
@@ -523,7 +507,6 @@ int RunGPUi(HostThreadState *hstate)
   FreeDeviceSimStates(context, command_queue, initkernel,kernel, program, simparam_mem_obj, layerspecs_mem_obj,num_photons_left_mem_obj, a_mem_obj, x_mem_obj, A_rz_mem_obj, Rd_ra_mem_obj, Tt_ra_mem_obj, photon_x_mem_obj, photon_y_mem_obj, photon_z_mem_obj, photon_ux_mem_obj, 
 photon_uy_mem_obj, photon_uz_mem_obj, photon_w_mem_obj, photon_sleft_mem_obj, photon_layer_mem_obj, is_active_mem_obj);
   // We still need the host-side structure.
-	return i;
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -550,7 +533,7 @@ static void DoOneSimulation(int sim_id, SimulationStruct* simulation,
   SimState *hss = &(hstates->host_sim_state);
 
   // number of photons responsible 
-  hss->n_photons_left = (int*)malloc(sizeof(int)); //change to int
+  hss->n_photons_left = (unsigned int*)malloc(sizeof(unsigned int));
   *(hss->n_photons_left) = simulation->number_of_photons; 
 
   // random number seeds
@@ -558,19 +541,15 @@ static void DoOneSimulation(int sim_id, SimulationStruct* simulation,
 
   printf("simulation number of photons %d\n", *(hss->n_photons_left));
   // Launch simulation
-  int number_of_iterations = RunGPUi (hstates);
+  RunGPUi (hstates);
 
   // End the timer.
   //CUT_SAFE_CALL( cutStopTimer(execTimer) );
   end = clock();
   //float elapsedTime = cutGetTimerValue(execTimer);
   float elapsedTime = ((float) end - start)/CLOCKS_PER_SEC;
-  float total_steps = (float)number_of_iterations*(float)NUM_STEPS*(float)NUM_THREADS;
   printf( "\n\n>>>>>>Simulation time: %f (s)\n", elapsedTime);
-  printf("total num of iterations = %d\n", number_of_iterations);
-  printf("NUM_STEPS = %d\n", NUM_STEPS);
-  printf("NUM_THREADS = %d\n", NUM_THREADS);
-  printf( ">>>>>>Simulation Speed: %e photon events per second\n", total_steps/elapsedTime);
+  printf( ">>>>>>Simulation Speed: %e photon events per second\n", NUM_STEPS*NUM_THREADS/elapsedTime);
   
   Write_Simulation_Results(hss, simulation, elapsedTime);
 
@@ -589,8 +568,6 @@ int main(int argc, char* argv[])
 
 
   char* filename = NULL;
-  char* outfilename = NULL;
-  unsigned long number_of_photons = 0;
   unsigned long long seed = (unsigned long long) time(NULL);
   int ignoreAdetection = 0;
   
@@ -600,7 +577,7 @@ int main(int argc, char* argv[])
   int i;
 
   // Parse command-line arguments.
-  if (interpret_arg(argc, argv, &filename, &outfilename, &number_of_photons, &seed, &ignoreAdetection))
+  if (interpret_arg(argc, argv, &filename,&seed, &ignoreAdetection))
   {
     usage(argv[0]);
     return 1;
@@ -614,7 +591,7 @@ int main(int argc, char* argv[])
   printf("====================================\n\n");
 
   // Read the simulation inputs.
-  n_simulations = read_simulation_data(filename, outfilename, number_of_photons, &simulations, ignoreAdetection);
+  n_simulations = read_simulation_data(filename, &simulations, ignoreAdetection);
   if(n_simulations == 0)
   {
     printf("Something wrong with read_simulation_data!\n");

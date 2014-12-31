@@ -104,7 +104,7 @@ typedef struct
 {
   // points to a scalar that stores the number of photons that are not
   // completed (i.e. either on the fly or not yet started)
-  int *n_photons_left; //change to int
+  UINT32 *n_photons_left;
 
   // per-thread seeds for random number generation
   // arrays of length NUM_THREADS
@@ -140,12 +140,11 @@ extern void usage(const char *prog_name);
 
 // Parse the command-line arguments.
 // Return 0 if successfull or a +ive error code.
-extern int interpret_arg(int argc, char* argv[], char **fpath_p, char **outfpath_p,
-        unsigned long* num_of_photons,
+extern int interpret_arg(int argc, char* argv[], char **fpath_p,
         unsigned long long* seed,
         int* ignoreAdetection);
 
-extern int read_simulation_data(char* filename, char* outfilename, unsigned long number_of_photons,
+extern int read_simulation_data(char* filename,
         SimulationStruct** simulations, int ignoreAdetection);
 
 extern int Write_Simulation_Results(SimState* HostMem,
