@@ -31,7 +31,7 @@ float dot_product (float x1, float y1, float z1, float x2, float y2, float z2) {
 //////////////////////////////////////////////////////////////////////////////
 //   Generates a random number between 0 and 1 [0,1) 
 //////////////////////////////////////////////////////////////////////////////
-float rand_MWC_co(UINT64* x,UINT32* a)
+float rand_MWC_co(__global UINT64* x,__global UINT32* a)
 {
   *x=(*x&0xfffffffful)*(*a)+(*x>>32);
   return native_divide(convert_float_rtz((UINT32)(*x)),(float)0x100000000);
@@ -48,7 +48,7 @@ float rand_MWC_co(UINT64* x,UINT32* a)
 //////////////////////////////////////////////////////////////////////////////
 //   Generates a random number between 0 and 1 (0,1]
 //////////////////////////////////////////////////////////////////////////////
-float rand_MWC_oc(UINT64* x,UINT32* a)
+float rand_MWC_oc(__global UINT64* x,__global UINT32* a)
 {
   return 1.0f-rand_MWC_co(x,a);
 } 
@@ -100,7 +100,7 @@ void LaunchPhoton(PhotonStructGPU *photon, SimParamGPU d_simparam)
 //   Otherwise, pick up the leftover in sleft.
 //////////////////////////////////////////////////////////////////////////////
 void ComputeStepSize(PhotonStructGPU *photon,
-                                UINT64 *rnd_x, UINT32 *rnd_a, __global const LayerStructGPU *d_layerspecs)
+                                __global UINT64 *rnd_x, __global UINT32 *rnd_a, __global const LayerStructGPU *d_layerspecs)
 {
   // Make a new step if no leftover.
   if (photon->sleft == MCML_FP_ZERO)
@@ -187,7 +187,7 @@ void Drop(PhotonStructGPU *photon, __global UINT64 *g_A_rz, __global const Layer
 //////////////////////////////////////////////////////////////////////////////
 void FastReflectTransmit(SimParamGPU d_simparam, __global const LayerStructGPU *d_layerspecs, 
                                      PhotonStructGPU *photon, __global UINT64 *d_state_Rd_ra, __global UINT64 *d_state_Tt_ra,
-                                    UINT64 *rnd_x, UINT32 *rnd_a)
+                                    __global UINT64 *rnd_x, __global UINT32 *rnd_a)
 {
   /* Collect all info that depend on the sign of "uz". */
   float cos_crit;
@@ -281,7 +281,7 @@ void FastReflectTransmit(SimParamGPU d_simparam, __global const LayerStructGPU *
         //AtomicAddULL(&ra_arr[ia * d_simparam.nr + ir],
         //  (UINT32)(photon->w * WEIGHT_SCALE));
         
-        atomic_add(&ra_arr[ia * d_simparam.nr + ir], (UINT32)(photon->w * WEIGHT_SCALE));
+        atomic_add(&ra_arr[ia * d_simparam.nr + ir], (UINT64)(photon->w * WEIGHT_SCALE));
 
         // Kill the photon.
         photon->w = MCML_FP_ZERO;
@@ -296,7 +296,7 @@ void FastReflectTransmit(SimParamGPU d_simparam, __global const LayerStructGPU *
 // 	 azimuthal angle psi.
 //////////////////////////////////////////////////////////////////////////////
 void Spin(float g, PhotonStructGPU *photon,
-                     UINT64 *rnd_x, UINT32 *rnd_a)
+                     __global UINT64 *rnd_x, __global UINT32 *rnd_a)
 {
   float cost, sint; // cosine and sine of the polar deflection angle theta
   float cosp, sinp; // cosine and sine of the azimuthal angle psi
@@ -367,7 +367,7 @@ void Spin(float g, PhotonStructGPU *photon,
 
 
 void NewSpin(float g, PhotonStructGPU *photon,
-                     UINT64 *rnd_x, UINT32 *rnd_a)
+                     __global UINT64 *rnd_x, __global UINT32 *rnd_a)
 {
   float cost, sint; // cosine and sine of the polar deflection angle theta
   float cosp, sinp; // cosine and sine of the azimuthal angle psi
@@ -578,13 +578,13 @@ __kernel void MCMLKernel(__global const SimParamGPU *d_simparam_addr,__global co
   SimParamGPU d_simparam = d_simparam_addr[0];
   //UINT32 d_state_n_photons_left = d_state_n_photons_left_addr[0];
   // random number seeds
-  UINT64 rnd_x;
-  UINT32 rnd_a;
+  //UINT64 rnd_x;
+  //UINT32 rnd_a;
 
   UINT32 tid = get_global_id(0);
 
-  rnd_x = d_state_x[tid];
-  rnd_a = d_state_a[tid];
+  //rnd_x = d_state_x[tid];
+  //rnd_a = d_state_a[tid];
   LaunchPhoton(&photon, d_simparam); // Launch a new photon.
   // Flag to indicate if this thread is active
   UINT32 is_active ;
@@ -604,7 +604,7 @@ __kernel void MCMLKernel(__global const SimParamGPU *d_simparam_addr,__global co
     if (is_active)
     {
       //>>>>>>>>> StepSizeInTissue() in MCML
-      ComputeStepSize(&photon,&rnd_x, &rnd_a, d_layerspecs);
+      ComputeStepSize(&photon,&d_state_x[tid], &d_state_a[tid], d_layerspecs);
 
       //>>>>>>>>> HitBoundary() in MCML
 
@@ -614,7 +614,7 @@ __kernel void MCMLKernel(__global const SimParamGPU *d_simparam_addr,__global co
 
       if (photon.hit){
         FastReflectTransmit(d_simparam, d_layerspecs,
-                                        &photon, d_state_Rd_ra, d_state_Tt_ra, &rnd_x, &rnd_a);
+                                        &photon, d_state_Rd_ra, d_state_Tt_ra, &d_state_x[tid], &d_state_a[tid]);
       
         }
       else
@@ -622,7 +622,7 @@ __kernel void MCMLKernel(__global const SimParamGPU *d_simparam_addr,__global co
         Drop (&photon, d_state_A_rz, d_layerspecs, d_simparam); 
 
 
-        Spin(d_layerspecs[photon.layer].g, &photon, &rnd_x, &rnd_a);
+        Spin(d_layerspecs[photon.layer].g, &photon, &d_state_x[tid], &d_state_a[tid]);
         //NewSpin(d_layerspecs[photon.layer].g, &photon, &rnd_x, &rnd_a);
       }
 
@@ -633,7 +633,7 @@ __kernel void MCMLKernel(__global const SimParamGPU *d_simparam_addr,__global co
       ****/
       if (photon.w < WEIGHT)
       {
-        float rand = rand_MWC_co(&rnd_x, &rnd_a);
+        float rand = rand_MWC_co(&d_state_x[tid], &d_state_a[tid]);
 
         // This photon survives the roulette.
         if (photon.w != MCML_FP_ZERO && rand < CHANCE)

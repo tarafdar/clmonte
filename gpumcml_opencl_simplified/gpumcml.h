@@ -104,7 +104,7 @@ typedef struct
 {
   // points to a scalar that stores the number of photons that are not
   // completed (i.e. either on the fly or not yet started)
-  UINT32 *n_photons_left;
+  int *n_photons_left;
 
   // per-thread seeds for random number generation
   // arrays of length NUM_THREADS
