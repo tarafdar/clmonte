@@ -72,14 +72,20 @@ float rand_MWC_oc(__global UINT64* x,__global UINT32* a)
 //   step size remainder (sleft), and current layer (layer) 
 //   Note: Infinitely narrow beam (pointing in the +z direction = downwards)
 //////////////////////////////////////////////////////////////////////////////
-void LaunchPhoton(PhotonStructGPU *photon, SimParamGPU d_simparam)
+void LaunchPhoton(PhotonStructGPU *photon, SimParamGPU d_simparam, __global UINT64 *rnd_x, __global UINT32 *rnd_a)
 {
-  photon->x = MCML_FP_ZERO;
-  photon->y = MCML_FP_ZERO;
-  photon->z = MCML_FP_ZERO;
-  photon->ux = MCML_FP_ZERO; 
-  photon->uy = MCML_FP_ZERO;
-  photon->uz = FP_ONE;
+  photon->x = d_simparam.originX;
+  photon->y = d_simparam.originY;
+  photon->z = d_simparam.originZ;
+  
+  float rand, theta, phi;  
+  rand = rand_MWC_co(rnd_x, rnd_a);
+  theta = PI_const * rand;
+  phi = FP_TWO * PI_const * rand;
+  
+  photon->ux = native_sin(phi) * native_cos(theta); 
+  photon->uy = native_sin(phi) * native_sin(theta);
+  photon->uz = native_cos(phi);
   photon->w = d_simparam.init_photon_w;
   photon->sleft = MCML_FP_ZERO;
   photon->layer = 1;
@@ -466,7 +472,7 @@ void NewSpin(float g, PhotonStructGPU *photon,
 //   simulation to be broken up into batches 
 //   (avoiding display driver time-out errors)
 //////////////////////////////////////////////////////////////////////////////
-__kernel void InitThreadState(__global float *tstates_photon_x, __global float *tstates_photon_y, __global float *tstates_photon_z,
+/*__kernel void InitThreadState(__global float *tstates_photon_x, __global float *tstates_photon_y, __global float *tstates_photon_z,
                                  __global float *tstates_photon_ux, __global float *tstates_photon_uy, __global float *tstates_photon_uz,
                                  __global float *tstates_photon_w, __global float *tstates_photon_sleft,
                                  __global UINT32 *tstates_photon_layer, __global UINT32 *tstates_is_active, __global SimParamGPU *d_simparam_addr)  
@@ -490,7 +496,7 @@ __kernel void InitThreadState(__global float *tstates_photon_x, __global float *
   tstates_photon_layer[tid] = photon_temp.layer;
 //
   tstates_is_active[tid] = 1;
-}
+}*/
 
 //////////////////////////////////////////////////////////////////////////////
 //   Save thread states (tstates), by copying the current photon 
@@ -585,7 +591,7 @@ __kernel void MCMLKernel(__global const SimParamGPU *d_simparam_addr,__global co
 
   //rnd_x = d_state_x[tid];
   //rnd_a = d_state_a[tid];
-  LaunchPhoton(&photon, d_simparam); // Launch a new photon.
+  LaunchPhoton(&photon, d_simparam, &d_state_x[tid], &d_state_a[tid]); // Launch a new photon.
   // Flag to indicate if this thread is active
   UINT32 is_active ;
   is_active = 1;
@@ -641,7 +647,7 @@ __kernel void MCMLKernel(__global const SimParamGPU *d_simparam_addr,__global co
         // This photon is terminated.
         else if (atomic_sub(d_state_n_photons_left_addr, 1) > NUM_THREADS){
             
-          LaunchPhoton(&photon, d_simparam); // Launch a new photon.
+          LaunchPhoton(&photon, d_simparam, &d_state_x[tid], &d_state_a[tid]); // Launch a new photon.
         
         }
         // No need to process any more photons.

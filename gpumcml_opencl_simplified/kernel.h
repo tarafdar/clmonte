@@ -19,16 +19,20 @@
 
 typedef struct
 {
-  float init_photon_w;      // initial photon weight 
-
   float dz;                 // z grid separation.[cm] 
+  float init_photon_w;      // initial photon weight
   float dr;                 // r grid separation.[cm] 
 
   UINT32 na;                // array range 0..na-1. 
   UINT32 nz;                // array range 0..nz-1. 
   UINT32 nr;                // array range 0..nr-1. 
 
-  UINT32 num_layers;        // number of layers. 
+  UINT32 num_layers;        // number of layers.
+
+  float originX;
+  float originY;
+  float originZ;	//coordinate of the source emitter location
+  UINT32 init_tetraID; 
 } SimParamGPU;
 
 typedef struct 
@@ -113,6 +117,23 @@ typedef struct
   // flag to indicate if photon hits a boundary
   UINT32 hit;
 } PhotonStructGPU;
+
+typedef struct
+{
+  // A face plane is defined by equation (normalX) * x + (normalY) * y + (normalZ) * z = faceConstant
+  float normalX[4];
+  float normalY[4];
+  float normalZ[4];
+  float faceConstant[4];
+  
+  unsigned adjTetras[4];
+  unsigned matID;    
+} Tetra ;
+
+typedef struct
+{
+  float mu_s, mu_a;
+} Material;
 
 #endif // _GPUMCML_KERNEL_H_
 
