@@ -69,7 +69,7 @@ float rand_MWC_oc(__global UINT64* x,__global UINT32* a)
 
 //////////////////////////////////////////////////////////////////////////////
 //   Initialize packet position (x, y, z), direction (dx, dy, dz), weight (w), 
-//   step size remainder (sleft), and current layer (layer) 
+//   step size remainder (sleft), current layer (layer), and auxiliary vectors a,b
 //   Note: Infinitely narrow beam (pointing in the +z direction = downwards)
 //////////////////////////////////////////////////////////////////////////////
 void LaunchPacket(Packet *pkt, SimParamGPU d_simparam, __global UINT64 *rnd_x, __global UINT32 *rnd_a)
@@ -91,14 +91,19 @@ void LaunchPacket(Packet *pkt, SimParamGPU d_simparam, __global UINT64 *rnd_x, _
   pkt->sleft = MCML_FP_ZERO;
   pkt->layer = 1;
 
-  pkt->ax = MCML_FP_ZERO;
-  pkt->az = MCML_FP_ZERO;
-  pkt->ay = FP_ONE;
+  // vector a = (vector d) cross (positive z axis unit vector) and normalize it 
+  float4 d = (float4)(pkt->dx, pkt->dy, pkt->dz, 0);
+  float4 crossProduct = cross(d, (float4)(0,0,1,0));
+  float4 a = normalize(crossProduct);
+  pkt->ax = a.x;
+  pkt->ay = a.y;
+  pkt->az = a.z;
 
-
-  pkt->by = MCML_FP_ZERO;
-  pkt->bz = MCML_FP_ZERO;
-  pkt->bx = FP_ONE;
+  // vector b = (vector d) cross (vector a)
+  float4 b = cross(d,a);
+  pkt->bx = b.x;
+  pkt->by = b.y;
+  pkt->bz = b.z;
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -490,7 +495,7 @@ void NewSpin(float g, Packet *pkt,
   Packet photon_temp; 
   SimParamGPU d_simparam = d_simparam_addr[0];
   // Initialize the photon and copy into photon_<parameter x>
-  LaunchPhoton(&photon_temp, d_simparam);
+  LaunchPacket(&photon_temp, d_simparam);
 
   // This is the unique ID for each thread (or thread ID = tid)
   UINT32 tid = get_global_id(0);
