@@ -77,6 +77,7 @@ void LaunchPhoton(PhotonStructGPU *photon, SimParamGPU d_simparam, __global UINT
   photon->x = d_simparam.originX;
   photon->y = d_simparam.originY;
   photon->z = d_simparam.originZ;
+  photon->tetraID = d_simparam.init_tetraID;
   
   float rand, theta, phi;  
   rand = rand_MWC_co(rnd_x, rnd_a);
@@ -106,7 +107,8 @@ void LaunchPhoton(PhotonStructGPU *photon, SimParamGPU d_simparam, __global UINT
 //   Otherwise, pick up the leftover in sleft.
 //////////////////////////////////////////////////////////////////////////////
 void ComputeStepSize(PhotonStructGPU *photon,
-                                __global UINT64 *rnd_x, __global UINT32 *rnd_a, __global const LayerStructGPU *d_layerspecs)
+                                __global UINT64 *rnd_x, __global UINT32 *rnd_a, __global const LayerStructGPU *d_layerspecs,
+                                __global const Tetra *d_tetra_mesh, __global const Material *d_materials)
 {
   // Make a new step if no leftover.
   if (photon->sleft == MCML_FP_ZERO)
@@ -115,9 +117,17 @@ void ComputeStepSize(PhotonStructGPU *photon,
     float rand = rand_MWC_oc(rnd_x, rnd_a);
     //float rand = 0;
     photon->s = -log(rand) * d_layerspecs[photon->layer].rmuas;
+    /* for full monte
+    UINT32 materialID = d_tetra_mesh[photon->tetraID].matID;
+    photon->s = -log(rand) * d_materials[materialID].rmuas;
+    */    
   }
   else {
     photon->s = photon->sleft * d_layerspecs[photon->layer].rmuas;
+    /* for full monte
+    UINT32 materialID = d_tetra_mesh[photon->tetraID].matID;
+    photon->s = photon->sleft * d_materials[materialID].rmuas;
+    */
     photon->sleft = MCML_FP_ZERO;
   }
 }
@@ -571,7 +581,8 @@ __kernel void MCMLKernel(__global const SimParamGPU *d_simparam_addr,__global co
                                   //__global SimState d_state, 
                                   __global UINT32 *d_state_n_photons_left_addr, __global UINT64 *d_state_x, 
                                   __global UINT32 *d_state_a,__global UINT64 *d_state_Rd_ra, 
-                                  __global UINT64 *d_state_A_rz, __global UINT64 *d_state_Tt_ra
+                                  __global UINT64 *d_state_A_rz, __global UINT64 *d_state_Tt_ra, __global const Tetra *d_tetra_mesh,
+                                  __global const Material *d_materialspecs
                                   //__global GPUThreadStates tstates
                                 // __global float *tstates_photon_x, __global float *tstates_photon_y, __global float *tstates_photon_z,
                                 // __global float *tstates_photon_ux, __global float *tstates_photon_uy, __global float *tstates_photon_uz,
@@ -610,8 +621,9 @@ __kernel void MCMLKernel(__global const SimParamGPU *d_simparam_addr,__global co
     if (is_active)
     {
       //>>>>>>>>> StepSizeInTissue() in MCML
-      ComputeStepSize(&photon,&d_state_x[tid], &d_state_a[tid], d_layerspecs);
+      ComputeStepSize(&photon,&d_state_x[tid], &d_state_a[tid], d_layerspecs, d_tetra_mesh, d_materialspecs);
 
+      
       //>>>>>>>>> HitBoundary() in MCML
 
       photon.hit = HitBoundary(&photon, d_layerspecs);

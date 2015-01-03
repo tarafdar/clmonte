@@ -11,7 +11,7 @@
 //////////////////////////////////////////////////////////////////////////////
 //   Initialize Device Constant Memory with read-only data
 //////////////////////////////////////////////////////////////////////////////
-int InitDCMem(SimulationStruct *sim, cl_context context, cl_command_queue command_queue, cl_mem *simparam_mem_obj, cl_mem *layerspecs_mem_obj )
+int InitDCMem(SimulationStruct *sim, cl_context context, cl_command_queue command_queue, cl_mem *simparam_mem_obj, cl_mem *layerspecs_mem_obj, cl_mem *tetra_mesh_mem_obj, cl_mem *materials_mem_obj)
 {
   // Make sure that the number of layers is within the limit.
   UINT32 n_layers = sim->n_layers + 2;
@@ -87,6 +87,32 @@ int InitDCMem(SimulationStruct *sim, cl_context context, cl_command_queue comman
   // Copy layer data to constant device memory
   if(ret!= CL_SUCCESS){
     printf("Error writing to layerspecs buffer, exiting\n");
+    exit(-1);
+  }
+
+  Tetra h_tetraspecs[1];
+  *tetra_mesh_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, sizeof(Tetra)*1, NULL, &ret);
+  if(ret!= CL_SUCCESS){
+    printf("Error create tetra mesh buffer, exiting\n");
+    exit(-1);
+  }
+  ret = clEnqueueWriteBuffer(command_queue, *tetra_mesh_mem_obj, CL_TRUE, 0, sizeof(Tetra) * 1, h_tetraspecs, 0, NULL, NULL);
+  // Copy tetra mesh data to constant device memory
+  if(ret!= CL_SUCCESS){
+    printf("Error writing to tetraspecs buffer, exiting\n");
+    exit(-1);
+  }
+
+  Material h_materialspecs[1];
+  *materials_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, sizeof(Material)*1, NULL, &ret);
+  if(ret!= CL_SUCCESS){
+    printf("Error create materials buffer, exiting\n");
+    exit(-1);
+  }
+  ret = clEnqueueWriteBuffer(command_queue, *materials_mem_obj, CL_TRUE, 0, sizeof(Material) * 1, h_materialspecs, 0, NULL, NULL);
+  // Copy material data to constant device memory
+  if(ret!= CL_SUCCESS){
+    printf("Error writing to materialspecs buffer, exiting\n");
     exit(-1);
   }
 
@@ -344,7 +370,7 @@ void FreeDeviceSimStates(cl_context context, cl_command_queue command_queue,cl_k
         cl_mem a_mem_obj, cl_mem x_mem_obj, cl_mem A_rz_mem_obj, cl_mem Rd_ra_mem_obj, cl_mem Tt_ra_mem_obj, 
         cl_mem photon_x_mem_obj, cl_mem photon_y_mem_obj,cl_mem photon_z_mem_obj, cl_mem photon_ux_mem_obj, 
         cl_mem photon_uy_mem_obj, cl_mem photon_uz_mem_obj, cl_mem photon_w_mem_obj, cl_mem photon_sleft_mem_obj,
-        cl_mem photon_layer_mem_obj, cl_mem is_active_mem_obj
+        cl_mem photon_layer_mem_obj, cl_mem is_active_mem_obj, cl_mem tetra_mesh_mem_obj, cl_mem materials_mem_obj
      )
 {
  cl_int ret;
@@ -388,6 +414,17 @@ void FreeDeviceSimStates(cl_context context, cl_command_queue command_queue,cl_k
     printf("Error releasing num_photons_left mem obj, exiting\n");
     exit(-1);
  }
+ ret = clReleaseMemObject(tetra_mesh_mem_obj);
+ if(ret!=CL_SUCCESS){
+   printf("Error releasing tetra_mesh mem obj, exiting\n");
+   exit(-1);
+ }
+ ret = clReleaseMemObject(materials_mem_obj);
+ if(ret!=CL_SUCCESS){
+   printf("Error releasing materials mem obj, exiting\n");
+   exit(-1);
+ }
+ 
  ret = clReleaseMemObject(a_mem_obj);
  if(ret!= CL_SUCCESS){
     printf("Error releasing a mem obj, exiting\n");

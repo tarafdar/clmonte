@@ -101,7 +101,7 @@ typedef struct
   float by;
   float bz;
 
-  // directional cosines of the photon
+  // direction of the photon
   float ux;
   float uy;
   float uz;
@@ -116,6 +116,8 @@ typedef struct
 
   // flag to indicate if photon hits a boundary
   UINT32 hit;
+  // id of the tetrahedron where the photon is currently in
+  UINT32 tetraID;
 } PhotonStructGPU;
 
 typedef struct
@@ -132,7 +134,8 @@ typedef struct
 
 typedef struct
 {
-  float mu_s, mu_a;
+  float mu_as;	//result of mu_a + mu_s
+  float rmu_as;	//reciprocal of mu_as, store this to get rid of slow division arithmetic 
 } Material;
 
 #endif // _GPUMCML_KERNEL_H_
