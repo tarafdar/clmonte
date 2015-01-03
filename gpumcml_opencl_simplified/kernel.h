@@ -109,7 +109,7 @@ typedef struct
 
   float w;            // packet weight
 
-  float s;            // step size [cm]
+  float s;            // step size [cm] to be consumed in next Hop
   float sleft;        // leftover step size [cm]
 
   // index to layer where the photon resides
@@ -123,11 +123,9 @@ typedef struct
 
 typedef struct
 {
-  // A face plane is defined by equation (normalX) * x + (normalY) * y + (normalZ) * z = faceConstant
-  float normalX[4];
-  float normalY[4];
-  float normalZ[4];
-  float faceConstant[4];
+  // The face i's plane is defined by equation (face[i][0]) * x + (face[i][1]) * y + (face[i][2]) * z = face[i][3]
+  // The face normal vectors (face[i][0],face[i][1],face[i][2]) always point into the tetrahedron. They are always unit vector.
+  float face[4][4];
   
   unsigned adjTetras[4];
   unsigned matID;    

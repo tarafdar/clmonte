@@ -144,11 +144,65 @@ void ComputeStepSize(Packet *pkt,
 //   If the projected step hits the boundary, the packet steps to the boundary
 //   and the remainder of the step size is stored in sleft for the next iteration
 //////////////////////////////////////////////////////////////////////////////
-int HitBoundary(Packet *pkt, __global const LayerStructGPU *d_layerspecs)
+int HitBoundary(Packet *pkt, __global const LayerStructGPU *d_layerspecs, __global const Tetra *d_tetra_mesh)
 {
   /* step size to boundary. */
   float dl_b; 
+  /*
+  //cos of the angle between direction and normal vector.
+  //assuming the packet inside the tetrahedron, cosdn<0 when moving towards that face; cosdn>0 when moving away.
+  float cosdn[4];
+  
+  //orthogonal distance from the packet's position to the face
+  float orth_dis[4];
 
+  //distance from the packet's position to the face along its direction
+  float move_dis[4];
+
+  float4 d = (float4)(pkt->dx, pkt->dy, pkt->dz, 0);
+  float4 p = (float4)(pkt->x, pkt->y, pkt->z, 0);
+  Tetra tetra = d_tetra_mesh[pkt->tetraID];
+  float4 n[4];
+  n[0] = (float4)(tetra.face[0][0],tetra.face[0][1],tetra.face[0][2],tetra.face[0][3]);
+  n[1] = (float4)(tetra.face[1][0],tetra.face[1][1],tetra.face[1][2],tetra.face[1][3]);
+  n[2] = (float4)(tetra.face[2][0],tetra.face[2][1],tetra.face[2][2],tetra.face[2][3]);
+  n[3] = (float4)(tetra.face[3][0],tetra.face[3][1],tetra.face[3][2],tetra.face[3][3]);
+  cosdn[0] = dot(d,n[0]);
+  cosdn[1] = dot(d,n[1]);
+  cosdn[2] = dot(d,n[2]);
+  cosdn[3] = dot(d,n[3]);
+
+  orth_dis[0] = n[0].w - dot(p,n[0]);
+  orth_dis[1] = n[1].w - dot(p,n[1]);
+  orth_dis[2] = n[2].w - dot(p,n[2]);
+  orth_dis[3] = n[3].w - dot(p,n[3]);
+
+  //if the packet is moving away from a face, its distance to that face's intersection is infinity.
+  move_dis[0] = cosdn[0]>0 ? FLT_MAX : -native_divide(orth_dis[0], cosdn[0]);
+  move_dis[1] = cosdn[1]>0 ? FLT_MAX : -native_divide(orth_dis[1], cosdn[1]);
+  move_dis[2] = cosdn[2]>0 ? FLT_MAX : -native_divide(orth_dis[2], cosdn[2]);
+  move_dis[3] = cosdn[3]>0 ? FLT_MAX : -native_divide(orth_dis[3], cosdn[3]);
+
+  UINT32 localMinIndex1, localMinIndex2, minIndex;
+  localMinIndex1 = move_dis[0]<move_dis[1] ? 0 : 1;
+  localMinIndex2 = move_dis[2]<move_dis[3] ? 2 : 3;
+  minIndex = move_dis[localMinIndex1]<move_dis[localMinIndex2] ? localMinIndex1 : localMinIndex2;
+  
+  //TODO in tuning: Should we also store move_dis[minIndex] into Packet to avoid recomputing?
+  int faceIDToHit = move_dis[minIndex]>pkt->sleft ? -1 : minIndex;
+  if(move_dis[minIndex] > pkt->sleft)
+  {
+    pkt->s = pkt->sleft;
+    pkt->sleft = 0;
+    return -1;	//means won't hit in this step
+  }
+  else
+  {
+    pkt->sleft = pkt->s - move_dis[minIndex];
+    pkt->s = move_dis[minIndex];
+    return minIndex;	//means will hit the face specified by minIndex
+  }
+  */
   /* Distance to the boundary. */
   float z_bound = (pkt->dz > MCML_FP_ZERO) ?
     d_layerspecs[pkt->layer].z1 : d_layerspecs[pkt->layer].z0;
@@ -631,7 +685,7 @@ __kernel void MCMLKernel(__global const SimParamGPU *d_simparam_addr,__global co
       
       //>>>>>>>>> HitBoundary() in MCML
 
-      pkt.hit = HitBoundary(&pkt, d_layerspecs);
+      pkt.hit = HitBoundary(&pkt, d_layerspecs, d_tetra_mesh);
 
       Hop(&pkt);
 
