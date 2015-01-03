@@ -88,25 +88,26 @@ typedef struct
 
 typedef struct
 {
-  // cartesian coordinates of the photon [cm]
+  // cartesian coordinates of the packet [cm]
   float x;
   float y;
   float z;
 
+  // azimuthal auxiliary vectors a and b
   float ax;
   float ay;
   float az;
-
+  
   float bx;
   float by;
   float bz;
 
-  // direction of the photon
-  float ux;
-  float uy;
-  float uz;
+  // direction of the packet
+  float dx;
+  float dy;
+  float dz;
 
-  float w;            // photon weight
+  float w;            // packet weight
 
   float s;            // step size [cm]
   float sleft;        // leftover step size [cm]
@@ -114,11 +115,11 @@ typedef struct
   // index to layer where the photon resides
   UINT32 layer;
 
-  // flag to indicate if photon hits a boundary
+  // flag to indicate if packet hits a boundary
   UINT32 hit;
-  // id of the tetrahedron where the photon is currently in
+  // id of the tetrahedron where the packet is currently in
   UINT32 tetraID;
-} PhotonStructGPU;
+} Packet;
 
 typedef struct
 {
