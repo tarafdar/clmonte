@@ -119,6 +119,8 @@ typedef struct
   UINT32 hit;
   // id of the tetrahedron where the packet is currently in
   UINT32 tetraID;
+  // id of the tetrahedron where the packet will enter
+  UINT32 nextTetraID;
 } Packet;
 
 typedef struct

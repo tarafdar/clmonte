@@ -148,7 +148,7 @@ int HitBoundary(Packet *pkt, __global const LayerStructGPU *d_layerspecs, __glob
 {
   /* step size to boundary. */
   float dl_b; 
-  /*
+  /* for full monte
   //cos of the angle between direction and normal vector.
   //assuming the packet inside the tetrahedron, cosdn<0 when moving towards that face; cosdn>0 when moving away.
   float cosdn[4];
@@ -189,7 +189,7 @@ int HitBoundary(Packet *pkt, __global const LayerStructGPU *d_layerspecs, __glob
   minIndex = move_dis[localMinIndex1]<move_dis[localMinIndex2] ? localMinIndex1 : localMinIndex2;
   
   //TODO in tuning: Should we also store move_dis[minIndex] into Packet to avoid recomputing?
-  int faceIDToHit = move_dis[minIndex]>pkt->sleft ? -1 : minIndex;
+  pkt->nextTetraID = tetra->adjTetras[minIndex];
   if(move_dis[minIndex] > pkt->sleft)
   {
     pkt->s = pkt->sleft;
@@ -263,7 +263,7 @@ void Drop(Packet *pkt, __global UINT64 *g_A_rz, __global const LayerStructGPU *d
 void FastReflectTransmit(SimParamGPU d_simparam, __global const LayerStructGPU *d_layerspecs, 
                                      Packet *pkt, __global UINT64 *d_state_Rd_ra, __global UINT64 *d_state_Tt_ra,
                                     __global UINT64 *rnd_x, __global UINT32 *rnd_a)
-{
+{  
   /* Collect all info that depend on the sign of "dz". */
   float cos_crit;
   UINT32 new_layer;
