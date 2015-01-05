@@ -119,8 +119,8 @@ typedef struct
   UINT32 hit;
   // id of the tetrahedron where the packet is currently in
   UINT32 tetraID;
-  // id of the tetrahedron where the packet will enter
-  UINT32 nextTetraID;
+  // index (0,1,2,3) of the current tetra's face to hit
+  UINT32 faceIndexToHit
 } Packet;
 
 typedef struct
@@ -137,6 +137,10 @@ typedef struct
 {
   float mu_as;	//result of mu_a + mu_s
   float rmu_as;	//reciprocal of mu_as, store this to get rid of slow division arithmetic 
+  float n;	//index of refraction
+  float g;	//anisotropy constant
+  float HGCoeff1;	// HGCoeff1 = (1+g^2)/(2g)
+  float HGCoeff2;	// HGCoeff2 = (1-g^2)^2 /(2g). So cos(theta) = HGCoeff1 - HGCoeff2 / (1-g * rand(-1,1))
 } Material;
 
 #endif // _GPUMCML_KERNEL_H_

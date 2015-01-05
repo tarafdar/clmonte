@@ -93,7 +93,11 @@ void LaunchPacket(Packet *pkt, SimParamGPU d_simparam, __global UINT64 *rnd_x, _
 
   // vector a = (vector d) cross (positive z axis unit vector) and normalize it 
   float4 d = (float4)(pkt->dx, pkt->dy, pkt->dz, 0);
-  float4 crossProduct = cross(d, (float4)(0,0,1,0));
+  float4 crossProduct;
+  if(d.x==0 && d.y==0)
+    crossProduct = cross(d, (float4)(1,0,0,0));
+  else
+    crossProduct = cross(d, (float4)(0,0,1,0));
   float4 a = normalize(crossProduct);
   pkt->ax = a.x;
   pkt->ay = a.y;
@@ -255,6 +259,13 @@ void Drop(Packet *pkt, __global UINT64 *g_A_rz, __global const LayerStructGPU *d
 
 }
 
+float GetCosCrit(float ni, float nt)
+{
+  float sin_crit = native_divide(nt,ni);
+  float cos_crit = sqrt(FP_ONE - sin_crit*sin_crit);
+  return cos_crit;
+}
+
 //////////////////////////////////////////////////////////////////////////////
 //   UltraFast version (featuring reduced divergence compared to CPU-MCML)
 //   If a packet hits a boundary, determine whether the packet is transmitted
@@ -262,8 +273,127 @@ void Drop(Packet *pkt, __global UINT64 *g_A_rz, __global const LayerStructGPU *d
 //////////////////////////////////////////////////////////////////////////////
 void FastReflectTransmit(SimParamGPU d_simparam, __global const LayerStructGPU *d_layerspecs, 
                                      Packet *pkt, __global UINT64 *d_state_Rd_ra, __global UINT64 *d_state_Tt_ra,
-                                    __global UINT64 *rnd_x, __global UINT32 *rnd_a)
-{  
+                                    __global UINT64 *rnd_x, __global UINT32 *rnd_a, __global const Tetra *d_tetra_mesh,
+                                    __global const Material *d_materialspecs)
+{
+  //TODO: Should we store the cos_crit in each Tetra for each face?
+  Tetra tetra = d_tetra_mesh[pkt->tetraID];
+  Tetra nextTetra = d_tetra_mesh[tetra.adjTetras[pkt->faceIndexToHit]];
+  float ni = d_materialspecs[tetra.matID].n;
+  float nt = d_materialspecs[nextTetra.matID].n;
+  float crit_cos=0;	//initialize as cos=0, means total internal reflection never occurs.
+  if (nt<ni)	//total internal reflection may occur
+  {
+    crit_cos = GetCosCrit(ni, nt);
+  }
+  
+  float *normal = tetra.face[pkt->faceIndexToHit];
+  float costheta = -dot((float4)(pkt->dx,pkt->dy,pkt->dz,0), (float4)(normal[0],normal[1],normal[2],0));
+
+  float ni_nt = native_divide(ni, nt);
+  float ca1 = costheta; //ca1 is cos(theta incidence) 
+  float sa1 = sqrt(FP_ONE-ca1*ca1); //sa1 is sin(theta incidence)
+  if (ca1 > COSZERO) sa1 = MCML_FP_ZERO;
+  float sa2 = min(ni_nt * sa1, FP_ONE); //sa2 is sin(theta transmitt)
+  float ca2 = sqrt(FP_ONE-sa2*sa2); //ca2 is cos(theta transmitt)
+  
+  if (costheta <= crit_cos)	//total internal reflection occurs
+  {
+    //reflected direction = original_direction - 2(original_direction dot normal)*normal
+    pkt->dx = pkt->dx + 2*ca1*normal[0]; //here the costheta must be the same as the one Li defined during the TIR step, which is negative d dot n, so the plus sign in the middle is consistent with the minus sign in the formula that's in the comment above
+    pkt->dy = pkt->dy + 2*ca1*normal[1];
+    pkt->dz = pkt->dz + 2*ca1*normal[2];
+    // auxilary updating function
+    // vector a = (vector d) cross (positive z axis unit vector) and normalize it 
+    float4 d = (float4)(pkt->dx, pkt->dy, pkt->dz, 0);
+    float4 crossProduct;
+    if(d.x==0 && d.y==0)
+      crossProduct = cross(d, (float4)(1,0,0,0));
+    else
+      crossProduct = cross(d, (float4)(0,0,1,0));
+    float4 a = normalize(crossProduct);
+    pkt->ax = a.x;
+    pkt->ay = a.y;
+    pkt->az = a.z;
+
+    // vector b = (vector d) cross (vector a)
+    float4 b = cross(d,a);
+    pkt->bx = b.x;
+    pkt->by = b.y;
+    pkt->bz = b.z;
+  }
+  else
+  {    
+    //Jeff's way of calculating Fresnel
+    // Rs = [(n1 cos(theta_i) - n2 cos(theta_t))/((n1 cos(theta_i) + n2 cos(theta_t)))] ^ 2
+    // Rp = [(n1 cos(theta_t) - n2 cos(theta_i))/((n1 cos(theta_t) + n2 cos(theta_i)))] ^ 2
+    float Rs = (ni*ca1 - nt*ca2)/(ni*ca1 + nt*ca2);
+    Rs *= Rs;
+    float Rp = (ni*ca2 - nt*ca1)/(ni*ca2 + nt*ca1);
+    Rp *= Rp;
+    float rFresnel = (Rs+Rp)/2;
+
+    if (ca1 < COSNINETYDEG || sa2 == FP_ONE) rFresnel = FP_ONE;
+
+    float rand = rand_MWC_co(rnd_x, rnd_a);
+
+    if (rFresnel < rand) //refract
+    {
+      // refracted direction = n1/n2*original_direction - [n1/n2*cos(theta incidence) + sqrt(1-sin^2(theta transmitt))]*normal
+      pkt->dx = ni_nt*(pkt->dx) - (ni_nt*ca1+ca2)*normal[0]; 
+      pkt->dy = ni_nt*(pkt->dy) - (ni_nt*ca1+ca2)*normal[1]; 
+      pkt->dz = ni_nt*(pkt->dz) - (ni_nt*ca1+ca2)*normal[2]; 
+      
+      // auxilary updating function
+      // vector a = (vector d) cross (positive z axis unit vector) and normalize it 
+      float4 d = (float4)(pkt->dx, pkt->dy, pkt->dz, 0);
+      float4 crossProduct;
+      if(d.x==0 && d.y==0)
+        crossProduct = cross(d, (float4)(1,0,0,0));
+      else
+        crossProduct = cross(d, (float4)(0,0,1,0));
+      float4 a = normalize(crossProduct);
+      pkt->ax = a.x;
+      pkt->ay = a.y;
+      pkt->az = a.z;
+
+      // vector b = (vector d) cross (vector a)
+      float4 b = cross(d,a);
+      pkt->bx = b.x;
+      pkt->by = b.y;
+      pkt->bz = b.z;
+      
+    }
+    else //reflect
+    {
+      //reflected direction = original_direction - 2(original_direction dot normal)*normal
+      pkt->dx = pkt->dx + 2*ca1*normal[0]; //here the costheta must be the same as the one Li defined during the TIR step, which is negative d dot n, so the plus sign in the middle is consistent with the minus sign in the formula that's in the comment above
+      pkt->dy = pkt->dy + 2*ca1*normal[1];
+      pkt->dz = pkt->dz + 2*ca1*normal[2];
+      
+      // auxilary updating function
+      // vector a = (vector d) cross (positive z axis unit vector) and normalize it 
+      float4 d = (float4)(pkt->dx, pkt->dy, pkt->dz, 0);
+      float4 crossProduct;
+      if(d.x==0 && d.y==0)
+        crossProduct = cross(d, (float4)(1,0,0,0));
+      else
+        crossProduct = cross(d, (float4)(0,0,1,0));
+      float4 a = normalize(crossProduct);
+      pkt->ax = a.x;
+      pkt->ay = a.y;
+      pkt->az = a.z;
+
+      // vector b = (vector d) cross (vector a)
+      float4 b = cross(d,a);
+      pkt->bx = b.x;
+      pkt->by = b.y;
+      pkt->bz = b.z; 
+    }
+  }
+
+  
+  
   /* Collect all info that depend on the sign of "dz". */
   float cos_crit;
   UINT32 new_layer;
@@ -279,7 +409,7 @@ void FastReflectTransmit(SimParamGPU d_simparam, __global const LayerStructGPU *
   }
 
   // cosine of the incident angle (0 to 90 deg)
-  float ca1 = fabs(pkt->dz);
+  ca1 = fabs(pkt->dz);
 
   // The default move is to reflect.
   pkt->dz = -pkt->dz;
@@ -371,7 +501,8 @@ void FastReflectTransmit(SimParamGPU d_simparam, __global const LayerStructGPU *
 // 	 azimuthal angle psi.
 //////////////////////////////////////////////////////////////////////////////
 void Spin(float g, Packet *pkt,
-                     __global UINT64 *rnd_x, __global UINT32 *rnd_a)
+                     __global UINT64 *rnd_x, __global UINT32 *rnd_a,
+                     __global const Tetra *d_tetra_mesh, __global const Material *d_materialspec)
 {
   float cost, sint; // cosine and sine of the polar deflection angle theta
   float cosp, sinp; // cosine and sine of the azimuthal angle psi
@@ -691,7 +822,7 @@ __kernel void MCMLKernel(__global const SimParamGPU *d_simparam_addr,__global co
 
       if (pkt.hit){
         FastReflectTransmit(d_simparam, d_layerspecs,
-                                        &pkt, d_state_Rd_ra, d_state_Tt_ra, &d_state_x[tid], &d_state_a[tid]);
+                                        &pkt, d_state_Rd_ra, d_state_Tt_ra, &d_state_x[tid], &d_state_a[tid], d_tetra_mesh, d_materialspecs);
       
         }
       else
@@ -699,7 +830,7 @@ __kernel void MCMLKernel(__global const SimParamGPU *d_simparam_addr,__global co
         Drop (&pkt, d_state_A_rz, d_layerspecs, d_simparam); 
 
 
-        Spin(d_layerspecs[pkt.layer].g, &pkt, &d_state_x[tid], &d_state_a[tid]);
+        Spin(d_layerspecs[pkt.layer].g, &pkt, &d_state_x[tid], &d_state_a[tid], d_tetra_mesh, d_materialspecs);
         //NewSpin(d_layerspecs[pkt.layer].g, &pkt, &rnd_x, &rnd_a);
       }
 
