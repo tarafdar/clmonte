@@ -509,33 +509,22 @@ void Spin(float g, Packet *pkt,
   float psi;
   float SIGN;
   float temp;
-  float last_ux, last_uy, last_uz;
+  float last_dx, last_dy, last_dz, last_ax, last_ay, last_az, last_bx, last_by, last_bz;
   float rand;
 
-  /***********************************************************
-  *	>>>>>>> SpinTheta
-  *  Choose (sample) a new theta angle for packet propagation
-  *	according to the anisotropy.
-  *
-  *	If anisotropy g is 0, then
-  *		cos(theta) = 2*rand-1.
-  *	otherwise
-  *		sample according to the Henyey-Greenstein function.
-  *
-  *	Returns the cosine of the polar deflection angle theta.
-  ****/
+  rand = FP_TWO * rand_MWC_co(rnd_x, rnd_a) - FP_ONE;	//rand is sampled from -1 to 1
 
-  rand = rand_MWC_co(rnd_x, rnd_a);
+  Material mat = d_materialspec[d_tetra_mesh[pkt->tetraID].matID];
+  cost = mat.HGCoeff1 - native_divide(mat.HGCoeff2, (1-mat.g * rand));
 
-  cost = FP_TWO * rand - FP_ONE;
-
-  if (g != MCML_FP_ZERO)
+  if (g != MCML_FP_ZERO)	//This if block will be removed in FullMonte
   {
-    temp = native_divide((FP_ONE - g * g), FP_ONE + g*cost);
+    temp = native_divide((FP_ONE - g * g), FP_ONE + g*rand);
     cost = native_divide(FP_ONE + g * g - temp*temp, FP_TWO * g);
     cost = max(cost, -FP_ONE);
     cost = min(cost, FP_ONE);
   }
+  
   sint = sqrt(FP_ONE - cost * cost);
 
   /* spin psi 0-2pi. */
@@ -547,27 +536,42 @@ void Spin(float g, Packet *pkt,
   float stcp = sint * cosp;
   float stsp = sint * sinp;
 
-  last_ux = pkt->dx;
-  last_uy = pkt->dy;
-  last_uz = pkt->dz;
+  last_dx = pkt->dx;
+  last_dy = pkt->dy;
+  last_dz = pkt->dz;
+  last_ax = pkt->ax;
+  last_ay = pkt->ay;
+  last_az = pkt->az;
+  last_bx = pkt->bx;
+  last_by = pkt->by;
+  last_bz = pkt->bz;
+  pkt->dx = cost*last_dx - sint*cosp*last_ax + sint*sinp*last_bx;
+  pkt->dy = cost*last_dy - sint*cosp*last_ay + sint*sinp*last_by;
+  pkt->dz = cost*last_dz - sint*cosp*last_az + sint*sinp*last_bz;
+  pkt->ax = sint*last_dx +cost*cosp*last_ax - cost*sinp*last_bx;
+  pkt->ay = sint*last_dy +cost*cosp*last_ay - cost*sinp*last_by;
+  pkt->az = sint*last_dz +cost*cosp*last_az - cost*sinp*last_bz;
+  pkt->bx = sinp*last_ax + cosp*last_bx;
+  pkt->by = sinp*last_ay + cosp*last_by;
+  pkt->bz = sinp*last_az + cosp*last_bz;
 
-  if (fabs(last_uz) > COSZERO) 
+  if (fabs(last_dz) >= COSZERO)	//This if-else block will be removed in FullMonte
     /* normal incident. */
   {
     pkt->dx = stcp;
     pkt->dy = stsp;
-    SIGN = ((last_uz) >= MCML_FP_ZERO ? FP_ONE : -FP_ONE);
+    SIGN = ((last_dz) >= MCML_FP_ZERO ? FP_ONE : -FP_ONE);
     pkt->dz = cost * SIGN;
   }
   else 
     /* regular incident. */
   {
-    temp = rsqrt(FP_ONE - last_uz * last_uz);
-    pkt->dx = (stcp * last_ux * last_uz - stsp * last_uy) * temp
-      + last_ux * cost;
-    pkt->dy = (stcp * last_uy * last_uz + stsp * last_ux) * temp
-      + last_uy * cost;
-    pkt->dz = native_divide(-stcp, temp) + last_uz * cost;
+    temp = rsqrt(FP_ONE - last_dz * last_dz);
+    pkt->dx = (stcp * last_dx * last_dz - stsp * last_dy) * temp
+      + last_dx * cost;
+    pkt->dy = (stcp * last_dy * last_dz + stsp * last_dx) * temp
+      + last_dy * cost;
+    pkt->dz = native_divide(-stcp, temp) + last_dz * cost;
   }
 }
 
