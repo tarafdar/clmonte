@@ -412,7 +412,8 @@ void Sort4Int(int *ids)
   Sort2Int(ids+1, ids+2);
 }
 
-void FindAdjacentTetraIDs(int tetraID, Tetra *tetra_mesh, list<TwoPointIDsToTetraID> *faceToTetraMap, int lowID, int midID, int highID, int faceIndex)
+void FindAdjacentTetraIDs(int tetraID, Tetra *tetra_mesh, list<TwoPointIDsToTetraID> *faceToTetraMap, float *pointX,  
+                          float *pointY, float *pointZ, int lowID, int midID, int highID, int fourthID, int faceIndex)
 {
   list<TwoPointIDsToTetraID> nodeList = faceToTetraMap[lowID];
   TwoPointIDsToTetraID *node = NULL;
@@ -442,11 +443,11 @@ void FindAdjacentTetraIDs(int tetraID, Tetra *tetra_mesh, list<TwoPointIDsToTetr
     Tetra adjTetra = tetra_mesh[node->TetraID];
     for(i = 0; i < 4; i++)
     {
-      if(adjTetra.face[i][0]==0 && adjTetra.face[i][1]==0 && adjTetra.face[i][2]==0 && adjTetra.adjTetras[i]==0)
-      {
-        ;
-      }
+      if(adjTetra.face[i][0]==0 && adjTetra.face[i][1]==0 && adjTetra.face[i][2]==0 && adjTetra.adjTetras[i]==0) break;
     }
+	adjTetra.adjTetras[i] = tetraID;
+	//Find face parameters (normal vector and face constant)
+	PopulateFaceParameters(tetra, adjTetra, lowID, midID, highID, fourthID, pointX, pointY, pointZ, );
   }
 }
 
@@ -482,10 +483,10 @@ void PopulateTetraFromMeshFile(char* filename, float *pointX, float *pointY, flo
     
     Sort4Int(pointIDs);
     //Find adjacent tetra IDs
-    FindAdjacentTetraIDs(i, tetra_mesh, faceToTetraMap, pointIDs[0], pointIDs[1], pointIDs[2], 0);
-    FindAdjacentTetraIDs(i, tetra_mesh, faceToTetraMap, pointIDs[0], pointIDs[1], pointIDs[3], 1);
-    FindAdjacentTetraIDs(i, tetra_mesh, faceToTetraMap, pointIDs[0], pointIDs[2], pointIDs[3], 2);
-    FindAdjacentTetraIDs(i, tetra_mesh, faceToTetraMap, pointIDs[1], pointIDs[2], pointIDs[3], 3);
+    FindAdjacentTetraIDs(i, tetra_mesh, faceToTetraMap, pointX, pointY, pointZ, pointIDs[0], pointIDs[1], pointIDs[2], pointIDs[3], 0);
+    FindAdjacentTetraIDs(i, tetra_mesh, faceToTetraMap, pointX, pointY, pointZ, pointIDs[0], pointIDs[1], pointIDs[3], pointIDs[2], 1);
+    FindAdjacentTetraIDs(i, tetra_mesh, faceToTetraMap, pointX, pointY, pointZ, pointIDs[0], pointIDs[2], pointIDs[3], pointIDs[1], 2);
+    FindAdjacentTetraIDs(i, tetra_mesh, faceToTetraMap, pointX, pointY, pointZ, pointIDs[1], pointIDs[2], pointIDs[3], pointIDs[0], 3);
     //process the point ids, compute the face normal vector and constant and store them into Tetra    
   }
   

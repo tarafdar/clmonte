@@ -608,7 +608,7 @@ int main(int argc, char* argv[])
 {
   banner();
 
-  float *pointX, *pointY, *pointZ;
+  Point *points;
   Tetra *tetra_mesh;
   unsigned long Np, Nt;	//number of points, number of tetrahedra
   //PopulateTetraFromMeshFile("", pointX, pointY, pointZ, tetra_mesh, &Np, &Nt);
