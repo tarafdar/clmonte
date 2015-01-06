@@ -17,6 +17,9 @@
 //////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////
 
+typedef unsigned long long UINT64;
+typedef unsigned int UINT32;
+
 typedef struct
 {
   float dz;                 // z grid separation.[cm] 
@@ -120,7 +123,7 @@ typedef struct
   // id of the tetrahedron where the packet is currently in
   UINT32 tetraID;
   // index (0,1,2,3) of the current tetra's face to hit
-  UINT32 faceIndexToHit
+  UINT32 faceIndexToHit;
 } Packet;
 
 typedef struct

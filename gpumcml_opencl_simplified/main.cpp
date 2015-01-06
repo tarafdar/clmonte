@@ -88,8 +88,8 @@
 //#endif
 
 #include <CL/cl.h>
-#include "gpumcml.h"
 #include "kernel.h"
+#include "gpumcml.h"
 #define MAX_SOURCE_SIZE 0x100000
 
 cl_context context;
@@ -117,6 +117,7 @@ cl_mem materials_mem_obj;
 cl_kernel initkernel;
 cl_kernel kernel;
 cl_program program;
+
 //////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////
 
@@ -594,12 +595,23 @@ static void DoOneSimulation(int sim_id, SimulationStruct* simulation,
   free(hstates);
 }
 
+void banner()
+{
+    printf("FullMonte OpenCL v0.0\n");
+    printf("(c) Yu Wu, Emil Salavat, Li Chen, 2015\n\n");
+}
+
 //////////////////////////////////////////////////////////////////////////////
 //   Perform MCML simulation for one run out of N runs (in the input file)
 //////////////////////////////////////////////////////////////////////////////
 int main(int argc, char* argv[])
 {
+  banner();
 
+  float *pointX, *pointY, *pointZ;
+  Tetra *tetra_mesh;
+  unsigned long Np, Nt;	//number of points, number of tetrahedra
+  //PopulateTetraFromMeshFile("", pointX, pointY, pointZ, tetra_mesh, &Np, &Nt);
 
   char* filename = NULL;
   unsigned long long seed = (unsigned long long) time(NULL);

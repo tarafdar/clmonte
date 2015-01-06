@@ -30,12 +30,16 @@
 #include <stdlib.h>
 #include <float.h>
 #include <string.h>
+#include <list>
 
 #include <CL/cl.h>
-//#include "kernel.h"
+
+#include "kernel.h"
 #include "gpumcml.h"
 //////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////
+
+using namespace std;
 
 //////////////////////////////////////////////////////////////////////////////
 //   Print Command Line Help - How to run program and pass in parameters 
@@ -378,6 +382,116 @@ int ischar(char a)
   if((a>=(char)65 && a<=(char)90)||(a>=(char)97 && a<=(char)122)) return 1;
   else return 0;
 }
+
+void cross(float x1, float y1, float z1, float x2, float y2, float z2, float *p_xout, float *p_yout, float *p_zout)
+{
+  *p_xout = y1 * z2 - y2 * z1;
+  *p_yout = z1 * x2 - z2 * x1;
+  *p_zout = x1 * y2 - x2 * y1;
+}
+
+void Sort2Int(int *a, int *b)
+{
+  if (*a > *b)
+  {
+    int temp = *a;
+    *a = *b;
+    *b = temp;
+  }
+}
+
+void Sort4Int(int *ids)
+{
+  //Get local mins and local maxes
+  Sort2Int(ids, ids+1);
+  Sort2Int(ids+2, ids+3);
+  //Now min = ids[0] or ids[2]; max = ids[1] or ids[3];
+  Sort2Int(ids, ids+2);
+  Sort2Int(ids+1, ids+3);
+  //Now min and max are properly located, only need to sort the middle two
+  Sort2Int(ids+1, ids+2);
+}
+
+void FindAdjacentTetraIDs(int tetraID, Tetra *tetra_mesh, list<TwoPointIDsToTetraID> *faceToTetraMap, int lowID, int midID, int highID, int faceIndex)
+{
+  list<TwoPointIDsToTetraID> nodeList = faceToTetraMap[lowID];
+  TwoPointIDsToTetraID *node = NULL;
+  int i;
+  for(list<TwoPointIDsToTetraID>::iterator it = nodeList.begin();it != nodeList.end();it++)
+  {
+    if(it->lowerPointID == midID && it->higherPointID == highID)
+    {
+      node = &(*it);
+      break;
+    }
+  }
+  if(node == NULL)	//Did not find the node
+  {
+    //add the node to nodeList, indicating this Tetra is waiting for its adjacent one to be found later (if it exists).
+    node = (TwoPointIDsToTetraID *)malloc(sizeof(TwoPointIDsToTetraID));
+    node->lowerPointID = midID;
+    node->higherPointID = highID;
+    node->TetraID = tetraID;
+    nodeList.push_back(*node);
+  }
+  else	//the node is found
+  {
+    //set both tetras' adjacent tetra id as each other's
+    Tetra tetra = tetra_mesh[tetraID];
+    tetra.adjTetras[faceIndex] = node->TetraID;
+    Tetra adjTetra = tetra_mesh[node->TetraID];
+    for(i = 0; i < 4; i++)
+    {
+      if(adjTetra.face[i][0]==0 && adjTetra.face[i][1]==0 && adjTetra.face[i][2]==0 && adjTetra.adjTetras[i]==0)
+      {
+        ;
+      }
+    }
+  }
+}
+
+void PopulateTetraFromMeshFile(char* filename, float *pointX, float *pointY, float *pointZ, Tetra *tetra_mesh, unsigned long *p_Np, unsigned long *p_Nt)
+{
+  int i;
+  int pointIDs[4];
+  FILE *pFile = fopen(filename , "r");
+  char line[64];
+  
+
+  
+  fgets(line, 64, pFile);
+  sscanf(line, "%d", p_Np);
+  //make size+1 because the point ID refered by each tetrahedron in the input file starts from 1 not 0
+  pointX = (float*)malloc(sizeof(float)*(*p_Np+1));
+  pointY = (float*)malloc(sizeof(float)*(*p_Np+1));
+  pointZ = (float*)malloc(sizeof(float)*(*p_Np+1));
+  fgets(line, 64, pFile);
+  sscanf(line, "%d", p_Nt);
+  for(i=1; i<*p_Np+1; i++)
+  {
+    fgets(line, 64, pFile);
+    sscanf(line, "%f %f %f", &pointX[i], &pointY[i], &pointZ[i]);
+  }
+  
+  tetra_mesh = (Tetra*)malloc(sizeof(Tetra)*(*p_Nt+1));
+  list<TwoPointIDsToTetraID> *faceToTetraMap = (list<TwoPointIDsToTetraID> *)malloc(sizeof(list<TwoPointIDsToTetraID>)*(*p_Np+1));
+  for(i=1; i<*p_Nt+1; i++)
+  {
+    fgets(line, 64, pFile);
+    sscanf(line, "%d %d %d %d %d", &pointIDs[0], &pointIDs[1], &pointIDs[2], &pointIDs[3], &(tetra_mesh[i].matID));
+    
+    Sort4Int(pointIDs);
+    //Find adjacent tetra IDs
+    FindAdjacentTetraIDs(i, tetra_mesh, faceToTetraMap, pointIDs[0], pointIDs[1], pointIDs[2], 0);
+    FindAdjacentTetraIDs(i, tetra_mesh, faceToTetraMap, pointIDs[0], pointIDs[1], pointIDs[3], 1);
+    FindAdjacentTetraIDs(i, tetra_mesh, faceToTetraMap, pointIDs[0], pointIDs[2], pointIDs[3], 2);
+    FindAdjacentTetraIDs(i, tetra_mesh, faceToTetraMap, pointIDs[1], pointIDs[2], pointIDs[3], 3);
+    //process the point ids, compute the face normal vector and constant and store them into Tetra    
+  }
+  
+  return;
+}
+
 
 //////////////////////////////////////////////////////////////////////////////
 //   Parse simulation input file
