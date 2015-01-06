@@ -383,6 +383,14 @@ int ischar(char a)
   else return 0;
 }
 
+void normalize(float &x, float &y, float &z)
+{
+  float magnitude = sqrt(x*x + y*y + z*z);
+  x = x/magnitude;
+  y = y/magnitude;
+  z = z/magnitude;
+}
+
 void cross(float x1, float y1, float z1, float x2, float y2, float z2, float *p_xout, float *p_yout, float *p_zout)
 {
   *p_xout = y1 * z2 - y2 * z1;
@@ -412,12 +420,55 @@ void Sort4Int(int *ids)
   Sort2Int(ids+1, ids+2);
 }
 
-void FindAdjacentTetraIDs(int tetraID, Tetra *tetra_mesh, list<TwoPointIDsToTetraID> *faceToTetraMap, float *pointX,  
-                          float *pointY, float *pointZ, int lowID, int midID, int highID, int fourthID, int faceIndex)
+void PopulateFaceParameters(Tetra &tetra, Tetra &adjTetra, int tetraIndex, int adjTetraIndex, Point &p1, Point &p2, 
+                            Point &p3, Point &p4)
+{
+  //1. Get vectors of any two sides of the face triangle
+  float x1 = p1.x - p2.x;
+  float y1 = p1.y - p2.y;
+  float z1 = p1.z - p2.z;
+  float x2 = p1.x - p3.x;
+  float y2 = p1.y - p3.y;
+  float z2 = p1.z - p3.z;
+  //2. Take the cross product of those two sides to get the normal vector
+  float nx,ny,nz;
+  cross(x1,y1,z1,x2,y2,z2,&nx,&ny,&nz);
+  //3. Normalize the normal vector to unit length
+  normalize(nx,ny,nz);
+  //4. Get the face constant
+  float faceConstant = nx*p1.x + ny*p1.y + nz*p1.z;
+  //5. Put nx,ny,nz and faceConstant to the correct tetrahedron by making sure (nx,ny,nz) always points into the tetra
+  if(nx*p4.x+ny*p4.y+nz*p4.z > faceConstant)	//pointing into tetra
+  {
+    tetra.face[tetraIndex][0] = nx;
+    tetra.face[tetraIndex][1] = ny;
+    tetra.face[tetraIndex][2] = nz;
+    tetra.face[tetraIndex][3] = faceConstant;
+    adjTetra.face[adjTetraIndex][0] = -nx;
+    adjTetra.face[adjTetraIndex][1] = -ny;
+    adjTetra.face[adjTetraIndex][2] = -nz;
+    adjTetra.face[adjTetraIndex][3] = -faceConstant;
+  }
+  else //pointing outside tetra, so into adjTetra
+  {
+    tetra.face[tetraIndex][0] = -nx;
+    tetra.face[tetraIndex][1] = -ny;
+    tetra.face[tetraIndex][2] = -nz;
+    tetra.face[tetraIndex][3] = -faceConstant;
+    adjTetra.face[adjTetraIndex][0] = nx;
+    adjTetra.face[adjTetraIndex][1] = ny;
+    adjTetra.face[adjTetraIndex][2] = nz;
+    adjTetra.face[adjTetraIndex][3] = faceConstant;
+  }
+}
+
+void HandleFace(int tetraID, Tetra *tetra_mesh, list<TwoPointIDsToTetraID> *faceToTetraMap, Point *points,
+                          int lowID, int midID, int highID, int fourthID, int faceIndex)
 {
   list<TwoPointIDsToTetraID> nodeList = faceToTetraMap[lowID];
   TwoPointIDsToTetraID *node = NULL;
   int i;
+  //Check if the nodeList already contains the adjacent tetra waiting to be paired.
   for(list<TwoPointIDsToTetraID>::iterator it = nodeList.begin();it != nodeList.end();it++)
   {
     if(it->lowerPointID == midID && it->higherPointID == highID)
@@ -426,6 +477,7 @@ void FindAdjacentTetraIDs(int tetraID, Tetra *tetra_mesh, list<TwoPointIDsToTetr
       break;
     }
   }
+  //TODO: may need mechanism to make sure no face is shared by more than two tetras.
   if(node == NULL)	//Did not find the node
   {
     //add the node to nodeList, indicating this Tetra is waiting for its adjacent one to be found later (if it exists).
@@ -433,6 +485,7 @@ void FindAdjacentTetraIDs(int tetraID, Tetra *tetra_mesh, list<TwoPointIDsToTetr
     node->lowerPointID = midID;
     node->higherPointID = highID;
     node->TetraID = tetraID;
+    node->otherPointID = fourthID;
     nodeList.push_back(*node);
   }
   else	//the node is found
@@ -441,20 +494,24 @@ void FindAdjacentTetraIDs(int tetraID, Tetra *tetra_mesh, list<TwoPointIDsToTetr
     Tetra tetra = tetra_mesh[tetraID];
     tetra.adjTetras[faceIndex] = node->TetraID;
     Tetra adjTetra = tetra_mesh[node->TetraID];
+    //Look for the available place in face array
     for(i = 0; i < 4; i++)
     {
       if(adjTetra.face[i][0]==0 && adjTetra.face[i][1]==0 && adjTetra.face[i][2]==0 && adjTetra.adjTetras[i]==0) break;
     }
+    //TODO: error checking for i==4?
 	adjTetra.adjTetras[i] = tetraID;
-	//Find face parameters (normal vector and face constant)
-	PopulateFaceParameters(tetra, adjTetra, lowID, midID, highID, fourthID, pointX, pointY, pointZ, );
+	//Populate face parameters (normal vector and face constant)
+	PopulateFaceParameters(tetra, adjTetra, faceIndex, i, points[lowID], points[midID], points[highID], points[fourthID]);
+	//Delete the node
+	nodeList.remove(*node);
   }
 }
 
-void PopulateTetraFromMeshFile(char* filename, float *pointX, float *pointY, float *pointZ, Tetra *tetra_mesh, unsigned long *p_Np, unsigned long *p_Nt)
+void PopulateTetraFromMeshFile(char* filename, Point *points, Tetra *tetra_mesh, unsigned long *p_Np, unsigned long *p_Nt)
 {
   int i;
-  int pointIDs[4];
+  int pointIDs[4];	//store the ids of 4 points of each tetrahedron
   FILE *pFile = fopen(filename , "r");
   char line[64];
   
@@ -463,15 +520,13 @@ void PopulateTetraFromMeshFile(char* filename, float *pointX, float *pointY, flo
   fgets(line, 64, pFile);
   sscanf(line, "%d", p_Np);
   //make size+1 because the point ID refered by each tetrahedron in the input file starts from 1 not 0
-  pointX = (float*)malloc(sizeof(float)*(*p_Np+1));
-  pointY = (float*)malloc(sizeof(float)*(*p_Np+1));
-  pointZ = (float*)malloc(sizeof(float)*(*p_Np+1));
+  points = (Point*)malloc(sizeof(Point)*(*p_Np+1));
   fgets(line, 64, pFile);
   sscanf(line, "%d", p_Nt);
   for(i=1; i<*p_Np+1; i++)
   {
     fgets(line, 64, pFile);
-    sscanf(line, "%f %f %f", &pointX[i], &pointY[i], &pointZ[i]);
+    sscanf(line, "%f %f %f", &(points[i].x), &(points[i].y), &(points[i].z));
   }
   
   tetra_mesh = (Tetra*)malloc(sizeof(Tetra)*(*p_Nt+1));
@@ -482,14 +537,55 @@ void PopulateTetraFromMeshFile(char* filename, float *pointX, float *pointY, flo
     sscanf(line, "%d %d %d %d %d", &pointIDs[0], &pointIDs[1], &pointIDs[2], &pointIDs[3], &(tetra_mesh[i].matID));
     
     Sort4Int(pointIDs);
-    //Find adjacent tetra IDs
-    FindAdjacentTetraIDs(i, tetra_mesh, faceToTetraMap, pointX, pointY, pointZ, pointIDs[0], pointIDs[1], pointIDs[2], pointIDs[3], 0);
-    FindAdjacentTetraIDs(i, tetra_mesh, faceToTetraMap, pointX, pointY, pointZ, pointIDs[0], pointIDs[1], pointIDs[3], pointIDs[2], 1);
-    FindAdjacentTetraIDs(i, tetra_mesh, faceToTetraMap, pointX, pointY, pointZ, pointIDs[0], pointIDs[2], pointIDs[3], pointIDs[1], 2);
-    FindAdjacentTetraIDs(i, tetra_mesh, faceToTetraMap, pointX, pointY, pointZ, pointIDs[1], pointIDs[2], pointIDs[3], pointIDs[0], 3);
-    //process the point ids, compute the face normal vector and constant and store them into Tetra    
+    //Find adjacent tetra IDs, and populate the face parameters into the tetra pair
+    HandleFace(i, tetra_mesh, faceToTetraMap, points, pointIDs[0], pointIDs[1], pointIDs[2], pointIDs[3], 0);
+    HandleFace(i, tetra_mesh, faceToTetraMap, points, pointIDs[0], pointIDs[1], pointIDs[3], pointIDs[2], 1);
+    HandleFace(i, tetra_mesh, faceToTetraMap, points, pointIDs[0], pointIDs[2], pointIDs[3], pointIDs[1], 2);
+    HandleFace(i, tetra_mesh, faceToTetraMap, points, pointIDs[1], pointIDs[2], pointIDs[3], pointIDs[0], 3);
   }
-  
+  //Now parameters of all the faces inside the mesh are populated, the rest are the mesh surfaces, which are the remaining nodes
+  //in faceToTetraMap
+  for(i=1; i<*p_Nt+1; i++)
+  {
+    list<TwoPointIDsToTetraID> nodeList = faceToTetraMap[i];
+    if(!nodeList.empty())
+    {
+      for(list<TwoPointIDsToTetraID>::iterator it = nodeList.begin();it != nodeList.end();it++)
+      {
+        Point p1 = points[i];
+        Point p2 = points[it->lowerPointID];
+        Point p3 = points[it->higherPointID];
+        Point p4 = points[it->otherPointID];
+        Tetra tetra = tetra_mesh[it->TetraID];
+        int j;
+        //Look for the available place in face array
+        for(j=0;j<4;j++)
+        {
+          if(tetra.face[j][0]==0&&tetra.face[j][1]==0&&tetra.face[j][2]==0) break;
+        }
+        //TODO: error checking for j==4?
+        //get normal vector
+        float nx,ny,nz,faceConstant;
+        cross(p1.x-p2.x, p1.y-p2.y, p1.z-p2.z, p1.x-p3.x, p1.y-p3.y, p1.z-p3.z, &nx, &ny, &nz);
+        normalize(nx,ny,nz);
+        faceConstant = p1.x*nx+p1.y*ny+p1.z*nz;
+        if (p4.x*nx+p4.y*ny+p4.z*nz>faceConstant)	//(nx,ny,nz) points into tetra
+        {
+          tetra.face[j][0] = nx;
+          tetra.face[j][1] = ny;
+          tetra.face[j][2] = nz;
+          tetra.face[j][3] = faceConstant;
+        }
+        else
+        {
+          tetra.face[j][0] = -nx;
+          tetra.face[j][1] = -ny;
+          tetra.face[j][2] = -nz;
+          tetra.face[j][3] = -faceConstant;
+        }
+      }
+    }
+  }
   return;
 }
 

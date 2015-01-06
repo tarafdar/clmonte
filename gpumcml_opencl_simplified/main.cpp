@@ -611,7 +611,7 @@ int main(int argc, char* argv[])
   Point *points;
   Tetra *tetra_mesh;
   unsigned long Np, Nt;	//number of points, number of tetrahedra
-  //PopulateTetraFromMeshFile("", pointX, pointY, pointZ, tetra_mesh, &Np, &Nt);
+  //PopulateTetraFromMeshFile("", *points, tetra_mesh, &Np, &Nt);
 
   char* filename = NULL;
   unsigned long long seed = (unsigned long long) time(NULL);
