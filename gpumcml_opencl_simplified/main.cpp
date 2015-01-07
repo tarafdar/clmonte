@@ -114,6 +114,7 @@ cl_mem photon_layer_mem_obj;
 cl_mem is_active_mem_obj;
 cl_mem tetra_mesh_mem_obj;
 cl_mem materials_mem_obj;
+cl_mem run_config_mem_obj;
 cl_kernel initkernel;
 cl_kernel kernel;
 cl_program program;
@@ -249,7 +250,7 @@ int RunGPUi(HostThreadState *hstate)
           &photon_z_mem_obj, &photon_ux_mem_obj, &photon_uy_mem_obj, &photon_uz_mem_obj, &photon_w_mem_obj, 
           &photon_sleft_mem_obj, &photon_layer_mem_obj, &is_active_mem_obj);
 
-  InitDCMem(hstate->sim, context, command_queue, &simparam_mem_obj, &layerspecs_mem_obj, &tetra_mesh_mem_obj, &materials_mem_obj);
+  InitDCMem(hstate->sim, context, command_queue, &simparam_mem_obj, &layerspecs_mem_obj, &tetra_mesh_mem_obj, &materials_mem_obj, &run_config_mem_obj);
 
   program = clCreateProgramWithSource(context, 1, (const char**)&source_str, (const size_t *)&source_size, &ret);
   if(ret != CL_SUCCESS){
@@ -411,6 +412,12 @@ int RunGPUi(HostThreadState *hstate)
     printf("Error setting materials kernel argument, exiting\n");
     exit(-1);
   }
+  
+  ret = clSetKernelArg(kernel, argnum++, sizeof(cl_mem), (void *)&run_config_mem_obj);
+  if(ret != CL_SUCCESS){
+    printf("Error setting run_config kernel argument, exiting\n");
+    exit(-1);
+  }
   //ret = clSetKernelArg(kernel, argnum++, sizeof(cl_mem),(void *)&photon_x_mem_obj);
   //if(ret != CL_SUCCESS){
   //  printf("Error setting photon_x kernel argument, exiting\n");
@@ -535,7 +542,7 @@ int RunGPUi(HostThreadState *hstate)
 
   CopyDeviceToHostMem(HostMem, hstate->sim, command_queue, A_rz_mem_obj, Rd_ra_mem_obj, Tt_ra_mem_obj, x_mem_obj);
   FreeDeviceSimStates(context, command_queue, initkernel,kernel, program, simparam_mem_obj, layerspecs_mem_obj,num_photons_left_mem_obj, a_mem_obj, x_mem_obj, A_rz_mem_obj, Rd_ra_mem_obj, Tt_ra_mem_obj, photon_x_mem_obj, photon_y_mem_obj, photon_z_mem_obj, photon_ux_mem_obj, 
-photon_uy_mem_obj, photon_uz_mem_obj, photon_w_mem_obj, photon_sleft_mem_obj, photon_layer_mem_obj, is_active_mem_obj, tetra_mesh_mem_obj, materials_mem_obj);
+photon_uy_mem_obj, photon_uz_mem_obj, photon_w_mem_obj, photon_sleft_mem_obj, photon_layer_mem_obj, is_active_mem_obj, tetra_mesh_mem_obj, materials_mem_obj, run_config_mem_obj);
   // We still need the host-side structure.
   return i;
 }

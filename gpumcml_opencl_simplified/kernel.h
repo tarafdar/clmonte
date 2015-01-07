@@ -146,5 +146,11 @@ typedef struct
   float HGCoeff2;	// HGCoeff2 = (1-g^2)^2 /(2g). So cos(theta) = HGCoeff1 - HGCoeff2 / (1-g * rand(-1,1))
 } Material;
 
+typedef struct
+{
+  float minWeight;	//minimum weight of packet for starting roulette
+  float prwin;		//probably of winning the roulette
+} RunConfig;
+
 #endif // _GPUMCML_KERNEL_H_
 

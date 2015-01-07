@@ -1,5 +1,5 @@
-typedef ulong UINT64;
-typedef uint UINT32;
+typedef ulong UINT64CL;
+typedef uint UINT32CL;
 // Critical weight for roulette
 #define WEIGHT 1E-4F        
 
@@ -31,10 +31,10 @@ float dot_product (float x1, float y1, float z1, float x2, float y2, float z2) {
 //////////////////////////////////////////////////////////////////////////////
 //   Generates a random number between 0 and 1 [0,1) 
 //////////////////////////////////////////////////////////////////////////////
-float rand_MWC_co(__global UINT64* x,__global UINT32* a)
+float rand_MWC_co(__global UINT64CL* x,__global UINT32CL* a)
 {
   *x=(*x&0xfffffffful)*(*a)+(*x>>32);
-  return native_divide(convert_float_rtz((UINT32)(*x)),(float)0x100000000);
+  return native_divide(convert_float_rtz((UINT32CL)(*x)),(float)0x100000000);
   
   //*x=((*x)&0xfffffffful)*(*a)+((*x)>>32);
   //return((float)((unsigned int)((*x)&0xfffffffful))/(UINT_MAX));
@@ -48,7 +48,7 @@ float rand_MWC_co(__global UINT64* x,__global UINT32* a)
 //////////////////////////////////////////////////////////////////////////////
 //   Generates a random number between 0 and 1 (0,1]
 //////////////////////////////////////////////////////////////////////////////
-float rand_MWC_oc(__global UINT64* x,__global UINT32* a)
+float rand_MWC_oc(__global UINT64CL* x,__global UINT32CL* a)
 {
   return 1.0f-rand_MWC_co(x,a);
 } 
@@ -58,11 +58,11 @@ float rand_MWC_oc(__global UINT64* x,__global UINT32* a)
 //   Note: 64-bit atomicAdd to global memory are only supported 
 //   in graphics card with compute capability 1.2 or above
 //////////////////////////////////////////////////////////////////////////////
-//void AtomicAddULL(UINT32* address, UINT32 add)
+//void AtomicAddULL(UINT32CL* address, UINT32CL add)
 //{
-//  if (atomic_add((UINT32*)address,add) +add < add)
+//  if (atomic_add((UINT32CL*)address,add) +add < add)
 //  {
-//    atomic_add(((UINT32*)address)+1, 1U);
+//    atomic_add(((UINT32CL*)address)+1, 1U);
 //  }
 //  //atomic_add(address, (int)add);
 //}
@@ -72,7 +72,7 @@ float rand_MWC_oc(__global UINT64* x,__global UINT32* a)
 //   step size remainder (sleft), current layer (layer), and auxiliary vectors a,b
 //   Note: Infinitely narrow beam (pointing in the +z direction = downwards)
 //////////////////////////////////////////////////////////////////////////////
-void LaunchPacket(Packet *pkt, SimParamGPU d_simparam, __global UINT64 *rnd_x, __global UINT32 *rnd_a)
+void LaunchPacket(Packet *pkt, SimParamGPU d_simparam, __global UINT64CL *rnd_x, __global UINT32CL *rnd_a)
 {
   pkt->x = d_simparam.originX;
   pkt->y = d_simparam.originY;
@@ -116,7 +116,7 @@ void LaunchPacket(Packet *pkt, SimParamGPU d_simparam, __global UINT64 *rnd_x, _
 //   Otherwise, pick up the leftover in sleft.
 //////////////////////////////////////////////////////////////////////////////
 void ComputeStepSize(Packet *pkt,
-                                __global UINT64 *rnd_x, __global UINT32 *rnd_a, __global const LayerStructGPU *d_layerspecs,
+                                __global UINT64CL *rnd_x, __global UINT32CL *rnd_a, __global const LayerStructGPU *d_layerspecs,
                                 __global const Tetra *d_tetra_mesh, __global const Material *d_materials)
 {
   // Make a new step if no leftover.
@@ -127,14 +127,14 @@ void ComputeStepSize(Packet *pkt,
     //float rand = 0;
     pkt->s = -log(rand) * d_layerspecs[pkt->layer].rmuas;
     /* for full monte
-    UINT32 materialID = d_tetra_mesh[pkt->tetraID].matID;
+    UINT32CL materialID = d_tetra_mesh[pkt->tetraID].matID;
     pkt->s = -log(rand) * d_materials[materialID].rmuas;
     */    
   }
   else {
     pkt->s = pkt->sleft * d_layerspecs[pkt->layer].rmuas;
     /* for full monte
-    UINT32 materialID = d_tetra_mesh[pkt->tetraID].matID;
+    UINT32CL materialID = d_tetra_mesh[pkt->tetraID].matID;
     pkt->s = pkt->sleft * d_materials[materialID].rmuas;
     */
     pkt->sleft = MCML_FP_ZERO;
@@ -187,7 +187,7 @@ int HitBoundary(Packet *pkt, __global const LayerStructGPU *d_layerspecs, __glob
   move_dis[2] = cosdn[2]>0 ? FLT_MAX : -native_divide(orth_dis[2], cosdn[2]);
   move_dis[3] = cosdn[3]>0 ? FLT_MAX : -native_divide(orth_dis[3], cosdn[3]);
 
-  UINT32 localMinIndex1, localMinIndex2, minIndex;
+  UINT32CL localMinIndex1, localMinIndex2, minIndex;
   localMinIndex1 = move_dis[0]<move_dis[1] ? 0 : 1;
   localMinIndex2 = move_dis[2]<move_dis[3] ? 2 : 3;
   minIndex = move_dis[localMinIndex1]<move_dis[localMinIndex2] ? localMinIndex1 : localMinIndex2;
@@ -212,7 +212,7 @@ int HitBoundary(Packet *pkt, __global const LayerStructGPU *d_layerspecs, __glob
     d_layerspecs[pkt->layer].z1 : d_layerspecs[pkt->layer].z0;
   dl_b = native_divide(z_bound - pkt->z, pkt->dz);     // dl_b > 0
 
-  UINT32 hit_boundary = (pkt->dz != MCML_FP_ZERO) && (pkt->s > dl_b);
+  UINT32CL hit_boundary = (pkt->dz != MCML_FP_ZERO) && (pkt->s > dl_b);
   if (hit_boundary)
   {
     // No need to multiply by (mua + mus), as it is later
@@ -237,24 +237,24 @@ void Hop(Packet *pkt)
 //////////////////////////////////////////////////////////////////////////////
 //   Drop a part of the weight of the packet to simulate absorption
 //////////////////////////////////////////////////////////////////////////////
-void Drop(Packet *pkt, __global UINT64 *g_A_rz, __global const LayerStructGPU *d_layerspecs, SimParamGPU d_simparam)
+void Drop(Packet *pkt, __global UINT64CL *g_A_rz, __global const LayerStructGPU *d_layerspecs, SimParamGPU d_simparam)
 {
    
   float dwa = pkt->w * d_layerspecs[pkt->layer].mua_muas;
   pkt->w -= dwa;
 
   // If scoring of absorption is specified (no -A flag in command line)
-    UINT32 iz = native_divide(pkt->z, d_simparam.dz);
-    UINT32 ir = native_divide(sqrt(pkt->x * pkt->x + pkt->y * pkt->y),d_simparam.dr);
+    UINT32CL iz = native_divide(pkt->z, d_simparam.dz);
+    UINT32CL ir = native_divide(sqrt(pkt->x * pkt->x + pkt->y * pkt->y),d_simparam.dr);
 
     // Only record if packet is not at the edge!!
     // This will be ignored anyways.
     if (iz < d_simparam.nz && ir < d_simparam.nr)
     {
-      UINT32 addr = ir * d_simparam.nz + iz;
+      UINT32CL addr = ir * d_simparam.nz + iz;
 
       // Write to the global memory.
-      atomic_add(&g_A_rz[addr], (UINT64)(dwa * WEIGHT_SCALE));
+      atomic_add(&g_A_rz[addr], (UINT64CL)(dwa * WEIGHT_SCALE));
     }
 
 }
@@ -272,8 +272,8 @@ float GetCosCrit(float ni, float nt)
 //   into the next layer or reflected back by computing the internal reflectance
 //////////////////////////////////////////////////////////////////////////////
 void FastReflectTransmit(SimParamGPU d_simparam, __global const LayerStructGPU *d_layerspecs, 
-                                     Packet *pkt, __global UINT64 *d_state_Rd_ra, __global UINT64 *d_state_Tt_ra,
-                                    __global UINT64 *rnd_x, __global UINT32 *rnd_a, __global const Tetra *d_tetra_mesh,
+                                     Packet *pkt, __global UINT64CL *d_state_Rd_ra, __global UINT64CL *d_state_Tt_ra,
+                                    __global UINT64CL *rnd_x, __global UINT32CL *rnd_a, __global const Tetra *d_tetra_mesh,
                                     __global const Material *d_materialspecs)
 {
   //TODO: Should we store the cos_crit in each Tetra for each face?
@@ -396,7 +396,7 @@ void FastReflectTransmit(SimParamGPU d_simparam, __global const LayerStructGPU *
   
   /* Collect all info that depend on the sign of "dz". */
   float cos_crit;
-  UINT32 new_layer;
+  UINT32CL new_layer;
   if (pkt->dz > MCML_FP_ZERO)
   {
     cos_crit = d_layerspecs[pkt->layer].cos_crit1;
@@ -471,7 +471,7 @@ void FastReflectTransmit(SimParamGPU d_simparam, __global const LayerStructGPU *
       {
         // transmitted
         float dz2 = pkt->dz;
-        __global UINT64 *ra_arr = d_state_Tt_ra;
+        __global UINT64CL *ra_arr = d_state_Tt_ra;
         if (pkt->layer == 0)
         {
           // diffuse reflectance
@@ -479,14 +479,14 @@ void FastReflectTransmit(SimParamGPU d_simparam, __global const LayerStructGPU *
           ra_arr = d_state_Rd_ra;
         }
 
-        UINT32 ia = acos(dz2) * FP_TWO * RPI * d_simparam.na;
-        UINT32 ir = native_divide(sqrt(pkt->x*pkt->x+pkt->y*pkt->y), d_simparam.dr);
+        UINT32CL ia = acos(dz2) * FP_TWO * RPI * d_simparam.na;
+        UINT32CL ir = native_divide(sqrt(pkt->x*pkt->x+pkt->y*pkt->y), d_simparam.dr);
         if (ir >= d_simparam.nr) ir = d_simparam.nr - 1;
 
         //AtomicAddULL(&ra_arr[ia * d_simparam.nr + ir],
-        //  (UINT32)(pkt->w * WEIGHT_SCALE));
+        //  (UINT32CL)(pkt->w * WEIGHT_SCALE));
         
-        atomic_add(&ra_arr[ia * d_simparam.nr + ir], (UINT64)(pkt->w * WEIGHT_SCALE));
+        atomic_add(&ra_arr[ia * d_simparam.nr + ir], (UINT64CL)(pkt->w * WEIGHT_SCALE));
 
         // Kill the packet.
         pkt->w = MCML_FP_ZERO;
@@ -501,7 +501,7 @@ void FastReflectTransmit(SimParamGPU d_simparam, __global const LayerStructGPU *
 // 	 azimuthal angle psi.
 //////////////////////////////////////////////////////////////////////////////
 void Spin(float g, Packet *pkt,
-                     __global UINT64 *rnd_x, __global UINT32 *rnd_a,
+                     __global UINT64CL *rnd_x, __global UINT32CL *rnd_a,
                      __global const Tetra *d_tetra_mesh, __global const Material *d_materialspec)
 {
   float cost, sint; // cosine and sine of the polar deflection angle theta
@@ -577,7 +577,7 @@ void Spin(float g, Packet *pkt,
 
 
 void NewSpin(float g, Packet *pkt,
-                     __global UINT64 *rnd_x, __global UINT32 *rnd_a)
+                     __global UINT64CL *rnd_x, __global UINT32CL *rnd_a)
 {
   float cost, sint; // cosine and sine of the polar deflection angle theta
   float cosp, sinp; // cosine and sine of the azimuthal angle psi
@@ -679,7 +679,7 @@ void NewSpin(float g, Packet *pkt,
 /*__kernel void InitThreadState(__global float *tstates_photon_x, __global float *tstates_photon_y, __global float *tstates_photon_z,
                                  __global float *tstates_photon_ux, __global float *tstates_photon_uy, __global float *tstates_photon_uz,
                                  __global float *tstates_photon_w, __global float *tstates_photon_sleft,
-                                 __global UINT32 *tstates_photon_layer, __global UINT32 *tstates_is_active, __global SimParamGPU *d_simparam_addr)  
+                                 __global UINT32CL *tstates_photon_layer, __global UINT32CL *tstates_is_active, __global SimParamGPU *d_simparam_addr)  
 {
   Packet photon_temp; 
   SimParamGPU d_simparam = d_simparam_addr[0];
@@ -687,7 +687,7 @@ void NewSpin(float g, Packet *pkt,
   LaunchPacket(&photon_temp, d_simparam);
 
   // This is the unique ID for each thread (or thread ID = tid)
-  UINT32 tid = get_global_id(0);
+  UINT32CL tid = get_global_id(0);
 
   tstates_photon_x[tid] = photon_temp.x;
   tstates_photon_y[tid] = photon_temp.y;
@@ -706,16 +706,16 @@ void NewSpin(float g, Packet *pkt,
 //   Save thread states (tstates), by copying the current photon 
 //   data from registers into global memory
 //////////////////////////////////////////////////////////////////////////////
- void SaveThreadState(__global UINT64 *d_state_x, __global UINT32 *d_state_a,
+ void SaveThreadState(__global UINT64CL *d_state_x, __global UINT32CL *d_state_a,
                                  __global float *tstates_photon_x, __global float *tstates_photon_y, __global float *tstates_photon_z,
                                  __global float *tstates_photon_ux, __global float *tstates_photon_uy, __global float *tstates_photon_uz,
                                  __global float *tstates_photon_w, __global float *tstates_photon_sleft,
-                                 __global UINT32 *tstates_photon_layer, __global UINT32 *tstates_is_active,  
+                                 __global UINT32CL *tstates_photon_layer, __global UINT32CL *tstates_is_active,  
                                    Packet *pkt,
-                                   UINT64 rnd_x, UINT32 rnd_a,
-                                   UINT32 is_active)
+                                   UINT64CL rnd_x, UINT32CL rnd_a,
+                                   UINT32CL is_active)
 {
-  UINT32 tid = get_global_id(0);
+  UINT32CL tid = get_global_id(0);
 
   d_state_x[tid] = rnd_x;
   d_state_a[tid] = rnd_a;
@@ -737,16 +737,16 @@ void NewSpin(float g, Packet *pkt,
 //   Restore thread states (tstates), by copying the latest packet 
 //   data from global memory back into the registers
 //////////////////////////////////////////////////////////////////////////////
- void RestoreThreadState(__global UINT64 *d_state_x, __global UINT32 *d_state_a,
+ void RestoreThreadState(__global UINT64CL *d_state_x, __global UINT32CL *d_state_a,
                                  __global float *tstates_photon_x, __global float *tstates_photon_y, __global float *tstates_photon_z,
                                  __global float *tstates_photon_ux, __global float *tstates_photon_uy, __global float *tstates_photon_uz,
                                  __global float *tstates_photon_w, __global float *tstates_photon_sleft,
-                                 __global UINT32 *tstates_photon_layer, __global UINT32 *tstates_is_active,  
+                                 __global UINT32CL *tstates_photon_layer, __global UINT32CL *tstates_is_active,  
                                    Packet *pkt,
-                                   UINT64 *rnd_x, UINT32 *rnd_a,
-                                   UINT32 *is_active)
+                                   UINT64CL *rnd_x, UINT32CL *rnd_a,
+                                   UINT32CL *is_active)
 {
-  UINT32 tid = get_global_id(0);
+  UINT32CL tid = get_global_id(0);
 
   *rnd_x = d_state_x[tid];
   *rnd_a = d_state_a[tid];
@@ -773,32 +773,32 @@ void NewSpin(float g, Packet *pkt,
 
 __kernel void MCMLKernel(__global const SimParamGPU *d_simparam_addr,__global const LayerStructGPU *d_layerspecs,
                                   //__global SimState d_state, 
-                                  __global UINT32 *d_state_n_photons_left_addr, __global UINT64 *d_state_x, 
-                                  __global UINT32 *d_state_a,__global UINT64 *d_state_Rd_ra, 
-                                  __global UINT64 *d_state_A_rz, __global UINT64 *d_state_Tt_ra, __global const Tetra *d_tetra_mesh,
-                                  __global const Material *d_materialspecs
+                                  __global UINT32CL *d_state_n_photons_left_addr, __global UINT64CL *d_state_x, 
+                                  __global UINT32CL *d_state_a,__global UINT64CL *d_state_Rd_ra, 
+                                  __global UINT64CL *d_state_A_rz, __global UINT64CL *d_state_Tt_ra, __global const Tetra *d_tetra_mesh,
+                                  __global const Material *d_materialspecs, __global const RunConfig *d_run_config
                                   //__global GPUThreadStates tstates
                                 // __global float *tstates_photon_x, __global float *tstates_photon_y, __global float *tstates_photon_z,
                                 // __global float *tstates_photon_ux, __global float *tstates_photon_uy, __global float *tstates_photon_uz,
                                 // __global float *tstates_photon_w, __global float *tstates_photon_sleft,
-                                // __global UINT32 *tstates_photon_layer, __global UINT32 *tstates_is_active  
+                                // __global UINT32CL *tstates_photon_layer, __global UINT32CL *tstates_is_active  
                                   )
 {
   // packet structure stored in registers
   Packet pkt; 
   SimParamGPU d_simparam = d_simparam_addr[0];
-  //UINT32 d_state_n_photons_left = d_state_n_photons_left_addr[0];
+  //UINT32CL d_state_n_photons_left = d_state_n_photons_left_addr[0];
   // random number seeds
-  //UINT64 rnd_x;
-  //UINT32 rnd_a;
+  //UINT64CL rnd_x;
+  //UINT32CL rnd_a;
 
-  UINT32 tid = get_global_id(0);
+  UINT32CL tid = get_global_id(0);
 
   //rnd_x = d_state_x[tid];
   //rnd_a = d_state_a[tid];
   LaunchPacket(&pkt, d_simparam, &d_state_x[tid], &d_state_a[tid]); // Launch a new packet.
   // Flag to indicate if this thread is active
-  UINT32 is_active ;
+  UINT32CL is_active ;
   is_active = 1;
   // Restore the thread state from global memory.
 //  RestoreThreadState(d_state_x, d_state_a, 
