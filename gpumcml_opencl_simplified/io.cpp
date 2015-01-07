@@ -508,7 +508,8 @@ void HandleFace(int tetraID, Tetra *tetra_mesh, list<TwoPointIDsToTetraID> *face
   }
 }
 
-void PopulateTetraFromMeshFile(char* filename, Point *points, Tetra *tetra_mesh, unsigned long *p_Np, unsigned long *p_Nt)
+
+void PopulateTetraFromMeshFile(const char* filename, Tetra *tetra_mesh, int *p_Np, int *p_Nt)
 {
   int i;
   int pointIDs[4];	//store the ids of 4 points of each tetrahedron
@@ -520,7 +521,7 @@ void PopulateTetraFromMeshFile(char* filename, Point *points, Tetra *tetra_mesh,
   fgets(line, 64, pFile);
   sscanf(line, "%d", p_Np);
   //make size+1 because the point ID refered by each tetrahedron in the input file starts from 1 not 0
-  points = (Point*)malloc(sizeof(Point)*(*p_Np+1));
+  Point *points = (Point*)malloc(sizeof(Point)*(*p_Np+1));
   fgets(line, 64, pFile);
   sscanf(line, "%d", p_Nt);
   for(i=1; i<*p_Np+1; i++)
@@ -530,7 +531,7 @@ void PopulateTetraFromMeshFile(char* filename, Point *points, Tetra *tetra_mesh,
   }
   
   tetra_mesh = (Tetra*)malloc(sizeof(Tetra)*(*p_Nt+1));
-  list<TwoPointIDsToTetraID> *faceToTetraMap = (list<TwoPointIDsToTetraID> *)malloc(sizeof(list<TwoPointIDsToTetraID>)*(*p_Np+1));
+  list<TwoPointIDsToTetraID> *faceToTetraMap = new list<TwoPointIDsToTetraID>[*p_Np+1];
   for(i=1; i<*p_Nt+1; i++)
   {
     fgets(line, 64, pFile);
@@ -545,47 +546,49 @@ void PopulateTetraFromMeshFile(char* filename, Point *points, Tetra *tetra_mesh,
   }
   //Now parameters of all the faces inside the mesh are populated, the rest are the mesh surfaces, which are the remaining nodes
   //in faceToTetraMap
-  for(i=1; i<*p_Nt+1; i++)
+  for(i=1; i<*p_Np+1; i++)
   {
     list<TwoPointIDsToTetraID> nodeList = faceToTetraMap[i];
-    if(!nodeList.empty())
+    while(!nodeList.empty())
     {
-      for(list<TwoPointIDsToTetraID>::iterator it = nodeList.begin();it != nodeList.end();it++)
+      TwoPointIDsToTetraID firstNode = nodeList.front();
+
+      Point p1 = points[i];
+      Point p2 = points[firstNode.lowerPointID];
+      Point p3 = points[firstNode.higherPointID];
+      Point p4 = points[firstNode.otherPointID];
+      Tetra tetra = tetra_mesh[firstNode.TetraID];
+      int j;
+      //Look for the available place in face array
+      for(j=0;j<4;j++)
       {
-        Point p1 = points[i];
-        Point p2 = points[it->lowerPointID];
-        Point p3 = points[it->higherPointID];
-        Point p4 = points[it->otherPointID];
-        Tetra tetra = tetra_mesh[it->TetraID];
-        int j;
-        //Look for the available place in face array
-        for(j=0;j<4;j++)
-        {
-          if(tetra.face[j][0]==0&&tetra.face[j][1]==0&&tetra.face[j][2]==0) break;
-        }
-        //TODO: error checking for j==4?
-        //get normal vector
-        float nx,ny,nz,faceConstant;
-        cross(p1.x-p2.x, p1.y-p2.y, p1.z-p2.z, p1.x-p3.x, p1.y-p3.y, p1.z-p3.z, &nx, &ny, &nz);
-        normalize(nx,ny,nz);
-        faceConstant = p1.x*nx+p1.y*ny+p1.z*nz;
-        if (p4.x*nx+p4.y*ny+p4.z*nz>faceConstant)	//(nx,ny,nz) points into tetra
-        {
-          tetra.face[j][0] = nx;
-          tetra.face[j][1] = ny;
-          tetra.face[j][2] = nz;
-          tetra.face[j][3] = faceConstant;
-        }
-        else
-        {
-          tetra.face[j][0] = -nx;
-          tetra.face[j][1] = -ny;
-          tetra.face[j][2] = -nz;
-          tetra.face[j][3] = -faceConstant;
-        }
+        if(tetra.face[j][0]==0&&tetra.face[j][1]==0&&tetra.face[j][2]==0) break;
       }
+      //TODO: error checking for j==4?
+      //get normal vector
+      float nx,ny,nz,faceConstant;
+      cross(p1.x-p2.x, p1.y-p2.y, p1.z-p2.z, p1.x-p3.x, p1.y-p3.y, p1.z-p3.z, &nx, &ny, &nz);
+      normalize(nx,ny,nz);
+      faceConstant = p1.x*nx+p1.y*ny+p1.z*nz;
+      if (p4.x*nx+p4.y*ny+p4.z*nz>faceConstant)	//(nx,ny,nz) points into tetra
+      {
+        tetra.face[j][0] = nx;
+        tetra.face[j][1] = ny;
+        tetra.face[j][2] = nz;
+        tetra.face[j][3] = faceConstant;
+      }
+      else
+      {
+        tetra.face[j][0] = -nx;
+        tetra.face[j][1] = -ny;
+        tetra.face[j][2] = -nz;
+        tetra.face[j][3] = -faceConstant;
+      }
+      nodeList.remove(firstNode);
     }
   }
+  free(points);
+  delete[] faceToTetraMap;
   return;
 }
 

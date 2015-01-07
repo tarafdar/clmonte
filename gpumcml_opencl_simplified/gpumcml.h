@@ -191,5 +191,5 @@ void FreeDeviceSimStates(cl_context context, cl_command_queue command_queue, cl_
         cl_mem photon_uy_mem_obj, cl_mem photon_uz_mem_obj, cl_mem photon_w_mem_obj, cl_mem photon_sleft_mem_obj,
         cl_mem photon_layer_mem_obj, cl_mem is_active_mem_obj, cl_mem tetra_mesh_mem_obj, cl_mem materials_mem_obj
         );
-void PopulateTetraFromMeshFile(char* filename, Point *points, Tetra *tetra_mesh, unsigned long *p_Np, unsigned long *p_Nt);
+void PopulateTetraFromMeshFile(char* filename, Tetra *tetra_mesh, unsigned long *p_Np, unsigned long *p_Nt);
 #endif  // _GPUMCML_H_
