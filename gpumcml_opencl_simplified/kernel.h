@@ -152,5 +152,12 @@ typedef struct
   float prwin;		//probably of winning the roulette
 } RunConfig;
 
+typedef struct
+{
+  float w;
+  float t;
+  float r;
+} Logger;
+
 #endif // _GPUMCML_KERNEL_H_
 

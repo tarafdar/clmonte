@@ -776,7 +776,7 @@ __kernel void MCMLKernel(__global const SimParamGPU *d_simparam_addr,__global co
                                   __global UINT32CL *d_state_n_photons_left_addr, __global UINT64CL *d_state_x, 
                                   __global UINT32CL *d_state_a,__global UINT64CL *d_state_Rd_ra, 
                                   __global UINT64CL *d_state_A_rz, __global UINT64CL *d_state_Tt_ra, __global const Tetra *d_tetra_mesh,
-                                  __global const Material *d_materialspecs, __global const RunConfig *d_run_config
+                                  __global const Material *d_materialspecs, __global const RunConfig *d_run_config, __global Logger *d_log
                                   //__global GPUThreadStates tstates
                                 // __global float *tstates_photon_x, __global float *tstates_photon_y, __global float *tstates_photon_z,
                                 // __global float *tstates_photon_ux, __global float *tstates_photon_uy, __global float *tstates_photon_uz,

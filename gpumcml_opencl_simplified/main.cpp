@@ -115,6 +115,7 @@ cl_mem is_active_mem_obj;
 cl_mem tetra_mesh_mem_obj;
 cl_mem materials_mem_obj;
 cl_mem run_config_mem_obj;
+cl_mem log_mem_obj;
 cl_kernel initkernel;
 cl_kernel kernel;
 cl_program program;
@@ -248,7 +249,7 @@ int RunGPUi(HostThreadState *hstate)
   InitSimStates(HostMem, hstate->sim, context, command_queue, &num_photons_left_mem_obj, 
           &a_mem_obj, &x_mem_obj, &A_rz_mem_obj, &Rd_ra_mem_obj, &Tt_ra_mem_obj, &photon_x_mem_obj, &photon_y_mem_obj,
           &photon_z_mem_obj, &photon_ux_mem_obj, &photon_uy_mem_obj, &photon_uz_mem_obj, &photon_w_mem_obj, 
-          &photon_sleft_mem_obj, &photon_layer_mem_obj, &is_active_mem_obj);
+          &photon_sleft_mem_obj, &photon_layer_mem_obj, &is_active_mem_obj, &log_mem_obj);
 
   InitDCMem(hstate->sim, context, command_queue, &simparam_mem_obj, &layerspecs_mem_obj, &tetra_mesh_mem_obj, &materials_mem_obj, &run_config_mem_obj);
 
@@ -418,6 +419,12 @@ int RunGPUi(HostThreadState *hstate)
     printf("Error setting run_config kernel argument, exiting\n");
     exit(-1);
   }
+  
+  ret = clSetKernelArg(kernel, argnum++, sizeof(cl_mem), (void *)&log_mem_obj);
+  if(ret != CL_SUCCESS){
+    printf("Error setting log kernel argument, exiting\n");
+    exit(-1);
+  }
   //ret = clSetKernelArg(kernel, argnum++, sizeof(cl_mem),(void *)&photon_x_mem_obj);
   //if(ret != CL_SUCCESS){
   //  printf("Error setting photon_x kernel argument, exiting\n");
@@ -540,9 +547,9 @@ int RunGPUi(HostThreadState *hstate)
   
   printf("[GPU] simulation done!\n");
 
-  CopyDeviceToHostMem(HostMem, hstate->sim, command_queue, A_rz_mem_obj, Rd_ra_mem_obj, Tt_ra_mem_obj, x_mem_obj);
+  CopyDeviceToHostMem(HostMem, hstate->sim, command_queue, A_rz_mem_obj, Rd_ra_mem_obj, Tt_ra_mem_obj, x_mem_obj, log_mem_obj);
   FreeDeviceSimStates(context, command_queue, initkernel,kernel, program, simparam_mem_obj, layerspecs_mem_obj,num_photons_left_mem_obj, a_mem_obj, x_mem_obj, A_rz_mem_obj, Rd_ra_mem_obj, Tt_ra_mem_obj, photon_x_mem_obj, photon_y_mem_obj, photon_z_mem_obj, photon_ux_mem_obj, 
-photon_uy_mem_obj, photon_uz_mem_obj, photon_w_mem_obj, photon_sleft_mem_obj, photon_layer_mem_obj, is_active_mem_obj, tetra_mesh_mem_obj, materials_mem_obj, run_config_mem_obj);
+photon_uy_mem_obj, photon_uz_mem_obj, photon_w_mem_obj, photon_sleft_mem_obj, photon_layer_mem_obj, is_active_mem_obj, tetra_mesh_mem_obj, materials_mem_obj, run_config_mem_obj, log_mem_obj);
   // We still need the host-side structure.
   return i;
 }
@@ -618,7 +625,7 @@ int main(int argc, char* argv[])
   Tetra *tetra_mesh;
   int Np, Nt;	//number of points, number of tetrahedra
   //PopulateTetraFromMeshFile("", tetra_mesh, &Np, &Nt);
-
+  Nt = 1;
   char* filename = NULL;
   unsigned long long seed = (unsigned long long) time(NULL);
   int ignoreAdetection = 0;
@@ -664,6 +671,7 @@ int main(int argc, char* argv[])
   //perform all the simulations
   for(i=0;i<n_simulations;i++)
   {
+    simulations[i].nTetras = Nt;
     // Run a simulation
     DoOneSimulation(i, &simulations[i], x, a);
   }

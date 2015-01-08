@@ -139,12 +139,12 @@ int InitSimStates(SimState* HostMem, SimulationStruct* sim, cl_context context, 
         cl_mem *num_photons_left_mem_obj, cl_mem *a_mem_obj, cl_mem *x_mem_obj, cl_mem *A_rz_mem_obj, cl_mem *Rd_ra_mem_obj, cl_mem *Tt_ra_mem_obj, 
         cl_mem *photon_x_mem_obj ,cl_mem *photon_y_mem_obj, cl_mem *photon_z_mem_obj, cl_mem *photon_ux_mem_obj, 
         cl_mem *photon_uy_mem_obj, cl_mem *photon_uz_mem_obj, cl_mem *photon_w_mem_obj, cl_mem *photon_sleft_mem_obj, 
-        cl_mem *photon_layer_mem_obj, cl_mem *is_active_mem_obj
+        cl_mem *photon_layer_mem_obj, cl_mem *is_active_mem_obj, cl_mem *log_mem_obj
         )
 {
   int rz_size = sim->det.nr * sim->det.nz;
   int ra_size = sim->det.nr * sim->det.na;
-
+  int Nt = sim->nTetras;
   unsigned int size;
   cl_int ret;
   size = sizeof(UINT32); 
@@ -188,6 +188,18 @@ int InitSimStates(SimState* HostMem, SimulationStruct* sim, cl_context context, 
     exit(-1);
   }
 
+  size = sim->nTetras * sizeof(Logger);
+  *log_mem_obj = clCreateBuffer(context, CL_MEM_READ_WRITE, size, NULL, &ret);
+  if(ret!=CL_SUCCESS){
+    printf("Error creating log buffer, exiting\n");
+    exit(-1);
+  }
+  HostMem->log = (Logger*)malloc(size);
+  ret = clEnqueueWriteBuffer(command_queue, *log_mem_obj, CL_TRUE, 0, size, HostMem->log, 0, NULL, NULL);
+  if(ret!=CL_SUCCESS){
+    printf("Error writing to log mem buffer, exiting\n");
+    exit(-1);
+  }
 
   // Allocate A_rz on host and device
   size = rz_size * sizeof(UINT64);
@@ -313,13 +325,19 @@ int InitSimStates(SimState* HostMem, SimulationStruct* sim, cl_context context, 
 //////////////////////////////////////////////////////////////////////////////
 //   Transfer data from Device to Host memory after simulation
 //////////////////////////////////////////////////////////////////////////////
-int CopyDeviceToHostMem(SimState* HostMem,SimulationStruct* sim, cl_command_queue command_queue, cl_mem A_rz_mem_obj, cl_mem Rd_ra_mem_obj, cl_mem Tt_ra_mem_obj, cl_mem x_mem_obj)
+int CopyDeviceToHostMem(SimState* HostMem,SimulationStruct* sim, cl_command_queue command_queue, cl_mem A_rz_mem_obj, cl_mem Rd_ra_mem_obj, cl_mem Tt_ra_mem_obj, cl_mem x_mem_obj, cl_mem log_mem_obj)
 {
   int rz_size = sim->det.nr*sim->det.nz;
   int ra_size = sim->det.nr*sim->det.na;
 
-  // Copy A_rz, Rd_ra and Tt_ra
+
   cl_int ret;
+  ret = clEnqueueReadBuffer(command_queue, log_mem_obj, CL_TRUE, 0, sim->nTetras*sizeof(Logger), HostMem->log, 0, NULL, NULL);
+  if(ret != CL_SUCCESS){
+    printf("Error reading log buffer, exiting\n");
+    exit(-1);
+  }
+  // Copy A_rz, Rd_ra and Tt_ra
   ret = clEnqueueReadBuffer(command_queue, A_rz_mem_obj, CL_TRUE, 0, rz_size*sizeof(UINT64), HostMem->A_rz, 0, NULL, NULL);
   if(ret != CL_SUCCESS){
     printf("Error reading A_rz buffer, exiting\n");
@@ -370,6 +388,10 @@ void FreeHostSimState(SimState *hstate)
   {
     free(hstate->Tt_ra); hstate->Tt_ra = NULL;
   }
+  if (hstate->log != NULL)
+  {
+    free(hstate->log); hstate->log = NULL;
+  }
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -381,7 +403,7 @@ void FreeDeviceSimStates(cl_context context, cl_command_queue command_queue,cl_k
         cl_mem photon_x_mem_obj, cl_mem photon_y_mem_obj,cl_mem photon_z_mem_obj, cl_mem photon_ux_mem_obj, 
         cl_mem photon_uy_mem_obj, cl_mem photon_uz_mem_obj, cl_mem photon_w_mem_obj, cl_mem photon_sleft_mem_obj,
         cl_mem photon_layer_mem_obj, cl_mem is_active_mem_obj, cl_mem tetra_mesh_mem_obj, cl_mem materials_mem_obj,
-        cl_mem run_config_mem_obj
+        cl_mem run_config_mem_obj, cl_mem log_mem_obj
      )
 {
  cl_int ret;
@@ -448,6 +470,11 @@ void FreeDeviceSimStates(cl_context context, cl_command_queue command_queue,cl_k
  ret = clReleaseMemObject(x_mem_obj);
  if(ret!= CL_SUCCESS){
     printf("Error releasing x mem obj, exiting\n");
+    exit(-1);
+ }
+ ret = clReleaseMemObject(log_mem_obj);
+ if(ret!= CL_SUCCESS){
+    printf("Error releasing log mem obj, exiting\n");
     exit(-1);
  }
  ret = clReleaseMemObject(A_rz_mem_obj);
