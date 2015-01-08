@@ -117,7 +117,7 @@ typedef struct
   UINT64* Rd_ra;
   UINT64* A_rz;			// Pointer to a 2D absorption matrix!
   UINT64* Tt_ra;
-  Logger* log;
+  UINT64* scaled_w;
 } SimState;
 
 // Everything a host thread needs to know in order to run simulation on
@@ -177,8 +177,7 @@ extern int Write_Simulation_Results(SimState* HostMem,
 
 extern void FreeSimulationStruct(SimulationStruct* sim, int n_simulations);
 
-int InitDCMem(SimulationStruct *sim, cl_context context, cl_command_queue command_queue, cl_mem *simparam_mem_obj, cl_mem *layerspecs_mem_obj, cl_mem *tetra_mesh_mem_obj, cl_mem *materials_mem_obj,
-              cl_mem *run_config_mem_obj);
+int InitDCMem(SimulationStruct *sim, cl_context context, cl_command_queue command_queue, cl_mem *simparam_mem_obj, cl_mem *layerspecs_mem_obj, cl_mem *tetra_mesh_mem_obj, cl_mem *materials_mem_obj);
 int InitSimStates(SimState* HostMem, SimulationStruct* sim, cl_context context, cl_command_queue command_queue, 
         cl_mem *num_photons_simulated_mem_obj, cl_mem *a_mem_obj, cl_mem *x_mem_obj, cl_mem *A_rz_mem_obj, cl_mem *Rd_ra_mem_obj, cl_mem *Tt_ra_mem_obj
         , cl_mem *photon_x_mem_obj, cl_mem *photon_y_mem_obj, cl_mem *photon_z_mem_obj, cl_mem *photon_ux_mem_obj, 
@@ -193,7 +192,7 @@ void FreeDeviceSimStates(cl_context context, cl_command_queue command_queue, cl_
         , cl_mem photon_x_mem_obj, cl_mem photon_y_mem_obj,cl_mem photon_z_mem_obj, cl_mem photon_ux_mem_obj, 
         cl_mem photon_uy_mem_obj, cl_mem photon_uz_mem_obj, cl_mem photon_w_mem_obj, cl_mem photon_sleft_mem_obj,
         cl_mem photon_layer_mem_obj, cl_mem is_active_mem_obj, cl_mem tetra_mesh_mem_obj, cl_mem materials_mem_obj,
-        cl_mem run_config_mem_obj, cl_mem log_mem_obj
+        cl_mem log_mem_obj
         );
 void PopulateTetraFromMeshFile(char* filename, Tetra *tetra_mesh, unsigned long *p_Np, unsigned long *p_Nt);
 #endif  // _GPUMCML_H_

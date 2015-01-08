@@ -10,8 +10,7 @@
 //////////////////////////////////////////////////////////////////////////////
 //   Initialize Device Constant Memory with read-only data
 //////////////////////////////////////////////////////////////////////////////
-int InitDCMem(SimulationStruct *sim, cl_context context, cl_command_queue command_queue, cl_mem *simparam_mem_obj, cl_mem *layerspecs_mem_obj, cl_mem *tetra_mesh_mem_obj, cl_mem *materials_mem_obj,
-              cl_mem *run_config_mem_obj)
+int InitDCMem(SimulationStruct *sim, cl_context context, cl_command_queue command_queue, cl_mem *simparam_mem_obj, cl_mem *layerspecs_mem_obj, cl_mem *tetra_mesh_mem_obj, cl_mem *materials_mem_obj)
 {
   // Make sure that the number of layers is within the limit.
   UINT32 n_layers = sim->n_layers + 2;
@@ -116,19 +115,6 @@ int InitDCMem(SimulationStruct *sim, cl_context context, cl_command_queue comman
     exit(-1);
   }
 
-  RunConfig h_runconfig;
-  *run_config_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, sizeof(RunConfig)*1, NULL, &ret);
-  if(ret!= CL_SUCCESS){
-    printf("Error create run_config buffer, exiting\n");
-    exit(-1);
-  }
-  ret = clEnqueueWriteBuffer(command_queue, *run_config_mem_obj, CL_TRUE, 0, sizeof(RunConfig) * 1, &h_runconfig, 0, NULL, NULL);
-  // Copy material data to constant device memory
-  if(ret!= CL_SUCCESS){
-    printf("Error writing to run_config buffer, exiting\n");
-    exit(-1);
-  }
-
   return 0;
 }
 
@@ -188,14 +174,14 @@ int InitSimStates(SimState* HostMem, SimulationStruct* sim, cl_context context, 
     exit(-1);
   }
 
-  size = sim->nTetras * sizeof(Logger);
+  size = sim->nTetras * sizeof(UINT64);
   *log_mem_obj = clCreateBuffer(context, CL_MEM_READ_WRITE, size, NULL, &ret);
   if(ret!=CL_SUCCESS){
     printf("Error creating log buffer, exiting\n");
     exit(-1);
   }
-  HostMem->log = (Logger*)malloc(size);
-  ret = clEnqueueWriteBuffer(command_queue, *log_mem_obj, CL_TRUE, 0, size, HostMem->log, 0, NULL, NULL);
+  HostMem->scaled_w = (UINT64*)malloc(size);
+  ret = clEnqueueWriteBuffer(command_queue, *log_mem_obj, CL_TRUE, 0, size, HostMem->scaled_w, 0, NULL, NULL);
   if(ret!=CL_SUCCESS){
     printf("Error writing to log mem buffer, exiting\n");
     exit(-1);
@@ -332,7 +318,7 @@ int CopyDeviceToHostMem(SimState* HostMem,SimulationStruct* sim, cl_command_queu
 
 
   cl_int ret;
-  ret = clEnqueueReadBuffer(command_queue, log_mem_obj, CL_TRUE, 0, sim->nTetras*sizeof(Logger), HostMem->log, 0, NULL, NULL);
+  ret = clEnqueueReadBuffer(command_queue, log_mem_obj, CL_TRUE, 0, sim->nTetras*sizeof(UINT64), HostMem->scaled_w, 0, NULL, NULL);
   if(ret != CL_SUCCESS){
     printf("Error reading log buffer, exiting\n");
     exit(-1);
@@ -388,9 +374,9 @@ void FreeHostSimState(SimState *hstate)
   {
     free(hstate->Tt_ra); hstate->Tt_ra = NULL;
   }
-  if (hstate->log != NULL)
+  if (hstate->scaled_w != NULL)
   {
-    free(hstate->log); hstate->log = NULL;
+    free(hstate->scaled_w); hstate->scaled_w = NULL;
   }
 }
 
@@ -403,7 +389,7 @@ void FreeDeviceSimStates(cl_context context, cl_command_queue command_queue,cl_k
         cl_mem photon_x_mem_obj, cl_mem photon_y_mem_obj,cl_mem photon_z_mem_obj, cl_mem photon_ux_mem_obj, 
         cl_mem photon_uy_mem_obj, cl_mem photon_uz_mem_obj, cl_mem photon_w_mem_obj, cl_mem photon_sleft_mem_obj,
         cl_mem photon_layer_mem_obj, cl_mem is_active_mem_obj, cl_mem tetra_mesh_mem_obj, cl_mem materials_mem_obj,
-        cl_mem run_config_mem_obj, cl_mem log_mem_obj
+        cl_mem log_mem_obj
      )
 {
  cl_int ret;
@@ -455,11 +441,6 @@ void FreeDeviceSimStates(cl_context context, cl_command_queue command_queue,cl_k
  ret = clReleaseMemObject(materials_mem_obj);
  if(ret!=CL_SUCCESS){
    printf("Error releasing materials mem obj, exiting\n");
-   exit(-1);
- }
- ret = clReleaseMemObject(run_config_mem_obj);
- if(ret!=CL_SUCCESS){
-   printf("Error releasing run_config mem obj, exiting\n");
    exit(-1);
  }
  ret = clReleaseMemObject(a_mem_obj);

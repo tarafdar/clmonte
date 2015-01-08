@@ -259,6 +259,21 @@ void Drop(Packet *pkt, __global UINT64CL *g_A_rz, __global const LayerStructGPU 
 
 }
 
+//////////////////////////////////////////////////////////////////////////////
+//   Drop a part of the weight of the packet to simulate absorption
+//////////////////////////////////////////////////////////////////////////////
+void absorb(Packet *pkt, __global const Material *d_materialspecs, __global UINT64CL *d_scaled_w) {
+    
+    float w0 = pkt->w;
+    float dw = w0*(d_materialspecs->absfrac);
+    
+    pkt->w = w0 - dw;
+    
+    // Store the absorbed weight in the material -> score in the logger structure
+    // UINT64 used to maintain compatibility with the "atomic_add" method
+    atomic_add(&(d_scaled_w[pkt->tetraID]), (UINT64CL)(dw * WEIGHT_SCALE) );
+}
+
 float GetCosCrit(float ni, float nt)
 {
   float sin_crit = native_divide(nt,ni);
@@ -776,7 +791,7 @@ __kernel void MCMLKernel(__global const SimParamGPU *d_simparam_addr,__global co
                                   __global UINT32CL *d_state_n_photons_left_addr, __global UINT64CL *d_state_x, 
                                   __global UINT32CL *d_state_a,__global UINT64CL *d_state_Rd_ra, 
                                   __global UINT64CL *d_state_A_rz, __global UINT64CL *d_state_Tt_ra, __global const Tetra *d_tetra_mesh,
-                                  __global const Material *d_materialspecs, __global const RunConfig *d_run_config, __global Logger *d_log
+                                  __global const Material *d_materialspecs, __global UINT64CL *d_scaled_w
                                   //__global GPUThreadStates tstates
                                 // __global float *tstates_photon_x, __global float *tstates_photon_y, __global float *tstates_photon_z,
                                 // __global float *tstates_photon_ux, __global float *tstates_photon_uy, __global float *tstates_photon_uz,
@@ -832,8 +847,9 @@ __kernel void MCMLKernel(__global const SimParamGPU *d_simparam_addr,__global co
       else
       {
         Drop (&pkt, d_state_A_rz, d_layerspecs, d_simparam); 
-
-
+        /*for Full Monte
+        absorb (&pkt, &d_materialspecs, &d_scaled_w);
+        */
         Spin(d_layerspecs[pkt.layer].g, &pkt, &d_state_x[tid], &d_state_a[tid], d_tetra_mesh, d_materialspecs);
         //NewSpin(d_layerspecs[pkt.layer].g, &pkt, &rnd_x, &rnd_a);
       }
@@ -843,13 +859,13 @@ __kernel void MCMLKernel(__global const SimParamGPU *d_simparam_addr,__global co
       *  If the pkt weight is small, the packet tries
       *  to survive a roulette.
       ****/
-      if (pkt.w < WEIGHT)
+      if (pkt.w < WEIGHT + d_simparam_addr->terminationThresh)
       {
         float rand = rand_MWC_co(&d_state_x[tid], &d_state_a[tid]);
 
         // This pkt survives the roulette.
-        if (pkt.w != MCML_FP_ZERO && rand < CHANCE)
-          pkt.w *= (FP_ONE / CHANCE);
+        if (pkt.w != MCML_FP_ZERO && rand < CHANCE + d_simparam_addr->proulettewin)
+          pkt.w *= (FP_ONE / CHANCE + d_simparam_addr->proulettewin);
         // This pkt is terminated.
         else if (atomic_sub(d_state_n_photons_left_addr, 1) > NUM_THREADS){
             

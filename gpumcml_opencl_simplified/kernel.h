@@ -36,6 +36,8 @@ typedef struct
   float originY;
   float originZ;	//coordinate of the source emitter location
   UINT32 init_tetraID; 
+  float terminationThresh;	//weight threshold to start roulette termination
+  float proulettewin;	//probability to win the roulette
 } SimParamGPU;
 
 typedef struct 
@@ -144,20 +146,8 @@ typedef struct
   float g;	//anisotropy constant
   float HGCoeff1;	// HGCoeff1 = (1+g^2)/(2g)
   float HGCoeff2;	// HGCoeff2 = (1-g^2)^2 /(2g). So cos(theta) = HGCoeff1 - HGCoeff2 / (1-g * rand(-1,1))
+  float absfrac;	//absorb fraction = 1- albedo = 1 - mus / (mus+mua)
 } Material;
-
-typedef struct
-{
-  float minWeight;	//minimum weight of packet for starting roulette
-  float prwin;		//probably of winning the roulette
-} RunConfig;
-
-typedef struct
-{
-  float w;
-  float t;
-  float r;
-} Logger;
 
 #endif // _GPUMCML_KERNEL_H_
 
