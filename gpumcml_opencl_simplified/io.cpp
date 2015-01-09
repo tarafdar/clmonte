@@ -465,7 +465,7 @@ void PopulateFaceParameters(Tetra &tetra, Tetra &adjTetra, int tetraIndex, int a
 void HandleFace(int tetraID, Tetra *tetra_mesh, list<TwoPointIDsToTetraID> *faceToTetraMap, Point *points,
                           int lowID, int midID, int highID, int fourthID, int faceIndex)
 {
-  list<TwoPointIDsToTetraID> nodeList = faceToTetraMap[lowID];
+  list<TwoPointIDsToTetraID> &nodeList = faceToTetraMap[lowID];
   TwoPointIDsToTetraID *node = NULL;
   int i;
   //Check if the nodeList already contains the adjacent tetra waiting to be paired.
@@ -491,9 +491,9 @@ void HandleFace(int tetraID, Tetra *tetra_mesh, list<TwoPointIDsToTetraID> *face
   else	//the node is found
   {
     //set both tetras' adjacent tetra id as each other's
-    Tetra tetra = tetra_mesh[tetraID];
+    Tetra &tetra = tetra_mesh[tetraID];
     tetra.adjTetras[faceIndex] = node->TetraID;
-    Tetra adjTetra = tetra_mesh[node->TetraID];
+    Tetra &adjTetra = tetra_mesh[node->TetraID];
     //Look for the available place in face array
     for(i = 0; i < 4; i++)
     {
@@ -509,7 +509,7 @@ void HandleFace(int tetraID, Tetra *tetra_mesh, list<TwoPointIDsToTetraID> *face
 }
 
 
-void PopulateTetraFromMeshFile(const char* filename, Tetra *tetra_mesh, int *p_Np, int *p_Nt)
+void PopulateTetraFromMeshFile(const char* filename, Tetra **p_tetra_mesh, int *p_Np, int *p_Nt)
 {
   int i;
   int pointIDs[4];	//store the ids of 4 points of each tetrahedron
@@ -530,34 +530,34 @@ void PopulateTetraFromMeshFile(const char* filename, Tetra *tetra_mesh, int *p_N
     sscanf(line, "%f %f %f", &(points[i].x), &(points[i].y), &(points[i].z));
   }
   
-  tetra_mesh = (Tetra*)malloc(sizeof(Tetra)*(*p_Nt+1));
+  *p_tetra_mesh = (Tetra*)malloc(sizeof(Tetra)*(*p_Nt+1));
   list<TwoPointIDsToTetraID> *faceToTetraMap = new list<TwoPointIDsToTetraID>[*p_Np+1];
   for(i=1; i<*p_Nt+1; i++)
   {
     fgets(line, 64, pFile);
-    sscanf(line, "%d %d %d %d %d", &pointIDs[0], &pointIDs[1], &pointIDs[2], &pointIDs[3], &(tetra_mesh[i].matID));
+    sscanf(line, "%d %d %d %d %d", &pointIDs[0], &pointIDs[1], &pointIDs[2], &pointIDs[3], &((*p_tetra_mesh)[i].matID));
     
     Sort4Int(pointIDs);
     //Find adjacent tetra IDs, and populate the face parameters into the tetra pair
-    HandleFace(i, tetra_mesh, faceToTetraMap, points, pointIDs[0], pointIDs[1], pointIDs[2], pointIDs[3], 0);
-    HandleFace(i, tetra_mesh, faceToTetraMap, points, pointIDs[0], pointIDs[1], pointIDs[3], pointIDs[2], 1);
-    HandleFace(i, tetra_mesh, faceToTetraMap, points, pointIDs[0], pointIDs[2], pointIDs[3], pointIDs[1], 2);
-    HandleFace(i, tetra_mesh, faceToTetraMap, points, pointIDs[1], pointIDs[2], pointIDs[3], pointIDs[0], 3);
+    HandleFace(i, *p_tetra_mesh, faceToTetraMap, points, pointIDs[0], pointIDs[1], pointIDs[2], pointIDs[3], 0);
+    HandleFace(i, *p_tetra_mesh, faceToTetraMap, points, pointIDs[0], pointIDs[1], pointIDs[3], pointIDs[2], 1);
+    HandleFace(i, *p_tetra_mesh, faceToTetraMap, points, pointIDs[0], pointIDs[2], pointIDs[3], pointIDs[1], 2);
+    HandleFace(i, *p_tetra_mesh, faceToTetraMap, points, pointIDs[1], pointIDs[2], pointIDs[3], pointIDs[0], 3);
   }
   //Now parameters of all the faces inside the mesh are populated, the rest are the mesh surfaces, which are the remaining nodes
   //in faceToTetraMap
   for(i=1; i<*p_Np+1; i++)
   {
-    list<TwoPointIDsToTetraID> nodeList = faceToTetraMap[i];
+    list<TwoPointIDsToTetraID> &nodeList = faceToTetraMap[i];
     while(!nodeList.empty())
     {
-      TwoPointIDsToTetraID firstNode = nodeList.front();
+      TwoPointIDsToTetraID &firstNode = nodeList.front();
 
       Point p1 = points[i];
       Point p2 = points[firstNode.lowerPointID];
       Point p3 = points[firstNode.higherPointID];
       Point p4 = points[firstNode.otherPointID];
-      Tetra tetra = tetra_mesh[firstNode.TetraID];
+      Tetra &tetra = (*p_tetra_mesh)[firstNode.TetraID];
       int j;
       //Look for the available place in face array
       for(j=0;j<4;j++)

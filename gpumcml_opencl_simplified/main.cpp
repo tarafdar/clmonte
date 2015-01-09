@@ -194,7 +194,7 @@ int init_RNG(UINT64 *x, UINT32 *a,
 //   Supports 1 GPU only
 //   Calls RunGPU with HostThreadState parameters
 //////////////////////////////////////////////////////////////////////////////
-int RunGPUi(HostThreadState *hstate)
+int RunGPUi(HostThreadState *hstate, Tetra *tetra_mesh)
 {
   SimState *HostMem = &(hstate->host_sim_state);
 
@@ -250,7 +250,7 @@ int RunGPUi(HostThreadState *hstate)
           &photon_z_mem_obj, &photon_ux_mem_obj, &photon_uy_mem_obj, &photon_uz_mem_obj, &photon_w_mem_obj, 
           &photon_sleft_mem_obj, &photon_layer_mem_obj, &is_active_mem_obj, &log_mem_obj);
 
-  InitDCMem(hstate->sim, context, command_queue, &simparam_mem_obj, &layerspecs_mem_obj, &tetra_mesh_mem_obj, &materials_mem_obj);
+  InitDCMem(hstate->sim, tetra_mesh, context, command_queue, &simparam_mem_obj, &layerspecs_mem_obj, &tetra_mesh_mem_obj, &materials_mem_obj);
 
   program = clCreateProgramWithSource(context, 1, (const char**)&source_str, (const size_t *)&source_size, &ret);
   if(ret != CL_SUCCESS){
@@ -551,7 +551,7 @@ photon_uy_mem_obj, photon_uz_mem_obj, photon_w_mem_obj, photon_sleft_mem_obj, ph
 //   Perform MCML simulation for one run out of N runs (in the input file)
 //////////////////////////////////////////////////////////////////////////////
 static void DoOneSimulation(int sim_id, SimulationStruct* simulation,
-                            unsigned long long *x, unsigned int *a)
+                            unsigned long long *x, unsigned int *a, Tetra *tetra_mesh)
 {
   printf("\n------------------------------------------------------------\n");
   printf("        Simulation #%d\n", sim_id);
@@ -579,7 +579,7 @@ static void DoOneSimulation(int sim_id, SimulationStruct* simulation,
 
   printf("simulation number of photons %d\n", *(hss->n_photons_left));
   // Launch simulation
-  int number_of_iterations = RunGPUi (hstates);
+  int number_of_iterations = RunGPUi (hstates, tetra_mesh);
 
   // End the timer.
   //CUT_SAFE_CALL( cutStopTimer(execTimer) );
@@ -608,6 +608,20 @@ void banner()
     printf("(c) Yu Wu, Emil Salavat, Li Chen, 2015\n\n");
 }
 
+void OutputTetraMesh(Tetra *tetra_mesh, int Nt)
+{
+  int i;
+  for(i=1; i<=Nt; i++)
+  {
+    Tetra &t = tetra_mesh[i];
+    printf("Tetra%d: material: %d\n", i, t.matID);
+    printf("  %f %f %f %f %d\n", t.face[0][0], t.face[0][1], t.face[0][2], t.face[0][3], t.adjTetras[0]);
+    printf("  %f %f %f %f %d\n", t.face[1][0], t.face[1][1], t.face[1][2], t.face[1][3], t.adjTetras[1]);
+    printf("  %f %f %f %f %d\n", t.face[2][0], t.face[2][1], t.face[2][2], t.face[2][3], t.adjTetras[2]);
+    printf("  %f %f %f %f %d\n", t.face[3][0], t.face[3][1], t.face[3][2], t.face[3][3], t.adjTetras[3]);
+  }
+}
+
 //////////////////////////////////////////////////////////////////////////////
 //   Perform MCML simulation for one run out of N runs (in the input file)
 //////////////////////////////////////////////////////////////////////////////
@@ -617,8 +631,8 @@ int main(int argc, char* argv[])
 
   Tetra *tetra_mesh;
   int Np, Nt;	//number of points, number of tetrahedra
-  //PopulateTetraFromMeshFile("", tetra_mesh, &Np, &Nt);
-  Nt = 1;
+  PopulateTetraFromMeshFile("one_layer_18_18_1_2.mesh", &tetra_mesh, &Np, &Nt);
+  OutputTetraMesh(tetra_mesh, Nt);
   char* filename = NULL;
   unsigned long long seed = (unsigned long long) time(NULL);
   int ignoreAdetection = 0;
@@ -666,10 +680,11 @@ int main(int argc, char* argv[])
   {
     simulations[i].nTetras = Nt;
     // Run a simulation
-    DoOneSimulation(i, &simulations[i], x, a);
+    DoOneSimulation(i, &simulations[i], x, a, tetra_mesh);
   }
 
   // Free the random number seed arrays.
+  free(tetra_mesh);
   free(x); free(a);
   FreeSimulationStruct(simulations, n_simulations);
 

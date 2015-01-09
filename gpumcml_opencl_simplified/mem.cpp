@@ -10,7 +10,7 @@
 //////////////////////////////////////////////////////////////////////////////
 //   Initialize Device Constant Memory with read-only data
 //////////////////////////////////////////////////////////////////////////////
-int InitDCMem(SimulationStruct *sim, cl_context context, cl_command_queue command_queue, cl_mem *simparam_mem_obj, cl_mem *layerspecs_mem_obj, cl_mem *tetra_mesh_mem_obj, cl_mem *materials_mem_obj)
+int InitDCMem(SimulationStruct *sim, Tetra *tetra_mesh, cl_context context, cl_command_queue command_queue, cl_mem *simparam_mem_obj, cl_mem *layerspecs_mem_obj, cl_mem *tetra_mesh_mem_obj, cl_mem *materials_mem_obj)
 {
   // Make sure that the number of layers is within the limit.
   UINT32 n_layers = sim->n_layers + 2;
@@ -89,13 +89,12 @@ int InitDCMem(SimulationStruct *sim, cl_context context, cl_command_queue comman
     exit(-1);
   }
 
-  Tetra h_tetraspecs[1];
-  *tetra_mesh_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, sizeof(Tetra)*1, NULL, &ret);
+  *tetra_mesh_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, sizeof(Tetra)*(sim->nTetras), NULL, &ret);
   if(ret!= CL_SUCCESS){
     printf("Error create tetra mesh buffer, exiting\n");
     exit(-1);
   }
-  ret = clEnqueueWriteBuffer(command_queue, *tetra_mesh_mem_obj, CL_TRUE, 0, sizeof(Tetra) * 1, h_tetraspecs, 0, NULL, NULL);
+  ret = clEnqueueWriteBuffer(command_queue, *tetra_mesh_mem_obj, CL_TRUE, 0, sizeof(Tetra)*(sim->nTetras), tetra_mesh, 0, NULL, NULL);
   // Copy tetra mesh data to constant device memory
   if(ret!= CL_SUCCESS){
     printf("Error writing to tetraspecs buffer, exiting\n");
