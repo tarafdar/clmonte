@@ -269,7 +269,7 @@ void absorb(Packet *pkt, __global const Material *d_materialspecs, __global UINT
     
     pkt->w = w0 - dw;
     
-    // Store the absorbed weight in the material -> score in the logger structure
+    // Store the absorbed weight in the material -> score in the d_scaled_w
     // UINT64 used to maintain compatibility with the "atomic_add" method
     atomic_add(&(d_scaled_w[pkt->tetraID]), (UINT64CL)(dw * WEIGHT_SCALE) );
 }
@@ -808,6 +808,10 @@ __kernel void MCMLKernel(__global const SimParamGPU *d_simparam_addr,__global co
   //UINT32CL rnd_a;
 
   UINT32CL tid = get_global_id(0);
+  if(tid < 20)
+  {
+    d_scaled_w[tid] = 34+tid;
+  }
 
   //rnd_x = d_state_x[tid];
   //rnd_a = d_state_a[tid];

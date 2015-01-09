@@ -89,12 +89,12 @@ int InitDCMem(SimulationStruct *sim, Tetra *tetra_mesh, cl_context context, cl_c
     exit(-1);
   }
 
-  *tetra_mesh_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, sizeof(Tetra)*(sim->nTetras), NULL, &ret);
+  *tetra_mesh_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, sizeof(Tetra)*(sim->nTetras+1), NULL, &ret);
   if(ret!= CL_SUCCESS){
     printf("Error create tetra mesh buffer, exiting\n");
     exit(-1);
   }
-  ret = clEnqueueWriteBuffer(command_queue, *tetra_mesh_mem_obj, CL_TRUE, 0, sizeof(Tetra)*(sim->nTetras), tetra_mesh, 0, NULL, NULL);
+  ret = clEnqueueWriteBuffer(command_queue, *tetra_mesh_mem_obj, CL_TRUE, 0, sizeof(Tetra)*(sim->nTetras+1), tetra_mesh, 0, NULL, NULL);
   // Copy tetra mesh data to constant device memory
   if(ret!= CL_SUCCESS){
     printf("Error writing to tetraspecs buffer, exiting\n");
@@ -124,7 +124,7 @@ int InitSimStates(SimState* HostMem, SimulationStruct* sim, cl_context context, 
         cl_mem *num_photons_left_mem_obj, cl_mem *a_mem_obj, cl_mem *x_mem_obj, cl_mem *A_rz_mem_obj, cl_mem *Rd_ra_mem_obj, cl_mem *Tt_ra_mem_obj, 
         cl_mem *photon_x_mem_obj ,cl_mem *photon_y_mem_obj, cl_mem *photon_z_mem_obj, cl_mem *photon_ux_mem_obj, 
         cl_mem *photon_uy_mem_obj, cl_mem *photon_uz_mem_obj, cl_mem *photon_w_mem_obj, cl_mem *photon_sleft_mem_obj, 
-        cl_mem *photon_layer_mem_obj, cl_mem *is_active_mem_obj, cl_mem *log_mem_obj
+        cl_mem *photon_layer_mem_obj, cl_mem *is_active_mem_obj, cl_mem *scaled_w_mem_obj
         )
 {
   int rz_size = sim->det.nr * sim->det.nz;
@@ -173,16 +173,16 @@ int InitSimStates(SimState* HostMem, SimulationStruct* sim, cl_context context, 
     exit(-1);
   }
 
-  size = sim->nTetras * sizeof(UINT64);
-  *log_mem_obj = clCreateBuffer(context, CL_MEM_READ_WRITE, size, NULL, &ret);
+  size = (sim->nTetras+1) * sizeof(UINT64);
+  *scaled_w_mem_obj = clCreateBuffer(context, CL_MEM_READ_WRITE, size, NULL, &ret);
   if(ret!=CL_SUCCESS){
-    printf("Error creating log buffer, exiting\n");
+    printf("Error creating scaled weight buffer, exiting\n");
     exit(-1);
   }
   HostMem->scaled_w = (UINT64*)malloc(size);
-  ret = clEnqueueWriteBuffer(command_queue, *log_mem_obj, CL_TRUE, 0, size, HostMem->scaled_w, 0, NULL, NULL);
+  ret = clEnqueueWriteBuffer(command_queue, *scaled_w_mem_obj, CL_TRUE, 0, size, HostMem->scaled_w, 0, NULL, NULL);
   if(ret!=CL_SUCCESS){
-    printf("Error writing to log mem buffer, exiting\n");
+    printf("Error writing to scaled weight mem buffer, exiting\n");
     exit(-1);
   }
 
@@ -310,17 +310,22 @@ int InitSimStates(SimState* HostMem, SimulationStruct* sim, cl_context context, 
 //////////////////////////////////////////////////////////////////////////////
 //   Transfer data from Device to Host memory after simulation
 //////////////////////////////////////////////////////////////////////////////
-int CopyDeviceToHostMem(SimState* HostMem,SimulationStruct* sim, cl_command_queue command_queue, cl_mem A_rz_mem_obj, cl_mem Rd_ra_mem_obj, cl_mem Tt_ra_mem_obj, cl_mem x_mem_obj, cl_mem log_mem_obj)
+int CopyDeviceToHostMem(SimState* HostMem,SimulationStruct* sim, cl_command_queue command_queue, cl_mem A_rz_mem_obj, cl_mem Rd_ra_mem_obj, cl_mem Tt_ra_mem_obj, cl_mem x_mem_obj, cl_mem scaled_w_mem_obj)
 {
   int rz_size = sim->det.nr*sim->det.nz;
   int ra_size = sim->det.nr*sim->det.na;
 
 
   cl_int ret;
-  ret = clEnqueueReadBuffer(command_queue, log_mem_obj, CL_TRUE, 0, sim->nTetras*sizeof(UINT64), HostMem->scaled_w, 0, NULL, NULL);
+  ret = clEnqueueReadBuffer(command_queue, scaled_w_mem_obj, CL_TRUE, 0, (sim->nTetras+1)*sizeof(UINT64), HostMem->scaled_w, 0, NULL, NULL);
   if(ret != CL_SUCCESS){
-    printf("Error reading log buffer, exiting\n");
+    printf("Error reading scaled weight buffer, exiting\n");
     exit(-1);
+  }
+  int i;
+  for(i=1;i<(sim->nTetras+1);i++)
+  {
+    printf("%d\n", (HostMem->scaled_w)[i]);
   }
   // Copy A_rz, Rd_ra and Tt_ra
   ret = clEnqueueReadBuffer(command_queue, A_rz_mem_obj, CL_TRUE, 0, rz_size*sizeof(UINT64), HostMem->A_rz, 0, NULL, NULL);
@@ -388,7 +393,7 @@ void FreeDeviceSimStates(cl_context context, cl_command_queue command_queue,cl_k
         cl_mem photon_x_mem_obj, cl_mem photon_y_mem_obj,cl_mem photon_z_mem_obj, cl_mem photon_ux_mem_obj, 
         cl_mem photon_uy_mem_obj, cl_mem photon_uz_mem_obj, cl_mem photon_w_mem_obj, cl_mem photon_sleft_mem_obj,
         cl_mem photon_layer_mem_obj, cl_mem is_active_mem_obj, cl_mem tetra_mesh_mem_obj, cl_mem materials_mem_obj,
-        cl_mem log_mem_obj
+        cl_mem scaled_w_mem_obj
      )
 {
  cl_int ret;
@@ -452,9 +457,9 @@ void FreeDeviceSimStates(cl_context context, cl_command_queue command_queue,cl_k
     printf("Error releasing x mem obj, exiting\n");
     exit(-1);
  }
- ret = clReleaseMemObject(log_mem_obj);
+ ret = clReleaseMemObject(scaled_w_mem_obj);
  if(ret!= CL_SUCCESS){
-    printf("Error releasing log mem obj, exiting\n");
+    printf("Error releasing scaled weight mem obj, exiting\n");
     exit(-1);
  }
  ret = clReleaseMemObject(A_rz_mem_obj);
