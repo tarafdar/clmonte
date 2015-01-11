@@ -679,7 +679,6 @@ int read_simulation_data(char* filename, SimulationStruct** simulations)
 
     // Read upper refractive index (1xfloat)
     if(!readfloats(1, ftemp, pFile)){perror ("Error reading upper refractive index");return 0;}
-    printf("Upper refractive index=%f\n",ftemp[0]);
     (*simulations)[i].layers[0].n=ftemp[0];
 
     dtot=0;
@@ -687,7 +686,6 @@ int read_simulation_data(char* filename, SimulationStruct** simulations)
     {
       // Read Layer data (5x float)
       if(!readfloats(5, ftemp, pFile)){perror ("Error reading layer data");return 0;}
-      printf("n=%f, mua=%f, mus=%f, g=%f, d=%f\n",ftemp[0],ftemp[1],ftemp[2],ftemp[3],ftemp[4]);
       (*simulations)[i].layers[ii].n=ftemp[0];
       (*simulations)[i].layers[ii].mua=ftemp[1];
       (*simulations)[i].layers[ii].g=ftemp[3];

@@ -72,7 +72,7 @@ float rand_MWC_oc(__global UINT64CL* x,__global UINT32CL* a)
 //   step size remainder (sleft), current layer (layer), and auxiliary vectors a,b
 //   Note: Infinitely narrow beam (pointing in the +z direction = downwards)
 //////////////////////////////////////////////////////////////////////////////
-void LaunchPacket(Packet *pkt, SimParamGPU d_simparam, __global UINT64CL *rnd_x, __global UINT32CL *rnd_a, __global float *debug)
+void LaunchPacket(Packet *pkt, SimParamGPU d_simparam, __global UINT64CL *rnd_x, __global UINT32CL *rnd_a)
 {
   pkt->x = d_simparam.originX;
   pkt->y = d_simparam.originY;
@@ -91,12 +91,6 @@ void LaunchPacket(Packet *pkt, SimParamGPU d_simparam, __global UINT64CL *rnd_x,
   pkt->sleft = MCML_FP_ZERO;
   pkt->layer = 1;
 
-  if(get_global_id(0)==4)
-  {
-  debug[0] = pkt->dx;
-  debug[1] = pkt->dy;
-  debug[2] = pkt->dz;
-  }
   // vector a = (vector d) cross (positive z axis unit vector) and normalize it 
   float4 d = (float4)(pkt->dx, pkt->dy, pkt->dz, 0);
   float4 crossProduct;
@@ -148,7 +142,7 @@ void ComputeStepSize(Packet *pkt,
 //   If the projected step hits the boundary, the packet steps to the boundary
 //   and the remainder of the step size is stored in sleft for the next iteration
 //////////////////////////////////////////////////////////////////////////////
-int HitBoundary(Packet *pkt, __global const Tetra *d_tetra_mesh)
+int HitBoundary(Packet *pkt, __global const Tetra *d_tetra_mesh, __global float *debug)
 {
   /* step size to boundary. */
   //cos of the angle between direction and normal vector.
@@ -174,22 +168,30 @@ int HitBoundary(Packet *pkt, __global const Tetra *d_tetra_mesh)
   cosdn[2] = dot(d,n[2]);
   cosdn[3] = dot(d,n[3]);
 
-  orth_dis[0] = n[0].w - dot(p,n[0]);
-  orth_dis[1] = n[1].w - dot(p,n[1]);
-  orth_dis[2] = n[2].w - dot(p,n[2]);
-  orth_dis[3] = n[3].w - dot(p,n[3]);
+  orth_dis[0] = dot(p,n[0])-n[0].w;
+  orth_dis[1] = dot(p,n[1])-n[1].w;
+  orth_dis[2] = dot(p,n[2])-n[2].w;
+  orth_dis[3] = dot(p,n[3])-n[3].w;
 
   //if the packet is moving away from a face, its distance to that face's intersection is infinity.
-  move_dis[0] = cosdn[0]>0 ? FLT_MAX : -native_divide(orth_dis[0], cosdn[0]);
-  move_dis[1] = cosdn[1]>0 ? FLT_MAX : -native_divide(orth_dis[1], cosdn[1]);
-  move_dis[2] = cosdn[2]>0 ? FLT_MAX : -native_divide(orth_dis[2], cosdn[2]);
-  move_dis[3] = cosdn[3]>0 ? FLT_MAX : -native_divide(orth_dis[3], cosdn[3]);
+  move_dis[0] = cosdn[0]>=0 ? FLT_MAX : -native_divide(orth_dis[0], cosdn[0]);
+  move_dis[1] = cosdn[1]>=0 ? FLT_MAX : -native_divide(orth_dis[1], cosdn[1]);
+  move_dis[2] = cosdn[2]>=0 ? FLT_MAX : -native_divide(orth_dis[2], cosdn[2]);
+  move_dis[3] = cosdn[3]>=0 ? FLT_MAX : -native_divide(orth_dis[3], cosdn[3]);
 
   UINT32CL localMinIndex1, localMinIndex2, minIndex;
   localMinIndex1 = move_dis[0]<move_dis[1] ? 0 : 1;
   localMinIndex2 = move_dis[2]<move_dis[3] ? 2 : 3;
   minIndex = move_dis[localMinIndex1]<move_dis[localMinIndex2] ? localMinIndex1 : localMinIndex2;
   
+  if(get_global_id(0)==4)
+  {
+    debug[0] = pkt->dx;
+    debug[1] = pkt->dy;
+    debug[2] = pkt->dz;
+    debug[3] = (float)minIndex;
+    debug[4] = move_dis[minIndex];
+  }
   //TODO in tuning: Should we also store move_dis[minIndex] into Packet to avoid recomputing?
   pkt->faceIndexToHit = minIndex;
   if(move_dis[minIndex] > pkt->sleft)
@@ -642,7 +644,7 @@ __kernel void MCMLKernel(__global const SimParamGPU *d_simparam_addr,
   SimParamGPU d_simparam = d_simparam_addr[0];
   UINT32CL tid = get_global_id(0);
 
-  LaunchPacket(&pkt, d_simparam, &d_state_x[tid], &d_state_a[tid], debug); // Launch a new packet.
+  LaunchPacket(&pkt, d_simparam, &d_state_x[tid], &d_state_a[tid]); // Launch a new packet.
   // Flag to indicate if this thread is active
   UINT32CL is_active ;
   is_active = 1;
@@ -655,7 +657,7 @@ __kernel void MCMLKernel(__global const SimParamGPU *d_simparam_addr,
 //                                             &pkt, &rnd_x, &rnd_a, &is_active);
 //
 
-/*  for (int iIndex = 0; iIndex < NUM_STEPS; ++iIndex)
+  for (int iIndex = 0; iIndex < 1; ++iIndex)
   {
     // Only process packet if the thread is active.
     if (is_active)
@@ -666,11 +668,11 @@ __kernel void MCMLKernel(__global const SimParamGPU *d_simparam_addr,
       
       //>>>>>>>>> HitBoundary() in MCML
 
-      pkt.hit = HitBoundary(&pkt, d_tetra_mesh);
+      pkt.hit = HitBoundary(&pkt, d_tetra_mesh, debug);
 
-      Hop(&pkt);
+      //Hop(&pkt);
 
-      if (pkt.hit){
+      /*if (pkt.hit){
         FastReflectTransmit(d_simparam, &pkt, d_state_Rd_ra, d_state_Tt_ra, &d_state_x[tid], &d_state_a[tid], d_tetra_mesh, d_materialspecs);
       
         }
@@ -702,12 +704,12 @@ __kernel void MCMLKernel(__global const SimParamGPU *d_simparam_addr,
             is_active = 0;
 
         }
-      }
+      }*/
     }
 
     //////////////////////////////////////////////////////////////////////
   } // end of the main loop
-*/
+
   //barrier(CLK_GLOBAL_MEM_FENCE);
 //  d_state_n_photons_left_addr[0]=0;
 //////////////////////////////////////////////////////////////////////////

@@ -182,7 +182,7 @@ int InitSimStates(SimState* HostMem, SimulationStruct* sim, cl_context context, 
         cl_mem *photon_uy_mem_obj, cl_mem *photon_uz_mem_obj, cl_mem *photon_w_mem_obj, cl_mem *photon_sleft_mem_obj, 
         cl_mem *photon_layer_mem_obj, cl_mem *is_active_mem_obj, cl_mem *scaled_w_mem_obj, cl_mem *debug_mem_obj
         );
-int CopyDeviceToHostMem(SimState* HostMem,SimulationStruct* sim, cl_command_queue command_queue, cl_mem A_rz_mem_obj, cl_mem Rd_ra_mem_obj, cl_mem Tt_ra_mem_obj, cl_mem x_mem_obj, cl_mem scaled_w_mem_obj, cl_mem debug_mem_obj);
+int CopyDeviceToHostMem(SimState* HostMem,SimulationStruct* sim, cl_command_queue command_queue, cl_mem A_rz_mem_obj, cl_mem Rd_ra_mem_obj, cl_mem Tt_ra_mem_obj, cl_mem x_mem_obj, cl_mem scaled_w_mem_obj, cl_mem debug_mem_obj, Tetra *tetra_mesh);
 void FreeHostSimState(SimState *hstate);
 void FreeDeviceSimStates(cl_context context, cl_command_queue command_queue, cl_kernel initkernel, cl_kernel kernel, 
         cl_program program, cl_mem simparam_mem_obj, cl_mem num_photons_simulated_mem_obj, 
