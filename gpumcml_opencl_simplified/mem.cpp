@@ -10,16 +10,10 @@
 //////////////////////////////////////////////////////////////////////////////
 //   Initialize Device Constant Memory with read-only data
 //////////////////////////////////////////////////////////////////////////////
-int InitDCMem(SimulationStruct *sim, Tetra *tetra_mesh, cl_context context, cl_command_queue command_queue, cl_mem *simparam_mem_obj, cl_mem *layerspecs_mem_obj, cl_mem *tetra_mesh_mem_obj, cl_mem *materials_mem_obj)
+int InitDCMem(SimulationStruct *sim, Tetra *tetra_mesh, Material *materialspec, cl_context context, cl_command_queue command_queue, cl_mem *simparam_mem_obj, cl_mem *tetra_mesh_mem_obj, cl_mem *materials_mem_obj)
 {
-  // Make sure that the number of layers is within the limit.
-  UINT32 n_layers = sim->n_layers + 2;
-  if (n_layers > MAX_LAYERS) return 1;
-
   SimParamGPU h_simparam;
 
-
-  h_simparam.num_layers = sim->n_layers;  // not plus 2 here
   h_simparam.init_photon_w = sim->start_weight;
   h_simparam.dz = sim->det.dz;
   h_simparam.dr = sim->det.dr;
@@ -29,7 +23,13 @@ int InitDCMem(SimulationStruct *sim, Tetra *tetra_mesh, cl_context context, cl_c
   h_simparam.nz = sim->det.nz;
   h_simparam.nr = sim->det.nr;
 
-  printf("number of simulation layers %d", sim->n_layers);
+  h_simparam.originX = 0;
+  h_simparam.originY = 0;
+  h_simparam.originZ = 0;
+  h_simparam.init_tetraID = 1;
+  h_simparam.terminationThresh = 0.5;
+  h_simparam.proulettewin = 0.5;
+
   cl_int ret;
   *simparam_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, sizeof(SimParamGPU), NULL, &ret);
   if(ret!= CL_SUCCESS){
@@ -44,51 +44,6 @@ int InitDCMem(SimulationStruct *sim, Tetra *tetra_mesh, cl_context context, cl_c
   //  exit(-1);
   //}
 
-  LayerStructGPU h_layerspecs[MAX_LAYERS];
-  float h_layerspecs_floats[MAX_LAYERS*9];
-  for (UINT32 i = 0; i < n_layers; ++i)
-  {
-    h_layerspecs[i].z0 = sim->layers[i].z_min;
-    h_layerspecs[i].z1 = sim->layers[i].z_max;
-    float n1 = sim->layers[i].n;
-    h_layerspecs[i].n = n1;
-
-    // TODO: sim->layer should not do any pre-computation.
-    float rmuas = sim->layers[i].mutr;
-    h_layerspecs[i].muas = FP_ONE / rmuas;
-    h_layerspecs[i].rmuas = rmuas;
-    h_layerspecs[i].mua_muas = sim->layers[i].mua * rmuas;
-
-    h_layerspecs[i].g = sim->layers[i].g;
-
-    if (i == 0 || i == n_layers-1)
-    {
-      h_layerspecs[i].cos_crit0 = MCML_FP_ZERO;
-      h_layerspecs[i].cos_crit1 = MCML_FP_ZERO;
-    }
-    else
-    {
-      float n2 = sim->layers[i-1].n;
-      h_layerspecs[i].cos_crit0 = (n1 > n2) ?
-        sqrt(FP_ONE - n2*n2/(n1*n1)) : MCML_FP_ZERO;
-      n2 = sim->layers[i+1].n;
-      h_layerspecs[i].cos_crit1 = (n1 > n2) ?
-        sqrtf(FP_ONE - n2*n2/(n1*n1)) : MCML_FP_ZERO;
-    }
-  }
-
-  *layerspecs_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, sizeof(LayerStructGPU)*n_layers, NULL, &ret);
-  if(ret!= CL_SUCCESS){
-    printf("Error creating layerspecs buffer, exiting\n");
-    exit(-1);
-  }
-  ret = clEnqueueWriteBuffer(command_queue, *layerspecs_mem_obj, CL_TRUE, 0, sizeof(LayerStructGPU) *n_layers, h_layerspecs, 0, NULL, NULL); 
-  // Copy layer data to constant device memory
-  if(ret!= CL_SUCCESS){
-    printf("Error writing to layerspecs buffer, exiting\n");
-    exit(-1);
-  }
-
   *tetra_mesh_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, sizeof(Tetra)*(sim->nTetras+1), NULL, &ret);
   if(ret!= CL_SUCCESS){
     printf("Error create tetra mesh buffer, exiting\n");
@@ -101,13 +56,12 @@ int InitDCMem(SimulationStruct *sim, Tetra *tetra_mesh, cl_context context, cl_c
     exit(-1);
   }
 
-  Material h_materialspecs[1];
-  *materials_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, sizeof(Material)*1, NULL, &ret);
+  *materials_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, sizeof(Material)*(sim->nMaterials+1), NULL, &ret);
   if(ret!= CL_SUCCESS){
     printf("Error create materials buffer, exiting\n");
     exit(-1);
   }
-  ret = clEnqueueWriteBuffer(command_queue, *materials_mem_obj, CL_TRUE, 0, sizeof(Material) * 1, h_materialspecs, 0, NULL, NULL);
+  ret = clEnqueueWriteBuffer(command_queue, *materials_mem_obj, CL_TRUE, 0, sizeof(Material)*(sim->nMaterials+1), materialspec, 0, NULL, NULL);
   // Copy material data to constant device memory
   if(ret!= CL_SUCCESS){
     printf("Error writing to materialspecs buffer, exiting\n");
@@ -129,14 +83,13 @@ int InitSimStates(SimState* HostMem, SimulationStruct* sim, cl_context context, 
 {
   int rz_size = sim->det.nr * sim->det.nz;
   int ra_size = sim->det.nr * sim->det.na;
-  int Nt = sim->nTetras;
   unsigned int size;
   cl_int ret;
   size = sizeof(UINT32); 
   // Allocate n_photons_left (on device only)
   *num_photons_left_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, size, NULL, &ret);
   if(ret!= CL_SUCCESS){
-    printf("Error creating layerspecs buffer, exiting\n");
+    printf("Error creating photons left buffer, exiting\n");
     exit(-1);
   }
 
@@ -322,11 +275,6 @@ int CopyDeviceToHostMem(SimState* HostMem,SimulationStruct* sim, cl_command_queu
     printf("Error reading scaled weight buffer, exiting\n");
     exit(-1);
   }
-  int i;
-  for(i=1;i<(sim->nTetras+1);i++)
-  {
-    printf("%d\n", (HostMem->scaled_w)[i]);
-  }
   // Copy A_rz, Rd_ra and Tt_ra
   ret = clEnqueueReadBuffer(command_queue, A_rz_mem_obj, CL_TRUE, 0, rz_size*sizeof(UINT64), HostMem->A_rz, 0, NULL, NULL);
   if(ret != CL_SUCCESS){
@@ -388,7 +336,7 @@ void FreeHostSimState(SimState *hstate)
 //   Free GPU Memory
 //////////////////////////////////////////////////////////////////////////////
 void FreeDeviceSimStates(cl_context context, cl_command_queue command_queue,cl_kernel initkernel, cl_kernel kernel, 
-        cl_program program, cl_mem simparam_mem_obj,  cl_mem layerspecs_mem_obj, cl_mem num_photons_left_mem_obj, 
+        cl_program program, cl_mem simparam_mem_obj, cl_mem num_photons_left_mem_obj, 
         cl_mem a_mem_obj, cl_mem x_mem_obj, cl_mem A_rz_mem_obj, cl_mem Rd_ra_mem_obj, cl_mem Tt_ra_mem_obj, 
         cl_mem photon_x_mem_obj, cl_mem photon_y_mem_obj,cl_mem photon_z_mem_obj, cl_mem photon_ux_mem_obj, 
         cl_mem photon_uy_mem_obj, cl_mem photon_uz_mem_obj, cl_mem photon_w_mem_obj, cl_mem photon_sleft_mem_obj,
@@ -425,11 +373,6 @@ void FreeDeviceSimStates(cl_context context, cl_command_queue command_queue,cl_k
  ret = clReleaseMemObject(simparam_mem_obj);
  if(ret!= CL_SUCCESS){
     printf("Error releasing simparam mem obj, exiting\n");
-    exit(-1);
- }
- ret = clReleaseMemObject(layerspecs_mem_obj);
- if(ret!= CL_SUCCESS){
-    printf("Error releasing layerspecs mem obj, exiting\n");
     exit(-1);
  }
  ret = clReleaseMemObject(num_photons_left_mem_obj);

@@ -95,7 +95,6 @@
 cl_context context;
 cl_command_queue command_queue;
 cl_mem simparam_mem_obj;
-cl_mem layerspecs_mem_obj;
 cl_mem num_photons_left_mem_obj;
 cl_mem a_mem_obj;
 cl_mem x_mem_obj;
@@ -194,7 +193,7 @@ int init_RNG(UINT64 *x, UINT32 *a,
 //   Supports 1 GPU only
 //   Calls RunGPU with HostThreadState parameters
 //////////////////////////////////////////////////////////////////////////////
-int RunGPUi(HostThreadState *hstate, Tetra *tetra_mesh)
+int RunGPUi(HostThreadState *hstate, Tetra *tetra_mesh, Material *materialspec)
 {
   SimState *HostMem = &(hstate->host_sim_state);
 
@@ -250,7 +249,7 @@ int RunGPUi(HostThreadState *hstate, Tetra *tetra_mesh)
           &photon_z_mem_obj, &photon_ux_mem_obj, &photon_uy_mem_obj, &photon_uz_mem_obj, &photon_w_mem_obj, 
           &photon_sleft_mem_obj, &photon_layer_mem_obj, &is_active_mem_obj, &scaled_w_mem_obj);
 
-  InitDCMem(hstate->sim, tetra_mesh, context, command_queue, &simparam_mem_obj, &layerspecs_mem_obj, &tetra_mesh_mem_obj, &materials_mem_obj);
+  InitDCMem(hstate->sim, tetra_mesh, materialspec, context, command_queue, &simparam_mem_obj, &tetra_mesh_mem_obj, &materials_mem_obj);
 
   program = clCreateProgramWithSource(context, 1, (const char**)&source_str, (const size_t *)&source_size, &ret);
   if(ret != CL_SUCCESS){
@@ -356,12 +355,6 @@ int RunGPUi(HostThreadState *hstate, Tetra *tetra_mesh)
   ret = clSetKernelArg(kernel, argnum++, sizeof(cl_mem),(void *)&simparam_mem_obj);
   if(ret != CL_SUCCESS){
     printf("Error setting simparam kernel argument, exiting\n");
-    exit(-1);
-  }
-  
-  ret = clSetKernelArg(kernel, argnum++, sizeof(cl_mem),(void *)&layerspecs_mem_obj);
-  if(ret != CL_SUCCESS){
-    printf("Error setting layerspecs kernel argument, exiting\n");
     exit(-1);
   }
   
@@ -541,7 +534,7 @@ int RunGPUi(HostThreadState *hstate, Tetra *tetra_mesh)
   printf("[GPU] simulation done!\n");
 
   CopyDeviceToHostMem(HostMem, hstate->sim, command_queue, A_rz_mem_obj, Rd_ra_mem_obj, Tt_ra_mem_obj, x_mem_obj, scaled_w_mem_obj);
-  FreeDeviceSimStates(context, command_queue, initkernel,kernel, program, simparam_mem_obj, layerspecs_mem_obj,num_photons_left_mem_obj, a_mem_obj, x_mem_obj, A_rz_mem_obj, Rd_ra_mem_obj, Tt_ra_mem_obj, photon_x_mem_obj, photon_y_mem_obj, photon_z_mem_obj, photon_ux_mem_obj, 
+  FreeDeviceSimStates(context, command_queue, initkernel,kernel, program, simparam_mem_obj, num_photons_left_mem_obj, a_mem_obj, x_mem_obj, A_rz_mem_obj, Rd_ra_mem_obj, Tt_ra_mem_obj, photon_x_mem_obj, photon_y_mem_obj, photon_z_mem_obj, photon_ux_mem_obj, 
 photon_uy_mem_obj, photon_uz_mem_obj, photon_w_mem_obj, photon_sleft_mem_obj, photon_layer_mem_obj, is_active_mem_obj, tetra_mesh_mem_obj, materials_mem_obj, scaled_w_mem_obj);
   // We still need the host-side structure.
   return i;
@@ -551,7 +544,7 @@ photon_uy_mem_obj, photon_uz_mem_obj, photon_w_mem_obj, photon_sleft_mem_obj, ph
 //   Perform MCML simulation for one run out of N runs (in the input file)
 //////////////////////////////////////////////////////////////////////////////
 static void DoOneSimulation(int sim_id, SimulationStruct* simulation,
-                            unsigned long long *x, unsigned int *a, Tetra *tetra_mesh)
+                            unsigned long long *x, unsigned int *a, Tetra *tetra_mesh, Material *materialspec)
 {
   printf("\n------------------------------------------------------------\n");
   printf("        Simulation #%d\n", sim_id);
@@ -579,7 +572,7 @@ static void DoOneSimulation(int sim_id, SimulationStruct* simulation,
 
   printf("simulation number of photons %d\n", *(hss->n_photons_left));
   // Launch simulation
-  int number_of_iterations = RunGPUi (hstates, tetra_mesh);
+  int number_of_iterations = RunGPUi (hstates, tetra_mesh, materialspec);
 
   // End the timer.
   //CUT_SAFE_CALL( cutStopTimer(execTimer) );
@@ -608,7 +601,7 @@ void banner()
     printf("(c) Yu Wu, Emil Salavat, Li Chen, 2015\n\n");
 }
 
-void OutputTetraMesh(Tetra *tetra_mesh, int Nt)
+void OutputTetraMesh(Tetra *tetra_mesh, int Nt)	//debug code
 {
   int i;
   for(i=1; i<=Nt; i++)
@@ -630,12 +623,14 @@ int main(int argc, char* argv[])
   banner();
 
   Tetra *tetra_mesh;
-  int Np, Nt;	//number of points, number of tetrahedra
+  int Np, Nt, Nm;	//number of points, number of tetrahedra, number of materials
   PopulateTetraFromMeshFile("one_layer_18_18_1_2.mesh", &tetra_mesh, &Np, &Nt);
-  //OutputTetraMesh(tetra_mesh, Nt);
+  Material *materialspec;
+  OutputTetraMesh(tetra_mesh, Nt);	//debug code
+  PopulateMaterialFromInput("", &materialspec, &Nm);
+  printf("mat n: %f\n", materialspec[1].n);
   char* filename = NULL;
   unsigned long long seed = (unsigned long long) time(NULL);
-  int ignoreAdetection = 0;
   
   SimulationStruct* simulations;
   int n_simulations;
@@ -643,7 +638,7 @@ int main(int argc, char* argv[])
   int i;
 
   // Parse command-line arguments.
-  if (interpret_arg(argc, argv, &filename,&seed, &ignoreAdetection))
+  if (interpret_arg(argc, argv, &filename))
   {
     usage(argv[0]);
     return 1;
@@ -652,12 +647,11 @@ int main(int argc, char* argv[])
   // Output the execution configuration.
   printf("\n====================================\n");
   printf("EXECUTION MODE:\n");
-  printf("  ignore A-detection:      %s\n", ignoreAdetection ? "YES" : "NO");
   printf("  seed:                    %llu\n", seed);
   printf("====================================\n\n");
 
   // Read the simulation inputs.
-  n_simulations = read_simulation_data(filename, &simulations, ignoreAdetection);
+  n_simulations = read_simulation_data(filename, &simulations);
   if(n_simulations == 0)
   {
     printf("Something wrong with read_simulation_data!\n");
@@ -679,11 +673,13 @@ int main(int argc, char* argv[])
   for(i=0;i<n_simulations;i++)
   {
     simulations[i].nTetras = Nt;
+    simulations[i].nMaterials = Nm;
     // Run a simulation
-    DoOneSimulation(i, &simulations[i], x, a, tetra_mesh);
+    DoOneSimulation(i, &simulations[i], x, a, tetra_mesh, materialspec);
   }
 
   // Free the random number seed arrays.
+  free(materialspec);
   free(tetra_mesh);
   free(x); free(a);
   FreeSimulationStruct(simulations, n_simulations);

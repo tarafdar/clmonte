@@ -58,9 +58,7 @@ void usage(const char *prog_name)
 //////////////////////////////////////////////////////////////////////////////
 //   Parse command line arguments
 //////////////////////////////////////////////////////////////////////////////
-int interpret_arg(int argc, char* argv[], char **fpath_p,
-                  unsigned long long* seed,
-                  int* ignoreAdetection)
+int interpret_arg(int argc, char* argv[], char **fpath_p)
 {
   int i;
   char *fpath = NULL;
@@ -79,16 +77,6 @@ int interpret_arg(int argc, char* argv[], char **fpath_p,
 
     // Skip the '-'.
     ++arg;
-
-    // This is an option.
-    if (strcmp(arg, "A") == 0)
-    {
-      *ignoreAdetection = 1;
-    }
-    else if (sscanf(arg, "S%llu", seed) == 1)
-    {
-      // <seed> has been set.
-    }
   }
 
   if (fpath_p != NULL) *fpath_p = fpath;
@@ -101,27 +89,7 @@ int interpret_arg(int argc, char* argv[], char **fpath_p,
  ****/
 void WriteInParm(FILE *file, SimulationStruct * sim)
 {
-  unsigned int i;
   
-  fprintf(file, 
-	"InParm \t\t\t# Input parameters. cm is used.\n");
-  
-  fprintf(file, "%s \tA\t\t# output file name, ASCII.\n", sim->outp_filename);
-  fprintf(file, "%u \t\t\t# No. of photons\n", sim->number_of_photons);
-  
-  fprintf(file, "%G\t%G\t\t# dz, dr [cm]\n", sim->det.dz, sim->det.dr);
-  fprintf(file, "%u\t%u\t%u\t# No. of dz, dr, da.\n\n", sim->det.nz, sim->det.nr, sim->det.na);
-  
-  fprintf(file, "%u\t\t\t\t\t# Number of layers\n", sim->n_layers);
-
-  fprintf(file, "#n\tmua\tmus\tg\td\t# One line for each layer\n"); 
-  fprintf(file, "%G\t\t\t\t\t# n for medium above\n", sim->layers[0].n); 
-
-  for(i=1; i<=sim->n_layers; i++)  {
-    fprintf(file, "%G\t%G\t%G\t%G\t%G\t# layer %hd\n",
-      sim->layers[i].n, sim->layers[i].mua, 1/sim->layers[i].mutr-sim->layers[i].mua, sim->layers[i].g, sim->layers[i].z_max-sim->layers[i].z_min, i);
-  }
-  fprintf(file, "%G\t\t\t\t\t# n for medium below\n", sim->layers[i].n); 
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -592,11 +560,25 @@ void PopulateTetraFromMeshFile(const char* filename, Tetra **p_tetra_mesh, int *
   return;
 }
 
+void PopulateMaterialFromInput(const char* fileName, Material **p_material_spec, int *Nm)
+{
+  *Nm = 1;
+  *p_material_spec = (Material *)malloc( sizeof(Material) * ((*Nm)+1) );
+  Material &material = (*p_material_spec)[1];
+  material.mu_as = (0.2+1000);
+  material.rmu_as = 1.0/(material.mu_as);
+  material.n = 1.53;
+  material.g = 0.9;
+  material.HGCoeff1 = (1+material.g*material.g)/(2*material.g);
+  material.HGCoeff2 = (1-material.g*material.g)*(1-material.g*material.g) / (2*material.g);
+  material.absfrac = 1- 1000/(1000+0.2);
+  return;
+}
 
 //////////////////////////////////////////////////////////////////////////////
 //   Parse simulation input file
 //////////////////////////////////////////////////////////////////////////////
-int read_simulation_data(char* filename, SimulationStruct** simulations, int ignoreAdetection)
+int read_simulation_data(char* filename, SimulationStruct** simulations)
 {
   int i=0;
   int ii=0;
@@ -638,9 +620,6 @@ int read_simulation_data(char* filename, SimulationStruct** simulations, int ign
     strcpy((*simulations)[i].inp_filename,filename);
     // Echo the Filename
     //printf("Input filename: %s\n",filename);
-
-    // Store ignoreAdetection data
-    (*simulations)[i].ignoreAdetection=ignoreAdetection;
 
     // Read the output filename and determine ASCII or Binary output
     ii=0;

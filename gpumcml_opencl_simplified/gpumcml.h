@@ -86,7 +86,6 @@ typedef struct
   char AorB;
 
   UINT32 number_of_photons;
-  int ignoreAdetection;
   float start_weight;
 
   DetStruct det;
@@ -94,6 +93,7 @@ typedef struct
   UINT32 n_layers;
   LayerStruct* layers;
   int nTetras;	//total number of tetrahedra
+  int nMaterials;	//total number of materials
 } SimulationStruct;
 
 // Per-GPU simulation states
@@ -165,19 +165,17 @@ extern void usage(const char *prog_name);
 
 // Parse the command-line arguments.
 // Return 0 if successfull or a +ive error code.
-extern int interpret_arg(int argc, char* argv[], char **fpath_p,
-        unsigned long long* seed,
-        int* ignoreAdetection);
+extern int interpret_arg(int argc, char* argv[], char **fpath_p);
 
 extern int read_simulation_data(char* filename,
-        SimulationStruct** simulations, int ignoreAdetection);
+        SimulationStruct** simulations);
 
 extern int Write_Simulation_Results(SimState* HostMem,
         SimulationStruct* sim, clock_t simulation_time);
 
 extern void FreeSimulationStruct(SimulationStruct* sim, int n_simulations);
 
-int InitDCMem(SimulationStruct *sim, Tetra *tetra_mesh, cl_context context, cl_command_queue command_queue, cl_mem *simparam_mem_obj, cl_mem *layerspecs_mem_obj, cl_mem *tetra_mesh_mem_obj, cl_mem *materials_mem_obj);
+int InitDCMem(SimulationStruct *sim, Tetra *tetra_mesh, Material *materialspec, cl_context context, cl_command_queue command_queue, cl_mem *simparam_mem_obj, cl_mem *tetra_mesh_mem_obj, cl_mem *materials_mem_obj);
 int InitSimStates(SimState* HostMem, SimulationStruct* sim, cl_context context, cl_command_queue command_queue, 
         cl_mem *num_photons_simulated_mem_obj, cl_mem *a_mem_obj, cl_mem *x_mem_obj, cl_mem *A_rz_mem_obj, cl_mem *Rd_ra_mem_obj, cl_mem *Tt_ra_mem_obj
         , cl_mem *photon_x_mem_obj, cl_mem *photon_y_mem_obj, cl_mem *photon_z_mem_obj, cl_mem *photon_ux_mem_obj, 
@@ -187,7 +185,7 @@ int InitSimStates(SimState* HostMem, SimulationStruct* sim, cl_context context, 
 int CopyDeviceToHostMem(SimState* HostMem,SimulationStruct* sim, cl_command_queue command_queue, cl_mem A_rz_mem_obj, cl_mem Rd_ra_mem_obj, cl_mem Tt_ra_mem_obj, cl_mem x_mem_obj, cl_mem scaled_w_mem_obj);
 void FreeHostSimState(SimState *hstate);
 void FreeDeviceSimStates(cl_context context, cl_command_queue command_queue, cl_kernel initkernel, cl_kernel kernel, 
-        cl_program program, cl_mem simparam_mem_obj, cl_mem layerspecs_mem_obj, cl_mem num_photons_simulated_mem_obj, 
+        cl_program program, cl_mem simparam_mem_obj, cl_mem num_photons_simulated_mem_obj, 
         cl_mem a_mem_obj, cl_mem x_mem_obj, cl_mem A_rz_mem_obj, cl_mem Rd_ra_mem_obj, cl_mem Tt_ra_mem_obj
         , cl_mem photon_x_mem_obj, cl_mem photon_y_mem_obj,cl_mem photon_z_mem_obj, cl_mem photon_ux_mem_obj, 
         cl_mem photon_uy_mem_obj, cl_mem photon_uz_mem_obj, cl_mem photon_w_mem_obj, cl_mem photon_sleft_mem_obj,
@@ -195,4 +193,5 @@ void FreeDeviceSimStates(cl_context context, cl_command_queue command_queue, cl_
         cl_mem scaled_w_mem_obj
         );
 void PopulateTetraFromMeshFile(const char* filename, Tetra **p_tetra_mesh, int *p_Np, int *p_Nt);
+void PopulateMaterialFromInput(const char*, Material **p_material_spec, int *Nm);
 #endif  // _GPUMCML_H_
