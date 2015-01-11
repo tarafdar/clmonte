@@ -234,6 +234,24 @@ void Hop(Packet *pkt)
   pkt->z += pkt->s * pkt->dz;
 }
 
+
+//////////////////////////////////////////////////////////////////////////////
+//   Drop a part of the weight of the packet to simulate absorption
+//////////////////////////////////////////////////////////////////////////////
+void absorb(Packet *pkt, __global const Material *d_materialspecs, __global logger *d_log) {
+    
+    float w0 = pkt->w;
+    float dw = w0*(d_materialspecs->absorbedfraction);
+    
+    pkt->w = w0 - dw;
+    
+    // Store the absorbed weight in the material -> score in the logger structure
+    // UINT64 used to maintain compatibility with the "atomic_add" method
+    atomic_add( &(d_log[pkt->tetraID]->w), (UINT64)(dw * WEIGHT_SCALE) );
+}
+
+
+/*
 //////////////////////////////////////////////////////////////////////////////
 //   Drop a part of the weight of the packet to simulate absorption
 //////////////////////////////////////////////////////////////////////////////
@@ -258,6 +276,8 @@ void Drop(Packet *pkt, __global UINT64CL *g_A_rz, __global const LayerStructGPU 
     }
 
 }
+*/
+
 
 //////////////////////////////////////////////////////////////////////////////
 //   Drop a part of the weight of the packet to simulate absorption
@@ -788,10 +808,17 @@ void NewSpin(float g, Packet *pkt,
 
 __kernel void MCMLKernel(__global const SimParamGPU *d_simparam_addr,__global const LayerStructGPU *d_layerspecs,
                                   //__global SimState d_state, 
+<<<<<<< Updated upstream
                                   __global UINT32CL *d_state_n_photons_left_addr, __global UINT64CL *d_state_x, 
                                   __global UINT32CL *d_state_a,__global UINT64CL *d_state_Rd_ra, 
                                   __global UINT64CL *d_state_A_rz, __global UINT64CL *d_state_Tt_ra, __global const Tetra *d_tetra_mesh,
                                   __global const Material *d_materialspecs, __global UINT64CL *d_scaled_w
+=======
+                                  __global UINT32 *d_state_n_photons_left_addr, __global UINT64 *d_state_x, 
+                                  __global UINT32 *d_state_a,__global UINT64 *d_state_Rd_ra, 
+                                  __global UINT64 *d_state_A_rz, __global UINT64 *d_state_Tt_ra, __global const Tetra *d_tetra_mesh,
+                                  __global const Material *d_materialspecs, __global logger *d_log
+>>>>>>> Stashed changes
                                   //__global GPUThreadStates tstates
                                 // __global float *tstates_photon_x, __global float *tstates_photon_y, __global float *tstates_photon_z,
                                 // __global float *tstates_photon_ux, __global float *tstates_photon_uy, __global float *tstates_photon_uz,
@@ -850,11 +877,19 @@ __kernel void MCMLKernel(__global const SimParamGPU *d_simparam_addr,__global co
         }
       else
       {
+<<<<<<< Updated upstream
         Drop (&pkt, d_state_A_rz, d_layerspecs, d_simparam); 
         /*for Full Monte
         absorb (&pkt, &d_materialspecs, &d_scaled_w);
         */
         Spin(d_layerspecs[pkt.layer].g, &pkt, &d_state_x[tid], &d_state_a[tid], d_tetra_mesh, d_materialspecs);
+=======
+
+        absorb(&pkt, &d_materialspecs, &d_log)
+
+
+        Spin(d_layerspecs[pkt.layer].g, &pkt, &d_state_x[tid], &d_state_a[tid]);
+>>>>>>> Stashed changes
         //NewSpin(d_layerspecs[pkt.layer].g, &pkt, &rnd_x, &rnd_a);
       }
 
@@ -863,6 +898,7 @@ __kernel void MCMLKernel(__global const SimParamGPU *d_simparam_addr,__global co
       *  If the pkt weight is small, the packet tries
       *  to survive a roulette.
       ****/
+<<<<<<< Updated upstream
       if (pkt.w < WEIGHT + d_simparam_addr->terminationThresh)
       {
         float rand = rand_MWC_co(&d_state_x[tid], &d_state_a[tid]);
@@ -872,15 +908,27 @@ __kernel void MCMLKernel(__global const SimParamGPU *d_simparam_addr,__global co
           pkt.w *= (FP_ONE / CHANCE + d_simparam_addr->proulettewin);
         // This pkt is terminated.
         else if (atomic_sub(d_state_n_photons_left_addr, 1) > NUM_THREADS){
+=======
+      // Current Photon Weight Below The Configuration Minimum
+      if (pkt.w < cfg.wmin) {
             
-          LaunchPacket(&pkt, d_simparam, &d_state_x[tid], &d_state_a[tid]); // Launch a new packet.
-        
-        }
-        // No need to process any more packets.
-        else{
-            is_active = 0;
-
-        }
+            // Packet survives the roulette
+            if ( (pkt.w != MCML_FP_ZERO) && ( rand_MWC_co(&d_state_x[tid], &d_state_a[tid]) < cfg.prwin ) ) {
+                pkt.w /= cfg.prwin;
+            }
+            
+            // Packet is terminated
+            else if ( atomic_sub(d_state_n_photons_left_addr, 1) > NUM_THREADS ){
+                // Launch a new packet
+                LaunchPacket(&pkt, d_simparam, &d_state_x[tid], &d_state_a[tid]);
+            }
+            
+            // No need to process any more packets
+            else {
+                is_active = 0;
+            }
+>>>>>>> Stashed changes
+            
       }
     }
 

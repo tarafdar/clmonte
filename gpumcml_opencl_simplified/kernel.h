@@ -140,6 +140,10 @@ typedef struct
 
 typedef struct
 {
+  float mu_a;
+  float mu_s;
+  float n_e;
+  
   float mu_as;	//result of mu_a + mu_s
   float rmu_as;	//reciprocal of mu_as, store this to get rid of slow division arithmetic 
   float n;	//index of refraction
@@ -147,7 +151,28 @@ typedef struct
   float HGCoeff1;	// HGCoeff1 = (1+g^2)/(2g)
   float HGCoeff2;	// HGCoeff2 = (1-g^2)^2 /(2g). So cos(theta) = HGCoeff1 - HGCoeff2 / (1-g * rand(-1,1))
   float absfrac;	//absorb fraction = 1- albedo = 1 - mus / (mus+mua)
+  
+  int setmatched; 
+  
 } Material;
+
+typedef struct {
+	int stype;
+	int Np;
+	
+	// Source Position -> IFF stype = 1 or 11
+	float x;
+	float y;
+	float z;
+	
+	// Source Direction -> IFF stype = 11
+	float dx;
+	float dy;
+	float dz;
+	
+	// Source Location -> IFF stype = 2
+	int IDt;
+} source;
 
 #endif // _GPUMCML_KERNEL_H_
 

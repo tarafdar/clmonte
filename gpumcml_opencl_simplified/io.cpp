@@ -32,7 +32,8 @@
 #include <string.h>
 #include <list>
 
-#include <CL/cl.h>
+//#include <CL/cl.h>
+#include <OpenCL/opencl.h>
 
 #include "kernel.h"
 #include "gpumcml.h"
@@ -593,6 +594,216 @@ void PopulateTetraFromMeshFile(const char* filename, Tetra **p_tetra_mesh, int *
 }
 
 
+//////////////////////////////////////////////////////////////////////////////
+//   Parse Material (.Opt File)
+//////////////////////////////////////////////////////////////////////////////
+
+void parseMaterial(char* filename, Material** mat) {
+	
+	FILE *matfile;
+	
+	// Line 1 and 2 of the material (.opt) file
+	// Line 1 -> Material Parameter Style -> Must be 1
+	// Line 2 -> Number of materials present in the mesh
+	char line1[100], line2[100], linemat[100];
+	int paramstyle, numbermat, etype;
+	
+	matfile = fopen(filename, "r");
+	
+	if (matfile == NULL) {
+		printf ("Error Opening Material (.opt) file.\n");
+		fclose (matfile);
+		return;
+	}
+	else {
+		// Verify the material paramter style
+		if ( fgets (line1, 100, matfile) == NULL ) {
+			printf ("Error Reading Line 1 Of Material (.opt) File.\n");
+			fclose (matfile);
+			return;
+		}
+		// Collect the number of materials present in the mesh
+		if ( fgets (line2, 100, matfile) == NULL ) {
+			printf ("Error Reading Line 2 Of Material (.opt) File.\n");
+			fclose (matfile);
+			return;
+		}
+	}
+	
+	sscanf (line1, "%d", &paramstyle);
+	sscanf (line2, "%d", &numbermat);
+	
+	// printf("File opened successfully!\nMaterial parameter style: %d\nNumber of materials presnet:%d\n", paramstyle, numbermat);
+	
+	*mat = (Material*)malloc((numbermat+1)*sizeof(Material));
+	
+	/*
+	if (materialproperties != NULL) {
+		printf ("Structure created successfully\n");
+	}*/
+	
+	for (int i = 1; i <= numbermat; i++) {
+		if ( fgets (linemat, 100, matfile) == NULL ) {
+			printf ("Error Reading Line %d Of Material (.opt) File.\n", i);
+			fclose (matfile);
+			return;
+		}
+		
+		sscanf (linemat, "%f %f %f %f", &(mat[i]->mu_a), &(mat[i]->mu_s), &(mat[i]->g), &(mat[i]->n));
+		
+	}
+	
+	// Get E-Type
+	if ( fgets (linemat, 100, matfile) == NULL ) {
+		printf ("Error Reading Line E-Type Of Material (.opt) File.\n");
+		fclose (matfile);
+		return;
+	}
+	
+	sscanf (linemat, "%d", &etype);
+	
+	if (etype == 1) {
+		// Get n_e
+		if ( fgets (linemat, 100, matfile) == NULL ) {
+			printf ("Error Reading Line n_e Of Material (.opt) File.\n");
+			fclose (matfile);
+			return;
+		}
+		sscanf (linemat, "%f", &(mat[0]->n_e));
+	}
+	else if (etype == 2) {
+		// Set Matched
+		mat[0]->setmatched = 1;
+		
+		// Get n_e
+		if ( fgets (linemat, 100, matfile) == NULL ) {
+			printf ("Error Reading Line n_e Of Material (.opt) File.\n");
+			fclose (matfile);
+			return;
+		}
+		
+		sscanf (linemat, "%f", &(mat[0]->n_e));
+	}
+	else {
+		printf ("Invalid Environment Type\n");
+		return;
+	}
+	
+	mat[0]->mu_a	 = 0;
+	mat[0]->mu_s	 = 0;
+	mat[0]->g		 = 0;
+	mat[0]->n		 = 0;
+	
+		
+	fclose (matfile);
+}
+
+
+                      
+                      
+//////////////////////////////////////////////////////////////////////////////
+//   Parse Source (.Source File)
+//////////////////////////////////////////////////////////////////////////////
+                      
+void parseSource(char* filename, source** sourcepoint) {
+	
+	FILE *sourcefile;
+	
+	// Line 1 and 2 of the material (.opt) file
+	// Line 1 -> Material Parameter Style -> Must be 1
+	// Line 2 -> Number of materials present in the mesh
+	char line1[100], linesource[100];
+	int numsources, sourcetype;
+	
+	sourcefile = fopen(filename, "r");
+	
+	if (sourcefile == NULL) {
+		printf ("Error Opening Source file.\n");
+		fclose (sourcefile);
+		return;
+	}
+	else {
+		// Collect The Number Of Sources
+		if ( fgets (line1, 100, sourcefile) == NULL ) {
+			printf ("Error Reading Line 1 Of Source File.\n");
+			fclose (sourcefile);
+			return;
+		}
+	}
+	
+	sscanf (line1, "%d", &numsources);
+
+	if (numsources == 0) {
+		printf("Error - Zero Sources Specified\n");
+		return;
+	}
+	// printf("File opened successfully!\nMaterial parameter style: %d\nNumber of materials presnet:%d\n", paramstyle, numbermat);
+	
+	*sourcepoint = (source*)malloc((numsources)*sizeof(source));
+	
+	
+	for (int i = 0; i < numsources; i++) {
+		if ( fgets (linesource, 100, sourcefile) == NULL ) {
+			printf ("Error Reading Line %d Of Source File.\n", i);
+			fclose (sourcefile);
+			return;
+		}
+		
+		sscanf (linesource, "%d ", &(sourcepoint[i]->stype) );
+		
+		// printf ("The source type is: %d\n", sourcepoint[i].stype);
+		
+		switch(sourcepoint[i]->stype){
+			
+			// Point Position -> Cartesian Coordinates
+			case 1:
+			sscanf (linesource, "%d %f %f %f %d", &(sourcepoint[i]->stype), &(sourcepoint[i]->x), &(sourcepoint[i]->y), &(sourcepoint[i]->z), &(sourcepoint[i]->Np) );
+			break;
+			
+			// IDt position
+			case 2:
+			sscanf (linesource, "%d %d %d", &(sourcepoint[i]->stype), &(sourcepoint[i]->IDt), &(sourcepoint[i]->Np) );
+			break;
+			
+			// IDt position
+			case 11:
+			sscanf (linesource, "%d %d %f %f %f %f %f %f %d", &(sourcepoint[i]->stype), &(sourcepoint[i]->IDt), &(sourcepoint[i]->x), &(sourcepoint[i]->y), &(sourcepoint[i]->z), &(sourcepoint[i]->dx), &(sourcepoint[i]->dy), &(sourcepoint[i]->dz), &(sourcepoint[i]->Np) );
+			
+			/*
+			printf ("X Coordinate: %f\n", sourcepoint[i].x);
+			printf ("Y Coordinate: %f\n", sourcepoint[i].y);
+			printf ("Z Coordinate: %f\n", sourcepoint[i].z);
+			
+			printf ("X Dir: %f\n", sourcepoint[i].dx);
+			printf ("Y Dir: %f\n", sourcepoint[i].dy);
+			printf ("Z Dir: %f\n", sourcepoint[i].dz);
+			
+			printf ("Np: %d\n", sourcepoint[i].Np);
+			*/
+			break;
+			
+			default:
+			printf ("Unrecognized Source Type.\n");
+			break;
+		}
+		
+		
+		
+		
+	}
+	
+	
+	// free(sourcepoint);
+	
+	fclose (sourcefile);
+	
+}
+
+
+                   
+                   
+                      
+                      
 //////////////////////////////////////////////////////////////////////////////
 //   Parse simulation input file
 //////////////////////////////////////////////////////////////////////////////

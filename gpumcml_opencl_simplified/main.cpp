@@ -87,7 +87,8 @@
 //#include <cutil.h>
 //#endif
 
-#include <CL/cl.h>
+//#include <CL/cl.h>
+#include <OpenCL/opencl.h>
 #include "kernel.h"
 #include "gpumcml.h"
 #define MAX_SOURCE_SIZE 0x100000
@@ -632,6 +633,15 @@ int main(int argc, char* argv[])
   Tetra *tetra_mesh;
   int Np, Nt;	//number of points, number of tetrahedra
   PopulateTetraFromMeshFile("one_layer_18_18_1_2.mesh", &tetra_mesh, &Np, &Nt);
+  
+  source *sourcepoint;
+  parseSource("FourLayer.source", &sourcepoint);
+  
+  Material *mat;
+  parseMaterial("FourLayer.opt", &mat);
+  
+  printf ("Success!\n");
+  
   //OutputTetraMesh(tetra_mesh, Nt);
   char* filename = NULL;
   unsigned long long seed = (unsigned long long) time(NULL);
