@@ -94,11 +94,13 @@
 
 cl_context context;
 cl_command_queue command_queue;
+float *debug;
 cl_mem simparam_mem_obj;
 cl_mem num_photons_left_mem_obj;
 cl_mem a_mem_obj;
 cl_mem x_mem_obj;
 cl_mem A_rz_mem_obj;
+cl_mem debug_mem_obj;
 cl_mem Rd_ra_mem_obj;
 cl_mem Tt_ra_mem_obj;
 cl_mem photon_x_mem_obj;
@@ -247,7 +249,7 @@ int RunGPUi(HostThreadState *hstate, Tetra *tetra_mesh, Material *materialspec)
   InitSimStates(HostMem, hstate->sim, context, command_queue, &num_photons_left_mem_obj, 
           &a_mem_obj, &x_mem_obj, &A_rz_mem_obj, &Rd_ra_mem_obj, &Tt_ra_mem_obj, &photon_x_mem_obj, &photon_y_mem_obj,
           &photon_z_mem_obj, &photon_ux_mem_obj, &photon_uy_mem_obj, &photon_uz_mem_obj, &photon_w_mem_obj, 
-          &photon_sleft_mem_obj, &photon_layer_mem_obj, &is_active_mem_obj, &scaled_w_mem_obj);
+          &photon_sleft_mem_obj, &photon_layer_mem_obj, &is_active_mem_obj, &scaled_w_mem_obj, &debug_mem_obj);
 
   InitDCMem(hstate->sim, tetra_mesh, materialspec, context, command_queue, &simparam_mem_obj, &tetra_mesh_mem_obj, &materials_mem_obj);
 
@@ -411,6 +413,12 @@ int RunGPUi(HostThreadState *hstate, Tetra *tetra_mesh, Material *materialspec)
     printf("Error setting scaled weight kernel argument, exiting\n");
     exit(-1);
   }
+  
+  ret = clSetKernelArg(kernel, argnum++, sizeof(cl_mem), (void *)&debug_mem_obj);
+  if(ret != CL_SUCCESS){
+    printf("Error setting debug kernel argument, exiting\n");
+    exit(-1);
+  }  
   //ret = clSetKernelArg(kernel, argnum++, sizeof(cl_mem),(void *)&photon_x_mem_obj);
   //if(ret != CL_SUCCESS){
   //  printf("Error setting photon_x kernel argument, exiting\n");
@@ -496,7 +504,7 @@ int RunGPUi(HostThreadState *hstate, Tetra *tetra_mesh, Material *materialspec)
   // Initialize the remaining thread states.
 
   int i=0;
-  for (i=0; *HostMem->n_photons_left > 0; ++i)
+  for (i=0; *HostMem->n_photons_left > 0 && i<1; ++i)
   {
     // Run the kernel.
     ret = clEnqueueNDRangeKernel(command_queue, kernel, 1, NULL, &global_size, &local_size, 0, NULL, NULL);
@@ -533,9 +541,9 @@ int RunGPUi(HostThreadState *hstate, Tetra *tetra_mesh, Material *materialspec)
   
   printf("[GPU] simulation done!\n");
 
-  CopyDeviceToHostMem(HostMem, hstate->sim, command_queue, A_rz_mem_obj, Rd_ra_mem_obj, Tt_ra_mem_obj, x_mem_obj, scaled_w_mem_obj);
+  CopyDeviceToHostMem(HostMem, hstate->sim, command_queue, A_rz_mem_obj, Rd_ra_mem_obj, Tt_ra_mem_obj, x_mem_obj, scaled_w_mem_obj, debug_mem_obj);
   FreeDeviceSimStates(context, command_queue, initkernel,kernel, program, simparam_mem_obj, num_photons_left_mem_obj, a_mem_obj, x_mem_obj, A_rz_mem_obj, Rd_ra_mem_obj, Tt_ra_mem_obj, photon_x_mem_obj, photon_y_mem_obj, photon_z_mem_obj, photon_ux_mem_obj, 
-photon_uy_mem_obj, photon_uz_mem_obj, photon_w_mem_obj, photon_sleft_mem_obj, photon_layer_mem_obj, is_active_mem_obj, tetra_mesh_mem_obj, materials_mem_obj, scaled_w_mem_obj);
+photon_uy_mem_obj, photon_uz_mem_obj, photon_w_mem_obj, photon_sleft_mem_obj, photon_layer_mem_obj, is_active_mem_obj, tetra_mesh_mem_obj, materials_mem_obj, scaled_w_mem_obj, debug_mem_obj);
   // We still need the host-side structure.
   return i;
 }

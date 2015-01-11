@@ -72,7 +72,7 @@ float rand_MWC_oc(__global UINT64CL* x,__global UINT32CL* a)
 //   step size remainder (sleft), current layer (layer), and auxiliary vectors a,b
 //   Note: Infinitely narrow beam (pointing in the +z direction = downwards)
 //////////////////////////////////////////////////////////////////////////////
-void LaunchPacket(Packet *pkt, SimParamGPU d_simparam, __global UINT64CL *rnd_x, __global UINT32CL *rnd_a)
+void LaunchPacket(Packet *pkt, SimParamGPU d_simparam, __global UINT64CL *rnd_x, __global UINT32CL *rnd_a, __global float *debug)
 {
   pkt->x = d_simparam.originX;
   pkt->y = d_simparam.originY;
@@ -91,6 +91,12 @@ void LaunchPacket(Packet *pkt, SimParamGPU d_simparam, __global UINT64CL *rnd_x,
   pkt->sleft = MCML_FP_ZERO;
   pkt->layer = 1;
 
+  if(get_global_id(0)==4)
+  {
+  debug[0] = pkt->dx;
+  debug[1] = pkt->dy;
+  debug[2] = pkt->dz;
+  }
   // vector a = (vector d) cross (positive z axis unit vector) and normalize it 
   float4 d = (float4)(pkt->dx, pkt->dy, pkt->dz, 0);
   float4 crossProduct;
@@ -623,7 +629,7 @@ __kernel void MCMLKernel(__global const SimParamGPU *d_simparam_addr,
                                   __global UINT32CL *d_state_n_photons_left_addr, __global UINT64CL *d_state_x, 
                                   __global UINT32CL *d_state_a,__global UINT64CL *d_state_Rd_ra, 
                                   __global UINT64CL *d_state_A_rz, __global UINT64CL *d_state_Tt_ra, __global const Tetra *d_tetra_mesh,
-                                  __global const Material *d_materialspecs, __global UINT64CL *d_scaled_w
+                                  __global const Material *d_materialspecs, __global UINT64CL *d_scaled_w, __global float *debug
                                   //__global GPUThreadStates tstates
                                 // __global float *tstates_photon_x, __global float *tstates_photon_y, __global float *tstates_photon_z,
                                 // __global float *tstates_photon_ux, __global float *tstates_photon_uy, __global float *tstates_photon_uz,
@@ -636,7 +642,7 @@ __kernel void MCMLKernel(__global const SimParamGPU *d_simparam_addr,
   SimParamGPU d_simparam = d_simparam_addr[0];
   UINT32CL tid = get_global_id(0);
 
-  LaunchPacket(&pkt, d_simparam, &d_state_x[tid], &d_state_a[tid]); // Launch a new packet.
+  LaunchPacket(&pkt, d_simparam, &d_state_x[tid], &d_state_a[tid], debug); // Launch a new packet.
   // Flag to indicate if this thread is active
   UINT32CL is_active ;
   is_active = 1;

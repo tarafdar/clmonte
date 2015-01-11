@@ -10,6 +10,7 @@
 //////////////////////////////////////////////////////////////////////////////
 //   Initialize Device Constant Memory with read-only data
 //////////////////////////////////////////////////////////////////////////////
+extern float *debug;
 int InitDCMem(SimulationStruct *sim, Tetra *tetra_mesh, Material *materialspec, cl_context context, cl_command_queue command_queue, cl_mem *simparam_mem_obj, cl_mem *tetra_mesh_mem_obj, cl_mem *materials_mem_obj)
 {
   SimParamGPU h_simparam;
@@ -78,7 +79,7 @@ int InitSimStates(SimState* HostMem, SimulationStruct* sim, cl_context context, 
         cl_mem *num_photons_left_mem_obj, cl_mem *a_mem_obj, cl_mem *x_mem_obj, cl_mem *A_rz_mem_obj, cl_mem *Rd_ra_mem_obj, cl_mem *Tt_ra_mem_obj, 
         cl_mem *photon_x_mem_obj ,cl_mem *photon_y_mem_obj, cl_mem *photon_z_mem_obj, cl_mem *photon_ux_mem_obj, 
         cl_mem *photon_uy_mem_obj, cl_mem *photon_uz_mem_obj, cl_mem *photon_w_mem_obj, cl_mem *photon_sleft_mem_obj, 
-        cl_mem *photon_layer_mem_obj, cl_mem *is_active_mem_obj, cl_mem *scaled_w_mem_obj
+        cl_mem *photon_layer_mem_obj, cl_mem *is_active_mem_obj, cl_mem *scaled_w_mem_obj, cl_mem *debug_mem_obj
         )
 {
   int rz_size = sim->det.nr * sim->det.nz;
@@ -158,6 +159,22 @@ int InitSimStates(SimState* HostMem, SimulationStruct* sim, cl_context context, 
     HostMem->A_rz[i] = 0;
   }
   ret = clEnqueueWriteBuffer(command_queue, *A_rz_mem_obj, CL_TRUE, 0, size, HostMem->A_rz, 0, NULL, NULL); 
+  
+  // Allocate debug on host and device
+  size = sizeof(float)*20;
+  *debug_mem_obj = clCreateBuffer(context, CL_MEM_READ_WRITE, size, NULL, &ret);
+  if(ret!= CL_SUCCESS){
+    printf("Error creating debug buffer, exiting\n");
+    exit(-1);
+  }
+  debug = (float*)malloc(size);
+  if (debug == NULL)
+  {
+    fprintf(stderr, "Error allocating debug");
+    exit(1);
+  }
+  ret = clEnqueueWriteBuffer(command_queue, *debug_mem_obj, CL_TRUE, 0, size, debug, 0, NULL, NULL);   
+  
   // On the device, we allocate multiple copies for less access contention.
 
   // Allocate Rd_ra on host and device
@@ -263,7 +280,7 @@ int InitSimStates(SimState* HostMem, SimulationStruct* sim, cl_context context, 
 //////////////////////////////////////////////////////////////////////////////
 //   Transfer data from Device to Host memory after simulation
 //////////////////////////////////////////////////////////////////////////////
-int CopyDeviceToHostMem(SimState* HostMem,SimulationStruct* sim, cl_command_queue command_queue, cl_mem A_rz_mem_obj, cl_mem Rd_ra_mem_obj, cl_mem Tt_ra_mem_obj, cl_mem x_mem_obj, cl_mem scaled_w_mem_obj)
+int CopyDeviceToHostMem(SimState* HostMem,SimulationStruct* sim, cl_command_queue command_queue, cl_mem A_rz_mem_obj, cl_mem Rd_ra_mem_obj, cl_mem Tt_ra_mem_obj, cl_mem x_mem_obj, cl_mem scaled_w_mem_obj, cl_mem debug_mem_obj)
 {
   int rz_size = sim->det.nr*sim->det.nz;
   int ra_size = sim->det.nr*sim->det.na;
@@ -281,6 +298,16 @@ int CopyDeviceToHostMem(SimState* HostMem,SimulationStruct* sim, cl_command_queu
     printf("Error reading A_rz buffer, exiting\n");
     exit(-1);
   }
+  ret = clEnqueueReadBuffer(command_queue, debug_mem_obj, CL_TRUE, 0, 20*sizeof(float), debug, 0, NULL, NULL);
+  if(ret != CL_SUCCESS){
+    printf("Error reading debug buffer, exiting\n");
+    exit(-1);
+  }
+  for(int i = 0; i < 3; i++)
+  {
+    printf("%f\n", debug[i]);
+  }
+  printf("%f\n", (debug[0]*debug[0]+debug[1]*debug[1]+debug[2]*debug[2]));
   ret = clEnqueueReadBuffer(command_queue, Rd_ra_mem_obj, CL_TRUE, 0, ra_size*sizeof(UINT64), HostMem->Rd_ra, 0, NULL, NULL);
   if(ret != CL_SUCCESS){
     printf("Error reading Rd_ra buffer, exiting\n");
@@ -341,7 +368,7 @@ void FreeDeviceSimStates(cl_context context, cl_command_queue command_queue,cl_k
         cl_mem photon_x_mem_obj, cl_mem photon_y_mem_obj,cl_mem photon_z_mem_obj, cl_mem photon_ux_mem_obj, 
         cl_mem photon_uy_mem_obj, cl_mem photon_uz_mem_obj, cl_mem photon_w_mem_obj, cl_mem photon_sleft_mem_obj,
         cl_mem photon_layer_mem_obj, cl_mem is_active_mem_obj, cl_mem tetra_mesh_mem_obj, cl_mem materials_mem_obj,
-        cl_mem scaled_w_mem_obj
+        cl_mem scaled_w_mem_obj, cl_mem debug_mem_obj
      )
 {
  cl_int ret;
@@ -408,6 +435,11 @@ void FreeDeviceSimStates(cl_context context, cl_command_queue command_queue,cl_k
  ret = clReleaseMemObject(A_rz_mem_obj);
  if(ret!= CL_SUCCESS){
     printf("Error releasing A_rz mem obj, exiting\n");
+    exit(-1);
+ }
+ ret = clReleaseMemObject(debug_mem_obj);
+ if(ret!= CL_SUCCESS){
+    printf("Error releasing debug mem obj, exiting\n");
     exit(-1);
  }
  ret = clReleaseMemObject(Rd_ra_mem_obj);
