@@ -15,7 +15,6 @@ int InitDCMem(SimulationStruct *sim, Tetra *tetra_mesh, Material *materialspec, 
 {
   SimParamGPU h_simparam;
 
-  h_simparam.init_photon_w = sim->start_weight;
   h_simparam.dz = sim->det.dz;
   h_simparam.dr = sim->det.dr;
   
@@ -30,6 +29,7 @@ int InitDCMem(SimulationStruct *sim, Tetra *tetra_mesh, Material *materialspec, 
   h_simparam.init_tetraID = 1;
   h_simparam.terminationThresh = 0.5;
   h_simparam.proulettewin = 0.5;
+  h_simparam.weight_scale = 10000000;
 
   cl_int ret;
   *simparam_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, sizeof(SimParamGPU), NULL, &ret);

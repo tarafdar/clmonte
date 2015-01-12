@@ -86,7 +86,6 @@ typedef struct
   char AorB;
 
   UINT32 number_of_photons;
-  float start_weight;
 
   DetStruct det;
 

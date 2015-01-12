@@ -87,7 +87,7 @@ void LaunchPacket(Packet *pkt, SimParamGPU d_simparam, __global UINT64CL *rnd_x,
   pkt->dx = native_sin(phi) * native_cos(theta); 
   pkt->dy = native_sin(phi) * native_sin(theta);
   pkt->dz = native_cos(phi);
-  pkt->w = d_simparam.init_photon_w;
+  pkt->w = FP_ONE;
   pkt->sleft = MCML_FP_ZERO;
   pkt->layer = 1;
 
@@ -221,7 +221,7 @@ void Hop(Packet *pkt)
 //////////////////////////////////////////////////////////////////////////////
 //   Drop a part of the weight of the packet to simulate absorption
 //////////////////////////////////////////////////////////////////////////////
-void absorb(Packet *pkt, __global const Material *d_materialspecs, __global UINT64CL *d_scaled_w) {
+void absorb(UINT32 weight_scale, Packet *pkt, __global const Material *d_materialspecs, __global UINT64CL *d_scaled_w) {
     
     float w0 = pkt->w;
     float dw = w0*(d_materialspecs->absfrac);
@@ -230,7 +230,7 @@ void absorb(Packet *pkt, __global const Material *d_materialspecs, __global UINT
     
     // Store the absorbed weight in the material -> score in the d_scaled_w
     // UINT64 used to maintain compatibility with the "atomic_add" method
-    atomic_add(&(d_scaled_w[pkt->tetraID]), (UINT64CL)(dw * WEIGHT_SCALE) );
+    atomic_add(&(d_scaled_w[pkt->tetraID]), (UINT64CL)(dw * weight_scale) );
 }
 
 float GetCosCrit(float ni, float nt)
@@ -678,7 +678,7 @@ __kernel void MCMLKernel(__global const SimParamGPU *d_simparam_addr,
         }
       else
       {
-        absorb (&pkt, d_materialspecs, d_scaled_w);
+        absorb (d_simparam_addr->weight_scale, &pkt, d_materialspecs, d_scaled_w);
         Spin(&pkt, &d_state_x[tid], &d_state_a[tid], d_tetra_mesh, d_materialspecs);
       }
 

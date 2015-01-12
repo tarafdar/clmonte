@@ -167,12 +167,6 @@ int Write_Simulation_Results(SimState* HostMem, SimulationStruct* sim, clock_t s
   for(i=0;i<rz_size;i++)A+= HostMem->A_rz[i];
   for(i=0;i<ra_size;i++){T += HostMem->Tt_ra[i];Rd += HostMem->Rd_ra[i];}
 
-  fprintf(pFile_outp,"\nRAT #Reflectance, absorption transmission\n");
-  fprintf(pFile_outp,"%G \t\t #Specular reflectance [-]\n", 1.0F - sim->start_weight);
-  fprintf(pFile_outp,"%G \t\t #Diffuse reflectance [-]\n",(double)Rd/scale1);
-  fprintf(pFile_outp,"%G \t\t #Absorbed fraction [-]\n",(double)A/scale1);
-  fprintf(pFile_outp,"%G \t\t #Transmittance [-]\n",(double)T/scale1);
-
 //  fprintf(pFile_outp,"%G \t\t #Diffuse reflectance [-]\n",(float)Rd/scale1);
 //  fprintf(pFile_outp,"%G \t\t #Absorbed fraction [-]\n",(float)A/scale1);
 //  fprintf(pFile_outp,"%G \t\t #Transmittance [-]\n",(float)T/scale1);
@@ -705,13 +699,6 @@ int read_simulation_data(char* filename, SimulationStruct** simulations)
 
     (*simulations)[i].end=ftell(pFile);
     //printf("end=%d\n",(*simulations)[i].end);
-
-    //calculate start_weight
-    n1=(*simulations)[i].layers[0].n;
-    n2=(*simulations)[i].layers[1].n;
-    r = (n1-n2)/(n1+n2);
-    r = r*r;
-    (*simulations)[i].start_weight = 1.0F - (float)r;
 
   }//end for i<n_simulations
   return n_simulations;

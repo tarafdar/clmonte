@@ -23,7 +23,6 @@ typedef unsigned int UINT32;
 typedef struct
 {
   float dz;                 // z grid separation.[cm] 
-  float init_photon_w;      // initial photon weight
   float dr;                 // r grid separation.[cm] 
 
   UINT32 na;                // array range 0..na-1. 
@@ -38,6 +37,7 @@ typedef struct
   UINT32 init_tetraID; 
   float terminationThresh;	//weight threshold to start roulette termination
   float proulettewin;	//probability to win the roulette
+  UINT32 weight_scale;
 } SimParamGPU;
 
 typedef struct 
