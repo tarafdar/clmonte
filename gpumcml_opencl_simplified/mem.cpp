@@ -161,7 +161,7 @@ int InitSimStates(SimState* HostMem, SimulationStruct* sim, cl_context context, 
   ret = clEnqueueWriteBuffer(command_queue, *A_rz_mem_obj, CL_TRUE, 0, size, HostMem->A_rz, 0, NULL, NULL); 
   
   // Allocate debug on host and device
-  size = sizeof(float)*20;
+  size = sizeof(float)*40;
   *debug_mem_obj = clCreateBuffer(context, CL_MEM_READ_WRITE, size, NULL, &ret);
   if(ret!= CL_SUCCESS){
     printf("Error creating debug buffer, exiting\n");
@@ -298,38 +298,30 @@ int CopyDeviceToHostMem(SimState* HostMem,SimulationStruct* sim, cl_command_queu
     printf("Error reading A_rz buffer, exiting\n");
     exit(-1);
   }
-  ret = clEnqueueReadBuffer(command_queue, debug_mem_obj, CL_TRUE, 0, 20*sizeof(float), debug, 0, NULL, NULL);
+  ret = clEnqueueReadBuffer(command_queue, debug_mem_obj, CL_TRUE, 0, 40*sizeof(float), debug, 0, NULL, NULL);
   if(ret != CL_SUCCESS){
     printf("Error reading debug buffer, exiting\n");
     exit(-1);
   }
   
-  printf("direction x: %f\n", debug[0]);
-  printf("direction y: %f\n", debug[1]);
-  printf("direction z: %f\n", debug[2]);
-  printf("face index to hit: %d\n", (int)debug[3]);
-  printf("distance to face: %f\n", debug[4]);
-  float dot[4];
-  dot[0] = debug[0]*tetra_mesh[1].face[0][0]+debug[1]*tetra_mesh[1].face[0][1]+debug[2]*tetra_mesh[1].face[0][2];
-  dot[1] = debug[0]*tetra_mesh[1].face[1][0]+debug[1]*tetra_mesh[1].face[1][1]+debug[2]*tetra_mesh[1].face[1][2];
-  dot[2] = debug[0]*tetra_mesh[1].face[2][0]+debug[1]*tetra_mesh[1].face[2][1]+debug[2]*tetra_mesh[1].face[2][2];
-  dot[3] = debug[0]*tetra_mesh[1].face[3][0]+debug[1]*tetra_mesh[1].face[3][1]+debug[2]*tetra_mesh[1].face[3][2];
-  
-  printf("d dot normal0: %f ", dot[0]); if (dot[0]>=0) printf("won't hit face 0\n"); else printf("may hit face 0\n");
-  printf("d dot normal1: %f ", dot[1]); if (dot[1]>=0) printf("won't hit face 1\n"); else printf("may hit face 1\n");
-  printf("d dot normal2: %f ", dot[2]); if (dot[2]>=0) printf("won't hit face 2\n"); else printf("may hit face 2\n");
-  printf("d dot normal3: %f ", dot[3]); if (dot[3]>=0) printf("won't hit face 3\n"); else printf("may hit face 3\n");
-  
-  printf("orthogonal distance0: %f\n", -tetra_mesh[1].face[0][3]);
-  printf("orthogonal distance1: %f\n", -tetra_mesh[1].face[1][3]);
-  printf("orthogonal distance2: %f\n", -tetra_mesh[1].face[2][3]);
-  printf("orthogonal distance3: %f\n", -tetra_mesh[1].face[3][3]);
-  
-  printf("real distance0: %f\n", -tetra_mesh[1].face[0][3]/fabs(dot[0]));
-  printf("real distance1: %f\n", -tetra_mesh[1].face[1][3]/fabs(dot[1]));
-  printf("real distance2: %f\n", -tetra_mesh[1].face[2][3]/fabs(dot[2]));
-  printf("real distance3: %f\n", -tetra_mesh[1].face[3][3]/fabs(dot[3]));
-  
+  for(int i = 0; i < 4; i++)
+  {
+  printf("dx: %f\n", debug[9*i+0]);
+  printf("dy: %f\n", debug[9*i+1]);
+  printf("dz: %f\n", debug[9*i+2]);
+  printf("ax: %f\n", debug[9*i+3]);
+  printf("ay: %f\n", debug[9*i+4]);
+  printf("az: %f\n", debug[9*i+5]);
+  printf("bx: %f\n", debug[9*i+6]);
+  printf("by: %f\n", debug[9*i+7]);
+  printf("bz: %f\n", debug[9*i+8]);
+  printf("|a|: %f\n", debug[9*i+3]*debug[9*i+3]+debug[9*i+4]*debug[9*i+4]+debug[9*i+5]*debug[9*i+5]);
+  printf("|b|: %f\n", debug[9*i+6]*debug[9*i+6]+debug[9*i+7]*debug[9*i+7]+debug[9*i+8]*debug[9*i+8]);
+  printf("a dot d: %f\n", debug[9*i+3]*debug[9*i+0]+debug[9*i+4]*debug[9*i+1]+debug[9*i+5]*debug[9*i+2]);
+  printf("a dot b: %f\n", debug[9*i+3]*debug[9*i+6]+debug[9*i+4]*debug[9*i+7]+debug[9*i+5]*debug[9*i+8]);
+  printf("b dot d: %f\n", debug[9*i+6]*debug[9*i+0]+debug[9*i+7]*debug[9*i+1]+debug[9*i+8]*debug[9*i+2]);
+  printf("\n");
+  }
   ret = clEnqueueReadBuffer(command_queue, Rd_ra_mem_obj, CL_TRUE, 0, ra_size*sizeof(UINT64), HostMem->Rd_ra, 0, NULL, NULL);
   if(ret != CL_SUCCESS){
     printf("Error reading Rd_ra buffer, exiting\n");
