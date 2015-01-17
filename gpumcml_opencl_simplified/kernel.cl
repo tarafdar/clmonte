@@ -236,13 +236,9 @@ float GetCosCrit(float ni, float nt)
   return cos_crit;
 }
 
-//////////////////////////////////////////////////////////////////////////////
-//   UltraFast version (featuring reduced divergence compared to CPU-MCML)
-//   If a packet hits a boundary, determine whether the packet is transmitted
-//   into the next layer or reflected back by computing the internal reflectance
-//////////////////////////////////////////////////////////////////////////////
+
 ///<return>ID of the tetrahedron that the packet is entering (same as current ID if reflect, otherwise the correct adjacent tetra ID</return>
-UINT32CL FastReflectTransmit(SimParamGPU d_simparam, Packet *pkt, __global UINT64CL *d_state_Rd_ra, __global UINT64CL *d_state_Tt_ra,
+UINT32CL FastReflectTransmit(SimParamGPU d_simparam, Packet *pkt, 
                                     __global UINT64CL *rnd_x, __global UINT32CL *rnd_a, __global const Tetra *d_tetra_mesh,
                                     __global const Material *d_materialspecs, __global float *debug, int index)
 {
@@ -651,8 +647,7 @@ void NewSpin(float g, Packet *pkt,
 __kernel void MCMLKernel(__global const SimParamGPU *d_simparam_addr,
                                   //__global SimState d_state, 
                                   __global UINT32CL *d_state_n_photons_left_addr, __global UINT64CL *d_state_x, 
-                                  __global UINT32CL *d_state_a,__global UINT64CL *d_state_Rd_ra, 
-                                  __global UINT64CL *d_state_A_rz, __global UINT64CL *d_state_Tt_ra, __global const Tetra *d_tetra_mesh,
+                                  __global UINT32CL *d_state_a, __global const Tetra *d_tetra_mesh,
                                   __global const Material *d_materialspecs, __global UINT64CL *d_scaled_w, __global float *debug
                                   //__global GPUThreadStates tstates
                                 // __global float *tstates_photon_x, __global float *tstates_photon_y, __global float *tstates_photon_z,
@@ -693,7 +688,7 @@ __kernel void MCMLKernel(__global const SimParamGPU *d_simparam_addr,
 
       if (pkt.hit)
       {
-        FastReflectTransmit(d_simparam, &pkt, d_state_Rd_ra, d_state_Tt_ra, &d_state_x[tid], &d_state_a[tid], d_tetra_mesh, d_materialspecs, debug, iIndex);
+        FastReflectTransmit(d_simparam, &pkt, &d_state_x[tid], &d_state_a[tid], d_tetra_mesh, d_materialspecs, debug, iIndex);
         if (pkt.tetraID == 0)	//exited the tissue
         {
           if (atomic_sub(d_state_n_photons_left_addr, 1) > NUM_THREADS)

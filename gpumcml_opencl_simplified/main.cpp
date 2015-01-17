@@ -1,92 +1,8 @@
-/////////////////////////////////////////////////////////////////////////////////////////////////////////
-//
-//   GPU-based Monte Carlo simulation of photon migration in multi-layered media (GPU-MCML)
-//   Copyright (C) 2010
-//	
-//   || DEVELOPMENT TEAM: 
-//   --------------------------------------------------------------------------------------------------
-//   Erik Alerstam, David Han, and William C. Y. Lo
-//   
-//   This code is the result of the collaborative efforts between 
-//   Lund University and the University of Toronto.  
-//
-//   || DOCUMENTATION AND USER MANUAL: 
-//   --------------------------------------------------------------------------------------------------
-//	 Detailed "Wiki" style documentation is being developed for GPU-MCML 
-//   and will be available on our webpage soon:
-//   http://code.google.com/p/gpumcml 
-// 
-//   || NEW FEATURES: 
-//   --------------------------------------------------------------------------------------------------
-//    - Supports the Fermi GPU architecture 
-//    - Backward compatible with pre-Fermi graphics cards
-//    - Supports linux and Windows environment (Visual Studio)
-//   
-//   || PREVIOUS WORK: 
-//   --------------------------------------------------------------------------------------------------
-//	 This code is the fusion of our earlier, preliminary implementations and combines the best features 
-//   from each implementation.  
-//
-//   W. C. Y. Lo, T. D. Han, J. Rose, and L. Lilge, "GPU-accelerated Monte Carlo simulation for photodynamic
-//   therapy treatment planning," in Proc. of SPIE-OSA Biomedical Optics, vol. 7373.
-//   
-//   and 
-//
-//   http://www.atomic.physics.lu.se/biophotonics/our_research/monte_carlo_simulations/gpu_monte_carlo/
-//	 E. Alerstam, T. Svensson and S. Andersson-Engels, "Parallel computing with graphics processing
-//	 units for high-speed Monte Carlo simulations of photon migration", Journal of Biomedical Optics
-//	 Letters, 13(6) 060504 (2008).
-//
-//   || CITATION: 
-//   --------------------------------------------------------------------------------------------------
-//	 We encourage the use, and modification of this code, and hope it will help 
-//	 users/programmers to utilize the power of GPGPU for their simulation needs. While we
-//	 don't have a scientific publication describing this code yet, we would very much appreciate it
-//	 if you cite our original papers above if you use this code or derivations 
-//   thereof for your own scientific work
-//
-//	 To compile and run this code, please visit www.nvidia.com and download the necessary 
-//	 CUDA Toolkit, SDK, and Developer Drivers 
-//
-//	 If you use Visual Studio, the express edition is available for free at 
-//   http://www.microsoft.com/express/Downloads/). 
-//  	
-//   This code is distributed under the terms of the GNU General Public Licence (see below). 
-//
-/////////////////////////////////////////////////////////////////////////////////////////////////////////
-/*	 
-*   This file is part of GPUMCML.
-* 
-*   GPUMCML is free software: you can redistribute it and/or modify
-*   it under the terms of the GNU General Public License as published by
-*   the Free Software Foundation, either version 3 of the License, or
-*   (at your option) any later version.
-*
-*   GPUMCML is distributed in the hope that it will be useful,
-*   but WITHOUT ANY WARRANTY; without even the implied warranty of
-*   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*   GNU General Public License for more details.
-*
-*   You should have received a copy of the GNU General Public License
-*   along with GPUMCML.  If not, see <http://www.gnu.org/licenses/>.
-*/
-
-
 #include <float.h> //for FLT_MAX 
 #include <stdio.h>
 #include <time.h> 
 #include <string.h>
 #include <math.h>
-
-//#include <cuda_runtime.h>
-
-//#ifdef _WIN32 
-//#include "gpumcml_io.c"
-//#include "cutil-win32/cutil.h"
-//#else 
-//#include <cutil.h>
-//#endif
-
 #include <CL/cl.h>
 #include "kernel.h"
 #include "gpumcml.h"
@@ -99,10 +15,7 @@ cl_mem simparam_mem_obj;
 cl_mem num_photons_left_mem_obj;
 cl_mem a_mem_obj;
 cl_mem x_mem_obj;
-cl_mem A_rz_mem_obj;
 cl_mem debug_mem_obj;
-cl_mem Rd_ra_mem_obj;
-cl_mem Tt_ra_mem_obj;
 cl_mem photon_x_mem_obj;
 cl_mem photon_y_mem_obj;
 cl_mem photon_z_mem_obj;
@@ -111,7 +24,6 @@ cl_mem photon_uy_mem_obj;
 cl_mem photon_uz_mem_obj;
 cl_mem photon_w_mem_obj;
 cl_mem photon_sleft_mem_obj;
-cl_mem photon_layer_mem_obj;
 cl_mem is_active_mem_obj;
 cl_mem tetra_mesh_mem_obj;
 cl_mem materials_mem_obj;
@@ -247,9 +159,9 @@ int RunGPUi(HostThreadState *hstate, Tetra *tetra_mesh, Material *materialspec)
   
   // Init the remaining states.
   InitSimStates(HostMem, hstate->sim, context, command_queue, &num_photons_left_mem_obj, 
-          &a_mem_obj, &x_mem_obj, &A_rz_mem_obj, &Rd_ra_mem_obj, &Tt_ra_mem_obj, &photon_x_mem_obj, &photon_y_mem_obj,
+          &a_mem_obj, &x_mem_obj, &photon_x_mem_obj, &photon_y_mem_obj,
           &photon_z_mem_obj, &photon_ux_mem_obj, &photon_uy_mem_obj, &photon_uz_mem_obj, &photon_w_mem_obj, 
-          &photon_sleft_mem_obj, &photon_layer_mem_obj, &is_active_mem_obj, &scaled_w_mem_obj, &debug_mem_obj);
+          &photon_sleft_mem_obj, &is_active_mem_obj, &scaled_w_mem_obj, &debug_mem_obj);
 
   InitDCMem(hstate->sim, tetra_mesh, materialspec, context, command_queue, &simparam_mem_obj, &tetra_mesh_mem_obj, &materials_mem_obj);
 
@@ -282,77 +194,6 @@ int RunGPUi(HostThreadState *hstate, Tetra *tetra_mesh, Material *materialspec)
     exit(-1);
   }
   
- // initkernel = clCreateKernel(program, "InitThreadState", &ret);
- // if(ret != CL_SUCCESS){
- //   printf("create initthreadstate kernel fail, exiting\n");
- //   exit(-1);
- // }
-  
- // ret = clSetKernelArg(initkernel, 0, sizeof(cl_mem),(void *)&photon_x_mem_obj);
- // if(ret != CL_SUCCESS){
- //   printf("Error setting photon x init kernel argument, exiting\n");
- //   exit(-1);
- // }
-
- // ret = clSetKernelArg(initkernel, 1, sizeof(cl_mem),(void *)&photon_y_mem_obj);
- // if(ret != CL_SUCCESS){
- //   printf("Error setting photon y init kernel argument, exiting\n");
- //   exit(-1);
- // }
-
- // ret = clSetKernelArg(initkernel, 2, sizeof(cl_mem),(void *)&photon_z_mem_obj);
- // if(ret != CL_SUCCESS){
- //   printf("Error setting photon z init kernel argument, exiting\n");
- //   exit(-1);
- // }
-
- // ret = clSetKernelArg(initkernel, 3, sizeof(cl_mem),(void *)&photon_ux_mem_obj);
- // if(ret != CL_SUCCESS){
- //   printf("Error setting photon ux init kernel argument, exiting\n");
- //   exit(-1);
- // }
-
- // ret = clSetKernelArg(initkernel, 4, sizeof(cl_mem),(void *)&photon_uy_mem_obj);
- // if(ret != CL_SUCCESS){
- //   printf("Error setting photon uy init kernel argument, exiting\n");
- //   exit(-1);
- // }
-
- // ret = clSetKernelArg(initkernel, 5, sizeof(cl_mem),(void *)&photon_uz_mem_obj);
- // if(ret != CL_SUCCESS){
- //   printf("Error setting photon uz init kernel argument, exiting\n");
- //   exit(-1);
- // }
-
- // ret = clSetKernelArg(initkernel, 6, sizeof(cl_mem),(void *)&photon_w_mem_obj);
- // if(ret != CL_SUCCESS){
- //   printf("Error setting photon w init kernel argument, exiting\n");
- //   exit(-1);
- // }
-
- // ret = clSetKernelArg(initkernel, 7, sizeof(cl_mem),(void *)&photon_sleft_mem_obj);
- // if(ret != CL_SUCCESS){
- //   printf("Error setting photon sleft init kernel argument, exiting\n");
- //   exit(-1);
- // }
-
- // ret = clSetKernelArg(initkernel, 8, sizeof(cl_mem),(void *)&photon_layer_mem_obj);
- // if(ret != CL_SUCCESS){
- //   printf("Error setting photon layer init kernel argument, exiting\n");
- //   exit(-1);
- // }
-
- // ret = clSetKernelArg(initkernel, 9, sizeof(cl_mem),(void *)&is_active_mem_obj);
- // if(ret != CL_SUCCESS){
- //   printf("Error setting is active init kernel argument, exiting\n");
- //   exit(-1);
- // }
-
- // ret = clSetKernelArg(initkernel, 10, sizeof(cl_mem),(void *)&simparam_mem_obj);
- // if(ret != CL_SUCCESS){
- //   printf("Error setting simparam init kernel argument, exiting\n");
- //   exit(-1);
- // }
   int argnum = 0;
   ret = clSetKernelArg(kernel, argnum++, sizeof(cl_mem),(void *)&simparam_mem_obj);
   if(ret != CL_SUCCESS){
@@ -375,24 +216,6 @@ int RunGPUi(HostThreadState *hstate, Tetra *tetra_mesh, Material *materialspec)
   ret = clSetKernelArg(kernel, argnum++, sizeof(cl_mem),(void *)&a_mem_obj);
   if(ret != CL_SUCCESS){
     printf("Error setting a kernel argument, exiting\n");
-    exit(-1);
-  }
-  
-  ret = clSetKernelArg(kernel, argnum++, sizeof(cl_mem),(void *)&Rd_ra_mem_obj);
-  if(ret != CL_SUCCESS){
-    printf("Error setting Rd_ra kernel argument, exiting\n");
-    exit(-1);
-  }
-  
-  ret = clSetKernelArg(kernel, argnum++, sizeof(cl_mem),(void *)&A_rz_mem_obj);
-  if(ret != CL_SUCCESS){
-    printf("Error setting A_rz kernel argument, exiting\n");
-    exit(-1);
-  }
-  
-  ret = clSetKernelArg(kernel, argnum++, sizeof(cl_mem),(void *)&Tt_ra_mem_obj);
-  if(ret != CL_SUCCESS){
-    printf("Error setting Tt_ra kernel argument, exiting\n");
     exit(-1);
   }
   
@@ -419,89 +242,9 @@ int RunGPUi(HostThreadState *hstate, Tetra *tetra_mesh, Material *materialspec)
     printf("Error setting debug kernel argument, exiting\n");
     exit(-1);
   }  
-  //ret = clSetKernelArg(kernel, argnum++, sizeof(cl_mem),(void *)&photon_x_mem_obj);
-  //if(ret != CL_SUCCESS){
-  //  printf("Error setting photon_x kernel argument, exiting\n");
-  //  exit(-1);
-  //}
-  //
-  //ret = clSetKernelArg(kernel, argnum++, sizeof(cl_mem),(void *)&photon_y_mem_obj);
-  //if(ret != CL_SUCCESS){
-  //  printf("Error setting photon_y kernel argument, exiting\n");
-  //  exit(-1);
-  //}
-  //
-  //ret = clSetKernelArg(kernel, argnum++, sizeof(cl_mem),(void *)&photon_z_mem_obj);
-  //if(ret != CL_SUCCESS){
-  //  printf("Error setting photon_z kernel argument, exiting\n");
-  //  exit(-1);
-  //}
-  //
-  //ret = clSetKernelArg(kernel, argnum++, sizeof(cl_mem),(void *)&photon_ux_mem_obj);
-  //if(ret != CL_SUCCESS){
-  //  printf("Error setting photon_ux kernel argument, exiting\n");
-  //  exit(-1);
-  //}
-  //
-  //ret = clSetKernelArg(kernel, argnum++, sizeof(cl_mem),(void *)&photon_uy_mem_obj);
-  //if(ret != CL_SUCCESS){
-  //  printf("Error setting photon_uy kernel argument, exiting\n");
-  //  exit(-1);
-  //}
-  //
-  //ret = clSetKernelArg(kernel, argnum++, sizeof(cl_mem),(void *)&photon_uz_mem_obj);
-  //if(ret != CL_SUCCESS){
-  //  printf("Error setting photon_uz kernel argument, exiting\n");
-  //  exit(-1);
-  //}
-  //
-  //ret = clSetKernelArg(kernel, argnum++, sizeof(cl_mem),(void *)&photon_w_mem_obj);
-  //if(ret != CL_SUCCESS){
-  //  printf("Error setting photon_w kernel argument, exiting\n");
-  //  exit(-1);
-  //}
-  //
-  //ret = clSetKernelArg(kernel, argnum++, sizeof(cl_mem),(void *)&photon_sleft_mem_obj);
-  //if(ret != CL_SUCCESS){
-  //  printf("Error setting photon_sleft kernel argument, exiting\n");
-  //  exit(-1);
-  //}
-  //
-  //ret = clSetKernelArg(kernel, argnum++, sizeof(cl_mem),(void *)&photon_layer_mem_obj);
-  //if(ret != CL_SUCCESS){
-  //  printf("Error setting photon_layer kernel argument, exiting\n");
-  //  exit(-1);
-  //}
-  //
-  //ret = clSetKernelArg(kernel, argnum++, sizeof(cl_mem),(void *)&is_active_mem_obj);
-  //if(ret != CL_SUCCESS){
-  //  printf("Error setting is_active kernel argument, exiting\n");
-  //  exit(-1);
-  //}
 
   size_t global_size = NUM_BLOCKS*NUM_THREADS_PER_BLOCK;
   size_t local_size = NUM_THREADS_PER_BLOCK;
-
-//  ret = clEnqueueNDRangeKernel(command_queue, initkernel, 1, NULL, &global_size, &local_size, 0, NULL, NULL);
-//  if(ret != CL_SUCCESS){
-//    printf("Error enqueundrange of initkernel, exiting\n");
-//    exit(-1);
-//  }
-//
-//   clFlush(command_queue);
-//   clFinish(command_queue);
-//
-//    ret = clEnqueueReadBuffer(command_queue, num_photons_left_mem_obj, CL_TRUE, 0, sizeof(UINT32), HostMem->n_photons_left, 0, NULL, NULL);
-//    if(ret != CL_SUCCESS){
-//        printf("test read failed %d\n", ret);
-//        exit(-1);
-//
-//    }
-//    
-//
-//    printf("num photons left %d after initthreadstate\n", *HostMem->n_photons_left);
-    //exit(0);
-  // Initialize the remaining thread states.
 
   int i=0;
   for (i=0; *HostMem->n_photons_left > 0 && i<1; ++i)
@@ -541,9 +284,9 @@ int RunGPUi(HostThreadState *hstate, Tetra *tetra_mesh, Material *materialspec)
   
   printf("[GPU] simulation done!\n");
 
-  CopyDeviceToHostMem(HostMem, hstate->sim, command_queue, A_rz_mem_obj, Rd_ra_mem_obj, Tt_ra_mem_obj, x_mem_obj, scaled_w_mem_obj, debug_mem_obj, tetra_mesh);
-  FreeDeviceSimStates(context, command_queue, initkernel,kernel, program, simparam_mem_obj, num_photons_left_mem_obj, a_mem_obj, x_mem_obj, A_rz_mem_obj, Rd_ra_mem_obj, Tt_ra_mem_obj, photon_x_mem_obj, photon_y_mem_obj, photon_z_mem_obj, photon_ux_mem_obj, 
-photon_uy_mem_obj, photon_uz_mem_obj, photon_w_mem_obj, photon_sleft_mem_obj, photon_layer_mem_obj, is_active_mem_obj, tetra_mesh_mem_obj, materials_mem_obj, scaled_w_mem_obj, debug_mem_obj);
+  CopyDeviceToHostMem(HostMem, hstate->sim, command_queue, x_mem_obj, scaled_w_mem_obj, debug_mem_obj, tetra_mesh);
+  FreeDeviceSimStates(context, command_queue, initkernel,kernel, program, simparam_mem_obj, num_photons_left_mem_obj, a_mem_obj, x_mem_obj, photon_x_mem_obj, photon_y_mem_obj, photon_z_mem_obj, photon_ux_mem_obj, 
+photon_uy_mem_obj, photon_uz_mem_obj, photon_w_mem_obj, photon_sleft_mem_obj, is_active_mem_obj, tetra_mesh_mem_obj, materials_mem_obj, scaled_w_mem_obj, debug_mem_obj);
   // We still need the host-side structure.
   return i;
 }
@@ -583,9 +326,7 @@ static void DoOneSimulation(int sim_id, SimulationStruct* simulation,
   int number_of_iterations = RunGPUi (hstates, tetra_mesh, materialspec);
 
   // End the timer.
-  //CUT_SAFE_CALL( cutStopTimer(execTimer) );
   end = clock();
-  //float elapsedTime = cutGetTimerValue(execTimer);
   float elapsedTime = ((float) end - start)/CLOCKS_PER_SEC;
   float total_steps = (float)number_of_iterations*(float)NUM_STEPS*(float)NUM_THREADS;
   printf( "\n\n>>>>>>Simulation time: %f (s)\n", elapsedTime);
@@ -595,8 +336,6 @@ static void DoOneSimulation(int sim_id, SimulationStruct* simulation,
   printf( ">>>>>>Simulation Speed: %e photon events per second\n", total_steps/elapsedTime);
   
   Write_Simulation_Results(hss, simulation, elapsedTime);
-
-  //CUT_SAFE_CALL( cutDeleteTimer(execTimer) );
 
   // Free SimState structs.
   FreeHostSimState(hss);

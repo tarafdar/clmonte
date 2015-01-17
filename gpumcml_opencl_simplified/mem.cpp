@@ -76,10 +76,10 @@ int InitDCMem(SimulationStruct *sim, Tetra *tetra_mesh, Material *materialspec, 
 //   Initialize Device Memory (global) for read/write data
 //////////////////////////////////////////////////////////////////////////////
 int InitSimStates(SimState* HostMem, SimulationStruct* sim, cl_context context, cl_command_queue command_queue, 
-        cl_mem *num_photons_left_mem_obj, cl_mem *a_mem_obj, cl_mem *x_mem_obj, cl_mem *A_rz_mem_obj, cl_mem *Rd_ra_mem_obj, cl_mem *Tt_ra_mem_obj, 
+        cl_mem *num_photons_left_mem_obj, cl_mem *a_mem_obj, cl_mem *x_mem_obj, 
         cl_mem *photon_x_mem_obj ,cl_mem *photon_y_mem_obj, cl_mem *photon_z_mem_obj, cl_mem *photon_ux_mem_obj, 
         cl_mem *photon_uy_mem_obj, cl_mem *photon_uz_mem_obj, cl_mem *photon_w_mem_obj, cl_mem *photon_sleft_mem_obj, 
-        cl_mem *photon_layer_mem_obj, cl_mem *is_active_mem_obj, cl_mem *scaled_w_mem_obj, cl_mem *debug_mem_obj
+        cl_mem *is_active_mem_obj, cl_mem *scaled_w_mem_obj, cl_mem *debug_mem_obj
         )
 {
   int rz_size = sim->det.nr * sim->det.nz;
@@ -140,26 +140,6 @@ int InitSimStates(SimState* HostMem, SimulationStruct* sim, cl_context context, 
     exit(-1);
   }
 
-  // Allocate A_rz on host and device
-  size = rz_size * sizeof(UINT64);
-  
-  *A_rz_mem_obj = clCreateBuffer(context, CL_MEM_READ_WRITE, size, NULL, &ret);
-  if(ret!= CL_SUCCESS){
-    printf("Error creating A_rz buffer, exiting\n");
-    exit(-1);
-  }
-  
-  HostMem->A_rz = (UINT64*)malloc(size);
-  if (HostMem->A_rz == NULL)
-  {
-    fprintf(stderr, "Error allocating HostMem->A_rz");
-    exit(1);
-  }
-  for(int i=0; i<rz_size; i++){
-    HostMem->A_rz[i] = 0;
-  }
-  ret = clEnqueueWriteBuffer(command_queue, *A_rz_mem_obj, CL_TRUE, 0, size, HostMem->A_rz, 0, NULL, NULL); 
-  
   // Allocate debug on host and device
   size = sizeof(float)*80;
   *debug_mem_obj = clCreateBuffer(context, CL_MEM_READ_WRITE, size, NULL, &ret);
@@ -180,38 +160,6 @@ int InitSimStates(SimState* HostMem, SimulationStruct* sim, cl_context context, 
   ret = clEnqueueWriteBuffer(command_queue, *debug_mem_obj, CL_TRUE, 0, size, debug, 0, NULL, NULL);   
   
   // On the device, we allocate multiple copies for less access contention.
-
-  // Allocate Rd_ra on host and device
-  
-  size = ra_size * sizeof(UINT64);
-  HostMem->Rd_ra = (UINT64*)malloc(size);
-  if(HostMem->Rd_ra==NULL){printf("Error allocating HostMem->Rd_ra"); exit (1);}
-  for(int i=0; i<ra_size; i++){
-    HostMem->Rd_ra[i] = 0;
-  }
-  *Rd_ra_mem_obj = clCreateBuffer(context, CL_MEM_READ_WRITE, size, NULL, &ret);
-  if(ret!= CL_SUCCESS){
-    printf("Error creating Rd_ra buffer, exiting\n");
-    exit(-1);
-  }
-  ret = clEnqueueWriteBuffer(command_queue, *Rd_ra_mem_obj, CL_TRUE, 0, size, HostMem->Rd_ra, 0, NULL, NULL); 
-  
-
-  // Allocate Tt_ra on host and device
-  size = ra_size * sizeof(UINT64);
-  HostMem->Tt_ra = (UINT64*)malloc(size);
-  for(int i=0; i<ra_size; i++){
-    HostMem->Tt_ra[i] = 0;
-  }
-  if(HostMem->Tt_ra==NULL){printf("Error allocating HostMem->Tt_ra"); exit (1);}
-  
-  *Tt_ra_mem_obj = clCreateBuffer(context, CL_MEM_READ_WRITE, size, NULL, &ret);
-  if(ret!= CL_SUCCESS){
-    printf("Error creating Tt_ra buffer, exiting\n");
-    exit(-1);
-  }
-  ret = clEnqueueWriteBuffer(command_queue, *Tt_ra_mem_obj, CL_TRUE, 0, size, HostMem->Tt_ra, 0, NULL, NULL); 
-  
 
   /* Allocate and initialize GPU thread states on the device.
   *
@@ -265,11 +213,6 @@ int InitSimStates(SimState* HostMem, SimulationStruct* sim, cl_context context, 
     exit(-1);
   }
   size = NUM_THREADS * sizeof(UINT32);
-  *photon_layer_mem_obj = clCreateBuffer(context, CL_MEM_READ_WRITE, size, NULL, &ret);
-  if(ret!= CL_SUCCESS){
-    printf("Error creating photon_layer buffer, exiting\n");
-    exit(-1);
-  }
 
   // thread active
   *is_active_mem_obj = clCreateBuffer(context, CL_MEM_READ_WRITE, size, NULL, &ret);
@@ -284,22 +227,12 @@ int InitSimStates(SimState* HostMem, SimulationStruct* sim, cl_context context, 
 //////////////////////////////////////////////////////////////////////////////
 //   Transfer data from Device to Host memory after simulation
 //////////////////////////////////////////////////////////////////////////////
-int CopyDeviceToHostMem(SimState* HostMem,SimulationStruct* sim, cl_command_queue command_queue, cl_mem A_rz_mem_obj, cl_mem Rd_ra_mem_obj, cl_mem Tt_ra_mem_obj, cl_mem x_mem_obj, cl_mem scaled_w_mem_obj, cl_mem debug_mem_obj, Tetra *tetra_mesh)
+int CopyDeviceToHostMem(SimState* HostMem,SimulationStruct* sim, cl_command_queue command_queue, cl_mem x_mem_obj, cl_mem scaled_w_mem_obj, cl_mem debug_mem_obj, Tetra *tetra_mesh)
 {
-  int rz_size = sim->det.nr*sim->det.nz;
-  int ra_size = sim->det.nr*sim->det.na;
-
-
   cl_int ret;
   ret = clEnqueueReadBuffer(command_queue, scaled_w_mem_obj, CL_TRUE, 0, (sim->nTetras+1)*sizeof(UINT64), HostMem->scaled_w, 0, NULL, NULL);
   if(ret != CL_SUCCESS){
     printf("Error reading scaled weight buffer, exiting\n");
-    exit(-1);
-  }
-  // Copy A_rz, Rd_ra and Tt_ra
-  ret = clEnqueueReadBuffer(command_queue, A_rz_mem_obj, CL_TRUE, 0, rz_size*sizeof(UINT64), HostMem->A_rz, 0, NULL, NULL);
-  if(ret != CL_SUCCESS){
-    printf("Error reading A_rz buffer, exiting\n");
     exit(-1);
   }
   ret = clEnqueueReadBuffer(command_queue, debug_mem_obj, CL_TRUE, 0, 80*sizeof(float), debug, 0, NULL, NULL);
@@ -307,39 +240,6 @@ int CopyDeviceToHostMem(SimState* HostMem,SimulationStruct* sim, cl_command_queu
     printf("Error reading debug buffer, exiting\n");
     exit(-1);
   }
-  
-  for(int i = 0; i < 2; i++)
-  {
-  printf("ni: %f\n", debug[20*i+0]);
-  printf("nt: %f\n", debug[20*i+1]);
-  printf("nt/ni: %f\n", debug[20*i+2]);
-  printf("step: %f\n", debug[20*i+3]);
-  printf("crit_cos: %f\n", debug[20*i+4]);
-  printf("costheta: %f\n", debug[20*i+5]);
-  printf("old dx: %f\n", debug[20*i+6]);
-  printf("old dy: %f\n", debug[20*i+7]);
-  printf("old dz: %f\n", debug[20*i+8]);
-  printf("refracted dx: %f\n", debug[20*i+9]);
-  printf("refracted dy: %f\n", debug[20*i+10]);
-  printf("refracted dz: %f\n", debug[20*i+11]);
-  int index = (int)(debug[20*i+12]);
-  printf("face index to hit: %d\n", index);
-  printf("nx: %f\n", tetra_mesh[1].face[index][0]);
-  printf("ny: %f\n", tetra_mesh[1].face[index][1]);
-  printf("nz: %f\n", tetra_mesh[1].face[index][2]);
-  printf("\n");
-  }
-  ret = clEnqueueReadBuffer(command_queue, Rd_ra_mem_obj, CL_TRUE, 0, ra_size*sizeof(UINT64), HostMem->Rd_ra, 0, NULL, NULL);
-  if(ret != CL_SUCCESS){
-    printf("Error reading Rd_ra buffer, exiting\n");
-    exit(-1);
-  }
-  ret = clEnqueueReadBuffer(command_queue, Tt_ra_mem_obj, CL_TRUE, 0, ra_size*sizeof(UINT64), HostMem->Tt_ra, 0, NULL, NULL);
-  if(ret != CL_SUCCESS){
-    printf("Error reading Tt_ra buffer, exiting\n");
-    exit(-1);
-  }
-
   //Also copy the state of the RNG's
   ret = clEnqueueReadBuffer(command_queue, x_mem_obj, CL_TRUE, 0, NUM_THREADS * sizeof(UINT64), HostMem->x, 0, NULL, NULL);
   if(ret != CL_SUCCESS){
@@ -361,19 +261,6 @@ void FreeHostSimState(SimState *hstate)
   }
 
   // DO NOT FREE RANDOM NUMBER SEEDS HERE.
-
-  if (hstate->A_rz != NULL)
-  {
-    free(hstate->A_rz); hstate->A_rz = NULL;
-  }
-  if (hstate->Rd_ra != NULL)
-  {
-    free(hstate->Rd_ra); hstate->Rd_ra = NULL;
-  }
-  if (hstate->Tt_ra != NULL)
-  {
-    free(hstate->Tt_ra); hstate->Tt_ra = NULL;
-  }
   if (hstate->scaled_w != NULL)
   {
     free(hstate->scaled_w); hstate->scaled_w = NULL;
@@ -385,10 +272,10 @@ void FreeHostSimState(SimState *hstate)
 //////////////////////////////////////////////////////////////////////////////
 void FreeDeviceSimStates(cl_context context, cl_command_queue command_queue,cl_kernel initkernel, cl_kernel kernel, 
         cl_program program, cl_mem simparam_mem_obj, cl_mem num_photons_left_mem_obj, 
-        cl_mem a_mem_obj, cl_mem x_mem_obj, cl_mem A_rz_mem_obj, cl_mem Rd_ra_mem_obj, cl_mem Tt_ra_mem_obj, 
+        cl_mem a_mem_obj, cl_mem x_mem_obj, 
         cl_mem photon_x_mem_obj, cl_mem photon_y_mem_obj,cl_mem photon_z_mem_obj, cl_mem photon_ux_mem_obj, 
         cl_mem photon_uy_mem_obj, cl_mem photon_uz_mem_obj, cl_mem photon_w_mem_obj, cl_mem photon_sleft_mem_obj,
-        cl_mem photon_layer_mem_obj, cl_mem is_active_mem_obj, cl_mem tetra_mesh_mem_obj, cl_mem materials_mem_obj,
+        cl_mem is_active_mem_obj, cl_mem tetra_mesh_mem_obj, cl_mem materials_mem_obj,
         cl_mem scaled_w_mem_obj, cl_mem debug_mem_obj
      )
 {
@@ -403,11 +290,6 @@ void FreeDeviceSimStates(cl_context context, cl_command_queue command_queue,cl_k
     printf("Error finishing queue in FreeDeviceSimStates, exiting\n");
     exit(-1);
  }
-// ret = clReleaseKernel(initkernel);
-// if(ret!= CL_SUCCESS){
-//    printf("Error releasing kernel, exiting\n");
-//    exit(-1);
-// }
  ret = clReleaseKernel(kernel);
  if(ret!= CL_SUCCESS){
     printf("Error releasing init kernel, exiting\n");
@@ -453,24 +335,9 @@ void FreeDeviceSimStates(cl_context context, cl_command_queue command_queue,cl_k
     printf("Error releasing scaled weight mem obj, exiting\n");
     exit(-1);
  }
- ret = clReleaseMemObject(A_rz_mem_obj);
- if(ret!= CL_SUCCESS){
-    printf("Error releasing A_rz mem obj, exiting\n");
-    exit(-1);
- }
  ret = clReleaseMemObject(debug_mem_obj);
  if(ret!= CL_SUCCESS){
     printf("Error releasing debug mem obj, exiting\n");
-    exit(-1);
- }
- ret = clReleaseMemObject(Rd_ra_mem_obj);
- if(ret!= CL_SUCCESS){
-    printf("Error releasing Rd_ra mem obj, exiting\n");
-    exit(-1);
- }
- ret = clReleaseMemObject(Tt_ra_mem_obj);
- if(ret!= CL_SUCCESS){
-    printf("Error releasing Tt_ra mem obj, exiting\n");
     exit(-1);
  }
  ret = clReleaseMemObject(photon_x_mem_obj);
@@ -511,11 +378,6 @@ void FreeDeviceSimStates(cl_context context, cl_command_queue command_queue,cl_k
  ret = clReleaseMemObject(photon_sleft_mem_obj);
  if(ret!= CL_SUCCESS){
     printf("Error releasing photon_sleft mem obj, exiting\n");
-    exit(-1);
- }
- ret = clReleaseMemObject(photon_layer_mem_obj);
- if(ret!= CL_SUCCESS){
-    printf("Error releasing photon_layer mem obj, exiting\n");
     exit(-1);
  }
  ret = clReleaseMemObject(is_active_mem_obj);
