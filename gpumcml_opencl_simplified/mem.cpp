@@ -161,7 +161,7 @@ int InitSimStates(SimState* HostMem, SimulationStruct* sim, cl_context context, 
   ret = clEnqueueWriteBuffer(command_queue, *A_rz_mem_obj, CL_TRUE, 0, size, HostMem->A_rz, 0, NULL, NULL); 
   
   // Allocate debug on host and device
-  size = sizeof(float)*40;
+  size = sizeof(float)*80;
   *debug_mem_obj = clCreateBuffer(context, CL_MEM_READ_WRITE, size, NULL, &ret);
   if(ret!= CL_SUCCESS){
     printf("Error creating debug buffer, exiting\n");
@@ -172,6 +172,10 @@ int InitSimStates(SimState* HostMem, SimulationStruct* sim, cl_context context, 
   {
     fprintf(stderr, "Error allocating debug");
     exit(1);
+  }
+  for(int i = 0; i < 80; i++)
+  {
+    debug[i] = 0;
   }
   ret = clEnqueueWriteBuffer(command_queue, *debug_mem_obj, CL_TRUE, 0, size, debug, 0, NULL, NULL);   
   
@@ -298,28 +302,31 @@ int CopyDeviceToHostMem(SimState* HostMem,SimulationStruct* sim, cl_command_queu
     printf("Error reading A_rz buffer, exiting\n");
     exit(-1);
   }
-  ret = clEnqueueReadBuffer(command_queue, debug_mem_obj, CL_TRUE, 0, 40*sizeof(float), debug, 0, NULL, NULL);
+  ret = clEnqueueReadBuffer(command_queue, debug_mem_obj, CL_TRUE, 0, 80*sizeof(float), debug, 0, NULL, NULL);
   if(ret != CL_SUCCESS){
     printf("Error reading debug buffer, exiting\n");
     exit(-1);
   }
   
-  for(int i = 0; i < 4; i++)
+  for(int i = 0; i < 2; i++)
   {
-  printf("dx: %f\n", debug[9*i+0]);
-  printf("dy: %f\n", debug[9*i+1]);
-  printf("dz: %f\n", debug[9*i+2]);
-  printf("ax: %f\n", debug[9*i+3]);
-  printf("ay: %f\n", debug[9*i+4]);
-  printf("az: %f\n", debug[9*i+5]);
-  printf("bx: %f\n", debug[9*i+6]);
-  printf("by: %f\n", debug[9*i+7]);
-  printf("bz: %f\n", debug[9*i+8]);
-  printf("|a|: %f\n", debug[9*i+3]*debug[9*i+3]+debug[9*i+4]*debug[9*i+4]+debug[9*i+5]*debug[9*i+5]);
-  printf("|b|: %f\n", debug[9*i+6]*debug[9*i+6]+debug[9*i+7]*debug[9*i+7]+debug[9*i+8]*debug[9*i+8]);
-  printf("a dot d: %f\n", debug[9*i+3]*debug[9*i+0]+debug[9*i+4]*debug[9*i+1]+debug[9*i+5]*debug[9*i+2]);
-  printf("a dot b: %f\n", debug[9*i+3]*debug[9*i+6]+debug[9*i+4]*debug[9*i+7]+debug[9*i+5]*debug[9*i+8]);
-  printf("b dot d: %f\n", debug[9*i+6]*debug[9*i+0]+debug[9*i+7]*debug[9*i+1]+debug[9*i+8]*debug[9*i+2]);
+  printf("ni: %f\n", debug[20*i+0]);
+  printf("nt: %f\n", debug[20*i+1]);
+  printf("nt/ni: %f\n", debug[20*i+2]);
+  printf("step: %f\n", debug[20*i+3]);
+  printf("crit_cos: %f\n", debug[20*i+4]);
+  printf("costheta: %f\n", debug[20*i+5]);
+  printf("old dx: %f\n", debug[20*i+6]);
+  printf("old dy: %f\n", debug[20*i+7]);
+  printf("old dz: %f\n", debug[20*i+8]);
+  printf("refracted dx: %f\n", debug[20*i+9]);
+  printf("refracted dy: %f\n", debug[20*i+10]);
+  printf("refracted dz: %f\n", debug[20*i+11]);
+  int index = (int)(debug[20*i+12]);
+  printf("face index to hit: %d\n", index);
+  printf("nx: %f\n", tetra_mesh[1].face[index][0]);
+  printf("ny: %f\n", tetra_mesh[1].face[index][1]);
+  printf("nz: %f\n", tetra_mesh[1].face[index][2]);
   printf("\n");
   }
   ret = clEnqueueReadBuffer(command_queue, Rd_ra_mem_obj, CL_TRUE, 0, ra_size*sizeof(UINT64), HostMem->Rd_ra, 0, NULL, NULL);

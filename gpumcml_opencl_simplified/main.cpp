@@ -635,6 +635,13 @@ int main(int argc, char* argv[])
   PopulateTetraFromMeshFile("one_layer_18_18_1_2.mesh", &tetra_mesh, &Np, &Nt);
   Material *materialspec;
   OutputTetraMesh(tetra_mesh, Nt);	//debug code
+
+  Source *sourcepoint;
+  //ParseSource("FourLayer.source", &sourcepoint);
+
+  Material *mat;
+  //ParseMaterial("FourLayer.opt", &mat);
+
   PopulateMaterialFromInput("", &materialspec, &Nm);
   printf("mat n: %f\n", materialspec[1].n);
   char* filename = NULL;

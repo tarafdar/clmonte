@@ -72,7 +72,7 @@ float rand_MWC_oc(__global UINT64CL* x,__global UINT32CL* a)
 //   step size remainder (sleft), current layer (layer), and auxiliary vectors a,b
 //   Note: Infinitely narrow beam (pointing in the +z direction = downwards)
 //////////////////////////////////////////////////////////////////////////////
-void LaunchPacket(Packet *pkt, SimParamGPU d_simparam, __global UINT64CL *rnd_x, __global UINT32CL *rnd_a, __global float *debug)
+void LaunchPacket(Packet *pkt, SimParamGPU d_simparam, __global UINT64CL *rnd_x, __global UINT32CL *rnd_a)
 {
   pkt->x = d_simparam.originX;
   pkt->y = d_simparam.originY;
@@ -117,7 +117,8 @@ void LaunchPacket(Packet *pkt, SimParamGPU d_simparam, __global UINT64CL *rnd_x,
 //////////////////////////////////////////////////////////////////////////////
 void ComputeStepSize(Packet *pkt,
                                 __global UINT64CL *rnd_x, __global UINT32CL *rnd_a,
-                                __global const Tetra *d_tetra_mesh, __global const Material *d_materials)
+                                __global const Tetra *d_tetra_mesh, __global const Material *d_materials,
+                                __global float *debug, int index)
 {
   // Make a new step if no leftover.
   if (pkt->sleft == MCML_FP_ZERO)
@@ -133,6 +134,9 @@ void ComputeStepSize(Packet *pkt,
     pkt->s = pkt->sleft * d_materials[materialID].rmu_as;
     pkt->sleft = MCML_FP_ZERO;
   }
+  if(get_global_id(0)==4)
+  debug[index*20+3] = pkt->s;
+
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -142,7 +146,7 @@ void ComputeStepSize(Packet *pkt,
 //   If the projected step hits the boundary, the packet steps to the boundary
 //   and the remainder of the step size is stored in sleft for the next iteration
 //////////////////////////////////////////////////////////////////////////////
-int HitBoundary(Packet *pkt, __global const Tetra *d_tetra_mesh)
+int HitBoundary(Packet *pkt, __global const Tetra *d_tetra_mesh, __global float *debug, int i)
 {
   /* step size to boundary. */
   //cos of the angle between direction and normal vector.
@@ -186,7 +190,7 @@ int HitBoundary(Packet *pkt, __global const Tetra *d_tetra_mesh)
   
   //TODO in tuning: Should we also store move_dis[minIndex] into Packet to avoid recomputing?
   pkt->faceIndexToHit = minIndex;
-  if(move_dis[minIndex] > pkt->sleft)
+  if(move_dis[minIndex] > pkt->s)
   {
     pkt->s = pkt->sleft;
     pkt->sleft = 0;
@@ -240,7 +244,7 @@ float GetCosCrit(float ni, float nt)
 ///<return>ID of the tetrahedron that the packet is entering (same as current ID if reflect, otherwise the correct adjacent tetra ID</return>
 UINT32CL FastReflectTransmit(SimParamGPU d_simparam, Packet *pkt, __global UINT64CL *d_state_Rd_ra, __global UINT64CL *d_state_Tt_ra,
                                     __global UINT64CL *rnd_x, __global UINT32CL *rnd_a, __global const Tetra *d_tetra_mesh,
-                                    __global const Material *d_materialspecs)
+                                    __global const Material *d_materialspecs, __global float *debug, int index)
 {
   //TODO: Should we store the cos_crit in each Tetra for each face?
   UINT32CL currTetraID = pkt->tetraID;
@@ -249,6 +253,11 @@ UINT32CL FastReflectTransmit(SimParamGPU d_simparam, Packet *pkt, __global UINT6
   Tetra nextTetra = d_tetra_mesh[nextTetraID];
   float ni = d_materialspecs[tetra.matID].n;
   float nt = d_materialspecs[nextTetra.matID].n;
+  if (get_global_id(0)==4)
+  {
+    debug[index*20+0] = ni;
+    debug[index*20+1] = nt;
+  }
   float crit_cos=0;	//initialize as cos=0, means total internal reflection never occurs.
   if (nt<ni)	//total internal reflection may occur
   {
@@ -259,12 +268,15 @@ UINT32CL FastReflectTransmit(SimParamGPU d_simparam, Packet *pkt, __global UINT6
   float costheta = -dot((float4)(pkt->dx,pkt->dy,pkt->dz,0), (float4)(normal[0],normal[1],normal[2],0));
 
   float ni_nt = native_divide(ni, nt);
-  float ca1 = costheta; //ca1 is cos(theta incidence) 
-  float sa1 = sqrt(FP_ONE-ca1*ca1); //sa1 is sin(theta incidence)
-  if (ca1 > COSZERO) sa1 = MCML_FP_ZERO;
-  float sa2 = min(ni_nt * sa1, FP_ONE); //sa2 is sin(theta transmitt)
-  float ca2 = sqrt(FP_ONE-sa2*sa2); //ca2 is cos(theta transmitt)
+  if (get_global_id(0)==4)
+    debug[index*20+2] = ni_nt;
   
+  float ca1 = costheta; //ca1 is cos(theta incidence) 
+  if (get_global_id(0)==4)
+  {
+    debug[20*index+4] = crit_cos;
+    debug[20*index+5] = costheta;
+  }
   if (costheta <= crit_cos)	//total internal reflection occurs
   {
     //reflected direction = original_direction - 2(original_direction dot normal)*normal
@@ -293,6 +305,11 @@ UINT32CL FastReflectTransmit(SimParamGPU d_simparam, Packet *pkt, __global UINT6
   }
   else
   {    
+    float sa1 = sqrt(FP_ONE-ca1*ca1); //sa1 is sin(theta incidence)
+    if (ca1 > COSZERO) 
+      sa1 = MCML_FP_ZERO;
+    float sa2 = min(ni_nt * sa1, FP_ONE); //sa2 is sin(theta transmitt)
+    float ca2 = sqrt(FP_ONE-sa2*sa2); //ca2 is cos(theta transmitt)
     //Jeff's way of calculating Fresnel
     // Rs = [(n1 cos(theta_i) - n2 cos(theta_t))/((n1 cos(theta_i) + n2 cos(theta_t)))] ^ 2
     // Rp = [(n1 cos(theta_t) - n2 cos(theta_i))/((n1 cos(theta_t) + n2 cos(theta_i)))] ^ 2
@@ -310,11 +327,24 @@ UINT32CL FastReflectTransmit(SimParamGPU d_simparam, Packet *pkt, __global UINT6
     {
       // entering the next tetrahedron
       pkt->tetraID = nextTetraID;
+      if(get_global_id(0)==4)
+      {
+      debug[20*index+6] = pkt->dx;
+      debug[20*index+7] = pkt->dy;
+      debug[20*index+8] = pkt->dz;
+      debug[20*index+12] = pkt->faceIndexToHit;
+      }
       // refracted direction = n1/n2*original_direction - [n1/n2*cos(theta incidence) + sqrt(1-sin^2(theta transmitt))]*normal
-      pkt->dx = ni_nt*(pkt->dx) - (ni_nt*ca1+ca2)*normal[0]; 
-      pkt->dy = ni_nt*(pkt->dy) - (ni_nt*ca1+ca2)*normal[1]; 
-      pkt->dz = ni_nt*(pkt->dz) - (ni_nt*ca1+ca2)*normal[2]; 
-      
+      pkt->dx = ni_nt*(pkt->dx) + (ni_nt*ca1-ca2)*normal[0]; 
+      pkt->dy = ni_nt*(pkt->dy) + (ni_nt*ca1-ca2)*normal[1]; 
+      pkt->dz = ni_nt*(pkt->dz) + (ni_nt*ca1-ca2)*normal[2]; 
+      if(get_global_id(0)==4)
+      {
+      debug[20*index+9] = pkt->dx;
+      debug[20*index+10] = pkt->dy;
+      debug[20*index+11] = pkt->dz;
+      debug[20*index+12] = pkt->faceIndexToHit;
+      }
       // auxilary updating function
       // vector a = (vector d) cross (positive z axis unit vector) and normalize it 
       float4 d = (float4)(pkt->dx, pkt->dy, pkt->dz, 0);
@@ -376,8 +406,7 @@ UINT32CL FastReflectTransmit(SimParamGPU d_simparam, Packet *pkt, __global UINT6
 // 	 azimuthal angle psi.
 //////////////////////////////////////////////////////////////////////////////
 void Spin(Packet *pkt, __global UINT64CL *rnd_x, __global UINT32CL *rnd_a,
-                     __global const Tetra *d_tetra_mesh, __global const Material *d_materialspec,
-                     __global float *debug, int index)
+                     __global const Tetra *d_tetra_mesh, __global const Material *d_materialspec)
 {
   float cost, sint; // cosine and sine of the polar deflection angle theta
   float cosp, sinp; // cosine and sine of the azimuthal angle psi
@@ -421,17 +450,6 @@ void Spin(Packet *pkt, __global UINT64CL *rnd_x, __global UINT32CL *rnd_a,
   pkt->bx = sinp*last_ax + cosp*last_bx;
   pkt->by = sinp*last_ay + cosp*last_by;
   pkt->bz = sinp*last_az + cosp*last_bz;
-  if(get_global_id(0)==4)
-  {
-  debug[index*9] = pkt->dx;
-  debug[index*9+1] = pkt->dy;
-  debug[index*9+2] = pkt->dz;
-  debug[index*9+3] = pkt->ax;
-  debug[index*9+4] = pkt->ay;
-  debug[index*9+5] = pkt->az;
-  debug[index*9+6] = pkt->bx;
-  debug[index*9+7] = pkt->by;
-  debug[index*9+8] = pkt->bz;}
 }
 
 
@@ -648,21 +666,7 @@ __kernel void MCMLKernel(__global const SimParamGPU *d_simparam_addr,
   SimParamGPU d_simparam = d_simparam_addr[0];
   UINT32CL tid = get_global_id(0);
 
-  LaunchPacket(&pkt, d_simparam, &d_state_x[tid], &d_state_a[tid], debug); // Launch a new packet.
-
-
-  if(get_global_id(0)==4)
-  {
-    debug[0]=pkt.dx;
-    debug[1]=pkt.dy;
-    debug[2]=pkt.dz;
-    debug[3]=pkt.ax;
-    debug[4]=pkt.ay;
-    debug[5]=pkt.az;
-    debug[6]=pkt.bx;
-    debug[7]=pkt.by;
-    debug[8]=pkt.bz;
-  }
+  LaunchPacket(&pkt, d_simparam, &d_state_x[tid], &d_state_a[tid]); // Launch a new packet.
 
   // Flag to indicate if this thread is active
   UINT32CL is_active ;
@@ -681,27 +685,34 @@ __kernel void MCMLKernel(__global const SimParamGPU *d_simparam_addr,
     // Only process packet if the thread is active.
     if (is_active)
     {
-      //>>>>>>>>> StepSizeInTissue() in MCML
-      ComputeStepSize(&pkt,&d_state_x[tid], &d_state_a[tid], d_tetra_mesh, d_materialspecs);
-
+      ComputeStepSize(&pkt,&d_state_x[tid], &d_state_a[tid], d_tetra_mesh, d_materialspecs, debug, iIndex);
       
-      //>>>>>>>>> HitBoundary() in MCML
-
-      pkt.hit = HitBoundary(&pkt, d_tetra_mesh);
+      pkt.hit = HitBoundary(&pkt, d_tetra_mesh, debug, iIndex);
 
       Hop(&pkt);
 
-      if (pkt.hit){
-        FastReflectTransmit(d_simparam, &pkt, d_state_Rd_ra, d_state_Tt_ra, &d_state_x[tid], &d_state_a[tid], d_tetra_mesh, d_materialspecs);
-      
+      if (pkt.hit)
+      {
+        FastReflectTransmit(d_simparam, &pkt, d_state_Rd_ra, d_state_Tt_ra, &d_state_x[tid], &d_state_a[tid], d_tetra_mesh, d_materialspecs, debug, iIndex);
+        if (pkt.tetraID == 0)	//exited the tissue
+        {
+          if (atomic_sub(d_state_n_photons_left_addr, 1) > NUM_THREADS)
+          {
+            LaunchPacket(&pkt, d_simparam, &d_state_x[tid], &d_state_a[tid]); // Launch a new packet.
+          }
+          // No need to process any more packets.
+          else
+          {
+            is_active = 0;
+          }
         }
+      }
       else
       {
         absorb (d_simparam_addr->weight_scale, &pkt, d_materialspecs, d_scaled_w);
-        Spin(&pkt, &d_state_x[tid], &d_state_a[tid], d_tetra_mesh, d_materialspecs, debug, iIndex);
+        Spin(&pkt, &d_state_x[tid], &d_state_a[tid], d_tetra_mesh, d_materialspecs);
       }
 
-      /*
       // >>>>>>>>> Roulette()
       // If the pkt weight is small, the packet tries
       // to survive a roulette.
@@ -721,9 +732,8 @@ __kernel void MCMLKernel(__global const SimParamGPU *d_simparam_addr,
         // No need to process any more packets.
         else{
             is_active = 0;
-
         }
-      }*/
+      }
     }
 
     //////////////////////////////////////////////////////////////////////
