@@ -297,11 +297,6 @@ photon_uy_mem_obj, photon_uz_mem_obj, photon_w_mem_obj, photon_sleft_mem_obj, is
 static void DoOneSimulation(int sim_id, SimulationStruct* simulation,
                             unsigned long long *x, unsigned int *a, Tetra *tetra_mesh, Material *materialspec)
 {
-  printf("\n------------------------------------------------------------\n");
-  printf("        Simulation #%d\n", sim_id);
-  printf("        - number_of_photons = %u\n", simulation->number_of_photons);
-  printf("------------------------------------------------------------\n\n");
-
   // Start simulation kernel exec timer
   clock_t start, end;
   double time_elapsed;
@@ -386,18 +381,16 @@ int main(int argc, char* argv[])
   char* filename = NULL;
   unsigned long long seed = (unsigned long long) time(NULL);
   
-  SimulationStruct* simulations;
-  int n_simulations;
+  SimulationStruct simulation;
 
   int i;
 
   // Parse command-line arguments.
-  if (interpret_arg(argc, argv, &filename))
+  if (interpret_arg(argc, argv, &simulation))
   {
     usage(argv[0]);
     return 1;
   }
-
   // Output the execution configuration.
   printf("\n====================================\n");
   printf("EXECUTION MODE:\n");
@@ -405,13 +398,7 @@ int main(int argc, char* argv[])
   printf("====================================\n\n");
 
   // Read the simulation inputs.
-  n_simulations = read_simulation_data(filename, &simulations);
-  if(n_simulations == 0)
-  {
-    printf("Something wrong with read_simulation_data!\n");
-    return 1;
-  }
-  printf("Read %d simulations\n",n_simulations);
+  printf("Number of photons: %d\n", simulation.number_of_photons);
 
   // Allocate and initialize RNG seeds.
   unsigned int len = NUM_THREADS;
@@ -423,20 +410,16 @@ int main(int argc, char* argv[])
   
   printf("Using the MWC random number generator ...\n");
 
-  //perform all the simulations
-  for(i=0;i<n_simulations;i++)
-  {
-    simulations[i].nTetras = Nt;
-    simulations[i].nMaterials = Nm;
-    // Run a simulation
-    DoOneSimulation(i, &simulations[i], x, a, tetra_mesh, materialspec);
-  }
+  //perform the simulation
+  simulation.nTetras = Nt;
+  simulation.nMaterials = Nm;
+  // Run a simulation
+  DoOneSimulation(i, &simulation, x, a, tetra_mesh, materialspec);
 
   // Free the random number seed arrays.
   free(materialspec);
   free(tetra_mesh);
   free(x); free(a);
-  FreeSimulationStruct(simulations, n_simulations);
 
   return 0; 
 }

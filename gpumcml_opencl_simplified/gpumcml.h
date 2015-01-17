@@ -90,7 +90,6 @@ typedef struct
   DetStruct det;
 
   UINT32 n_layers;
-  LayerStruct* layers;
   int nTetras;	//total number of tetrahedra
   int nMaterials;	//total number of materials
 } SimulationStruct;
@@ -161,15 +160,10 @@ extern void usage(const char *prog_name);
 
 // Parse the command-line arguments.
 // Return 0 if successfull or a +ive error code.
-extern int interpret_arg(int argc, char* argv[], char **fpath_p);
-
-extern int read_simulation_data(char* filename,
-        SimulationStruct** simulations);
+extern int interpret_arg(int argc, char* argv[], SimulationStruct *p_simulation);
 
 extern int Write_Simulation_Results(SimState* HostMem,
         SimulationStruct* sim, clock_t simulation_time);
-
-extern void FreeSimulationStruct(SimulationStruct* sim, int n_simulations);
 
 int InitDCMem(SimulationStruct *sim, Tetra *tetra_mesh, Material *materialspec, cl_context context, cl_command_queue command_queue, cl_mem *simparam_mem_obj, cl_mem *tetra_mesh_mem_obj, cl_mem *materials_mem_obj);
 int InitSimStates(SimState* HostMem, SimulationStruct* sim, cl_context context, cl_command_queue command_queue, 
