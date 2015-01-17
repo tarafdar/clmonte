@@ -77,9 +77,7 @@ int InitDCMem(SimulationStruct *sim, Tetra *tetra_mesh, Material *materialspec, 
 //////////////////////////////////////////////////////////////////////////////
 int InitSimStates(SimState* HostMem, SimulationStruct* sim, cl_context context, cl_command_queue command_queue, 
         cl_mem *num_photons_left_mem_obj, cl_mem *a_mem_obj, cl_mem *x_mem_obj, 
-        cl_mem *photon_x_mem_obj ,cl_mem *photon_y_mem_obj, cl_mem *photon_z_mem_obj, cl_mem *photon_ux_mem_obj, 
-        cl_mem *photon_uy_mem_obj, cl_mem *photon_uz_mem_obj, cl_mem *photon_w_mem_obj, cl_mem *photon_sleft_mem_obj, 
-        cl_mem *is_active_mem_obj, cl_mem *scaled_w_mem_obj, cl_mem *debug_mem_obj
+        cl_mem *scaled_w_mem_obj, cl_mem *debug_mem_obj
         )
 {
   int rz_size = sim->det.nr * sim->det.nz;
@@ -159,68 +157,6 @@ int InitSimStates(SimState* HostMem, SimulationStruct* sim, cl_context context, 
   }
   ret = clEnqueueWriteBuffer(command_queue, *debug_mem_obj, CL_TRUE, 0, size, debug, 0, NULL, NULL);   
   
-  // On the device, we allocate multiple copies for less access contention.
-
-  /* Allocate and initialize GPU thread states on the device.
-  *
-  * We only initialize rnd_a and rnd_x here. For all other fields, whose
-  * initial value is a known constant, we use a kernel to do the
-  * initialization.
-  */
-
-  // photon structure
-  size = NUM_THREADS * sizeof(float);
-  
-  *photon_x_mem_obj = clCreateBuffer(context, CL_MEM_READ_WRITE, size, NULL, &ret);
-  if(ret!= CL_SUCCESS){
-    printf("Error creating photon_x buffer, exiting\n");
-    exit(-1);
-  }
-  
-  *photon_y_mem_obj = clCreateBuffer(context, CL_MEM_READ_WRITE, size, NULL, &ret);
-  if(ret!= CL_SUCCESS){
-    printf("Error creating photon_y buffer, exiting\n");
-    exit(-1);
-  }
-  *photon_z_mem_obj = clCreateBuffer(context, CL_MEM_READ_WRITE, size, NULL, &ret);
-  if(ret!= CL_SUCCESS){
-    printf("Error creating photon_z buffer, exiting\n");
-    exit(-1);
-  }
-  *photon_ux_mem_obj = clCreateBuffer(context, CL_MEM_READ_WRITE, size, NULL, &ret);
-  if(ret!= CL_SUCCESS){
-    printf("Error creating photon_ux buffer, exiting\n");
-    exit(-1);
-  }
-  *photon_uy_mem_obj = clCreateBuffer(context, CL_MEM_READ_WRITE, size, NULL, &ret);
-  if(ret!= CL_SUCCESS){
-    printf("Error creating photon_uy buffer, exiting\n");
-    exit(-1);
-  }
-  *photon_uz_mem_obj = clCreateBuffer(context, CL_MEM_READ_WRITE, size, NULL, &ret);
-  if(ret!= CL_SUCCESS){
-    printf("Error creating photon_uz buffer, exiting\n");
-    exit(-1);
-  }
-  *photon_w_mem_obj = clCreateBuffer(context, CL_MEM_READ_WRITE, size, NULL, &ret);
-  if(ret!= CL_SUCCESS){
-    printf("Error creating photon_w buffer, exiting\n");
-    exit(-1);
-  }
-  *photon_sleft_mem_obj = clCreateBuffer(context, CL_MEM_READ_WRITE, size, NULL, &ret);
-  if(ret!= CL_SUCCESS){
-    printf("Error creating photon_sleft buffer, exiting\n");
-    exit(-1);
-  }
-  size = NUM_THREADS * sizeof(UINT32);
-
-  // thread active
-  *is_active_mem_obj = clCreateBuffer(context, CL_MEM_READ_WRITE, size, NULL, &ret);
-  if(ret!= CL_SUCCESS){
-    printf("Error creating is_active buffer, exiting\n");
-    exit(-1);
-  }
-
   return 1;
 }
 
@@ -273,9 +209,7 @@ void FreeHostSimState(SimState *hstate)
 void FreeDeviceSimStates(cl_context context, cl_command_queue command_queue,cl_kernel initkernel, cl_kernel kernel, 
         cl_program program, cl_mem simparam_mem_obj, cl_mem num_photons_left_mem_obj, 
         cl_mem a_mem_obj, cl_mem x_mem_obj, 
-        cl_mem photon_x_mem_obj, cl_mem photon_y_mem_obj,cl_mem photon_z_mem_obj, cl_mem photon_ux_mem_obj, 
-        cl_mem photon_uy_mem_obj, cl_mem photon_uz_mem_obj, cl_mem photon_w_mem_obj, cl_mem photon_sleft_mem_obj,
-        cl_mem is_active_mem_obj, cl_mem tetra_mesh_mem_obj, cl_mem materials_mem_obj,
+        cl_mem tetra_mesh_mem_obj, cl_mem materials_mem_obj,
         cl_mem scaled_w_mem_obj, cl_mem debug_mem_obj
      )
 {
@@ -340,51 +274,7 @@ void FreeDeviceSimStates(cl_context context, cl_command_queue command_queue,cl_k
     printf("Error releasing debug mem obj, exiting\n");
     exit(-1);
  }
- ret = clReleaseMemObject(photon_x_mem_obj);
- if(ret!= CL_SUCCESS){
-    printf("Error releasing photon_x mem obj, exiting\n");
-    exit(-1);
- }
- ret = clReleaseMemObject(photon_y_mem_obj);
- if(ret!= CL_SUCCESS){
-    printf("Error releasing photon_y mem obj, exiting\n");
-    exit(-1);
- }
- ret = clReleaseMemObject(photon_z_mem_obj);
- if(ret!= CL_SUCCESS){
-    printf("Error releasing photon_z mem obj, exiting\n");
-    exit(-1);
- }
- ret = clReleaseMemObject(photon_ux_mem_obj);
- if(ret!= CL_SUCCESS){
-    printf("Error releasing photon_ux mem obj, exiting\n");
-    exit(-1);
- }
- ret = clReleaseMemObject(photon_uy_mem_obj);
- if(ret!= CL_SUCCESS){
-    printf("Error releasing photon_uy mem obj, exiting\n");
-    exit(-1);
- }
- ret = clReleaseMemObject(photon_uz_mem_obj);
- if(ret!= CL_SUCCESS){
-    printf("Error releasing photon_uz mem obj, exiting\n");
-    exit(-1);
- }
- ret = clReleaseMemObject(photon_w_mem_obj);
- if(ret!= CL_SUCCESS){
-    printf("Error releasing photon_w mem obj, exiting\n");
-    exit(-1);
- }
- ret = clReleaseMemObject(photon_sleft_mem_obj);
- if(ret!= CL_SUCCESS){
-    printf("Error releasing photon_sleft mem obj, exiting\n");
-    exit(-1);
- }
- ret = clReleaseMemObject(is_active_mem_obj);
- if(ret!= CL_SUCCESS){
-    printf("Error releasing is_active mem obj, exiting\n");
-    exit(-1);
- }
+
  ret = clReleaseCommandQueue(command_queue);
  if(ret!= CL_SUCCESS){
     printf("Error releasing command_queue mem obj, exiting\n");

@@ -16,15 +16,6 @@ cl_mem num_photons_left_mem_obj;
 cl_mem a_mem_obj;
 cl_mem x_mem_obj;
 cl_mem debug_mem_obj;
-cl_mem photon_x_mem_obj;
-cl_mem photon_y_mem_obj;
-cl_mem photon_z_mem_obj;
-cl_mem photon_ux_mem_obj;
-cl_mem photon_uy_mem_obj;
-cl_mem photon_uz_mem_obj;
-cl_mem photon_w_mem_obj;
-cl_mem photon_sleft_mem_obj;
-cl_mem is_active_mem_obj;
 cl_mem tetra_mesh_mem_obj;
 cl_mem materials_mem_obj;
 cl_mem scaled_w_mem_obj;
@@ -159,9 +150,7 @@ int RunGPUi(HostThreadState *hstate, Tetra *tetra_mesh, Material *materialspec)
   
   // Init the remaining states.
   InitSimStates(HostMem, hstate->sim, context, command_queue, &num_photons_left_mem_obj, 
-          &a_mem_obj, &x_mem_obj, &photon_x_mem_obj, &photon_y_mem_obj,
-          &photon_z_mem_obj, &photon_ux_mem_obj, &photon_uy_mem_obj, &photon_uz_mem_obj, &photon_w_mem_obj, 
-          &photon_sleft_mem_obj, &is_active_mem_obj, &scaled_w_mem_obj, &debug_mem_obj);
+          &a_mem_obj, &x_mem_obj, &scaled_w_mem_obj, &debug_mem_obj);
 
   InitDCMem(hstate->sim, tetra_mesh, materialspec, context, command_queue, &simparam_mem_obj, &tetra_mesh_mem_obj, &materials_mem_obj);
 
@@ -285,8 +274,7 @@ int RunGPUi(HostThreadState *hstate, Tetra *tetra_mesh, Material *materialspec)
   printf("[GPU] simulation done!\n");
 
   CopyDeviceToHostMem(HostMem, hstate->sim, command_queue, x_mem_obj, scaled_w_mem_obj, debug_mem_obj, tetra_mesh);
-  FreeDeviceSimStates(context, command_queue, initkernel,kernel, program, simparam_mem_obj, num_photons_left_mem_obj, a_mem_obj, x_mem_obj, photon_x_mem_obj, photon_y_mem_obj, photon_z_mem_obj, photon_ux_mem_obj, 
-photon_uy_mem_obj, photon_uz_mem_obj, photon_w_mem_obj, photon_sleft_mem_obj, is_active_mem_obj, tetra_mesh_mem_obj, materials_mem_obj, scaled_w_mem_obj, debug_mem_obj);
+  FreeDeviceSimStates(context, command_queue, initkernel,kernel, program, simparam_mem_obj, num_photons_left_mem_obj, a_mem_obj, x_mem_obj, tetra_mesh_mem_obj, materials_mem_obj, scaled_w_mem_obj, debug_mem_obj);
   // We still need the host-side structure.
   return i;
 }
