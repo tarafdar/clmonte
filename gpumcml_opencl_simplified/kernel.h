@@ -154,7 +154,7 @@ typedef struct
 
 typedef struct {
   int stype;
-  int Np;
+  int Np;	//means weight (in terms of number of photons in this packet)
 
   // Source Position -> IFF stype = 1 or 11
   float x;

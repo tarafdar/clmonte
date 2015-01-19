@@ -23,10 +23,10 @@ int InitDCMem(SimulationStruct *sim, Tetra *tetra_mesh, Material *materialspec, 
   h_simparam.nz = sim->det.nz;
   h_simparam.nr = sim->det.nr;
 
-  h_simparam.originX = 0;
-  h_simparam.originY = 0;
-  h_simparam.originZ = 0;
-  h_simparam.init_tetraID = 1;
+  h_simparam.originX = 0.3;
+  h_simparam.originY = 1.31;
+  h_simparam.originZ = 1.333;
+  h_simparam.init_tetraID = 48;
   h_simparam.terminationThresh = 0.5;
   h_simparam.proulettewin = 0.5;
   h_simparam.weight_scale = 10000000;

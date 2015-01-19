@@ -179,5 +179,5 @@ void FreeDeviceSimStates(cl_context context, cl_command_queue command_queue, cl_
 void PopulateTetraFromMeshFile(const char* filename, Tetra **p_tetra_mesh, int *p_Np, int *p_Nt);
 void PopulateMaterialFromInput(const char*, Material **p_material_spec, int *Nm);
 void ParseSource(const char *fileName, Source **sourcePoint);
-void ParseMaterial(const char *fileName, Material **mat);
+void ParseMaterial(const char *fileName, Material **mat, int *p_Nm);
 #endif  // _GPUMCML_H_

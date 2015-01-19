@@ -334,7 +334,7 @@ void banner()
 void OutputTetraMesh(Tetra *tetra_mesh, int Nt)	//debug code
 {
   int i;
-  for(i=1; i<=Nt; i++)
+  for(i=1; i<=1; i++)
   {
     Tetra &t = tetra_mesh[i];
     printf("Tetra%d: material: %d\n", i, t.matID);
@@ -343,6 +343,30 @@ void OutputTetraMesh(Tetra *tetra_mesh, int Nt)	//debug code
     printf("  %f %f %f %f %d\n", t.face[2][0], t.face[2][1], t.face[2][2], t.face[2][3], t.adjTetras[2]);
     printf("  %f %f %f %f %d\n", t.face[3][0], t.face[3][1], t.face[3][2], t.face[3][3], t.adjTetras[3]);
   }
+  printf("\n");
+}
+
+void OutputMaterial(Material *mats, int Nm)
+{
+  int i;
+  for(i=1; i<=Nm; i++)
+  {
+    Material &mat = mats[i];
+    printf("Material%d:\n", i);
+    printf("  mua %f\n  mus %f\n  muas %f\n  rmuas %f\n", i, mat.mu_a, mat.mu_s, mat.mu_as, mat.rmu_as);
+    printf("  n %f\n  g %f\n  HGCoeff1 %f\n  HGCoeff2 %f\n  absfrac %f\n", mat.n, mat.g, mat.HGCoeff1, mat.HGCoeff2, mat.absfrac);
+  }
+  printf("\n");
+}
+
+void OutputSource(Source *p_src)
+{
+  printf("Source\n");
+  printf("  initial weight: %d\n", p_src->Np);
+  printf("  x: %f\n  y: %f\n  z: %f\n", p_src->x, p_src->y, p_src->z);
+  printf("  dx: %f\n  dy: %f\n  dz: %f\n", p_src->dx, p_src->dy, p_src->dz);
+  printf("  initial tetra ID: %d\n", p_src->IDt);
+  printf("\n");
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -354,18 +378,17 @@ int main(int argc, char* argv[])
 
   Tetra *tetra_mesh;
   int Np, Nt, Nm;	//number of points, number of tetrahedra, number of materials
-  PopulateTetraFromMeshFile("one_layer_18_18_1_2.mesh", &tetra_mesh, &Np, &Nt);
+  PopulateTetraFromMeshFile("cube_5med.mesh", &tetra_mesh, &Np, &Nt);
   Material *materialspec;
   OutputTetraMesh(tetra_mesh, Nt);	//debug code
 
   Source *sourcepoint;
-  //ParseSource("FourLayer.source", &sourcepoint);
-
+  ParseSource("cube_5med.source", &sourcepoint);
+  OutputSource(sourcepoint);	//debug code
   Material *mat;
-  //ParseMaterial("FourLayer.opt", &mat);
+  ParseMaterial("cube_5med.opt", &materialspec, &Nm);
+  OutputMaterial(materialspec, Nm);	//debug code
 
-  PopulateMaterialFromInput("", &materialspec, &Nm);
-  printf("mat n: %f\n", materialspec[1].n);
   char* filename = NULL;
   unsigned long long seed = (unsigned long long) time(NULL);
   

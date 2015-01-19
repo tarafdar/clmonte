@@ -294,7 +294,7 @@ void PopulateMaterialFromInput(const char* fileName, Material **p_material_spec,
   return;
 }
 
-void ParseMaterial(const char* filename, Material** mat) 
+void ParseMaterial(const char* filename, Material** p_mats, int *p_Nm) 
 {
 
   FILE *pFile;
@@ -327,18 +327,13 @@ void ParseMaterial(const char* filename, Material** mat)
     fclose (pFile);
     return;
   }
-  sscanf (line1, "%d", &numbermat);
-
-  // printf("File opened successfully!\nMaterial parameter style: %d\nNumber of materials presnet:%d\n", paramstyle, numbermat);
-
-  *mat = (Material*)malloc((numbermat+1)*sizeof(Material));
-
-  /*
-  if (materialproperties != NULL) {
-  printf ("Structure created successfully\n");
-  }*/
-
-  for (int i = 1; i <= numbermat; i++) 
+  sscanf (line1, "%d", p_Nm);
+  *p_mats = (Material*)malloc(((*p_Nm)+1)*sizeof(Material));
+  if (*p_mats == NULL)
+  {
+    printf("malloc failed\n");
+  }
+  for (int i = 1; i <= *p_Nm; i++) 
   {
     if ( fgets (linemat, 100, pFile) == NULL ) 
     {
@@ -346,7 +341,13 @@ void ParseMaterial(const char* filename, Material** mat)
       fclose (pFile);
       return;
     }
-    sscanf (linemat, "%f %f %f %f", &(mat[i]->mu_a), &(mat[i]->mu_s), &(mat[i]->g), &(mat[i]->n));
+    Material &mat = (*p_mats)[i];
+    sscanf (linemat, "%f %f %f %f", &(mat.mu_a), &(mat.mu_s), &(mat.g), &(mat.n));
+    mat.mu_as = mat.mu_a + mat.mu_s;
+    mat.rmu_as = 1.0/mat.mu_as;
+    mat.HGCoeff1 = (1+mat.g * mat.g)/(2*mat.g);
+    mat.HGCoeff2 = (1-mat.g * mat.g)*(1-mat.g * mat.g) / (2*mat.g);
+    mat.absfrac = 1 - mat.mu_s / (mat.mu_s+mat.mu_a);
   }
 
   // Get E-Type
@@ -373,7 +374,7 @@ void ParseMaterial(const char* filename, Material** mat)
   else if (etype == 2) 
   {
     // Set Matched
-    mat[0]->setMatched = 1;
+    (*p_mats)[0].setMatched = 1;
 
     // Get n_e
     if ( fgets (linemat, 100, pFile) == NULL ) 
@@ -391,10 +392,10 @@ void ParseMaterial(const char* filename, Material** mat)
     return;
   }
 
-  mat[0]->mu_a = 0;
-  mat[0]->mu_s = 0;
-  mat[0]->g = 0;
-  mat[0]->n = n_e;
+  (*p_mats)[0].mu_a = 0;
+  (*p_mats)[0].mu_s = 0;
+  (*p_mats)[0].g = 0;
+  (*p_mats)[0].n = n_e;
 
   fclose (pFile);
 }
@@ -403,7 +404,7 @@ void ParseMaterial(const char* filename, Material** mat)
 // Parse Source (.Source File)
 //////////////////////////////////////////////////////////////////////////////
 
-void ParseSource(char* filename, Source** sourcepoint) 
+void ParseSource(const char* filename, Source** sourcepoint) 
 {
   FILE *sourcefile;
 
