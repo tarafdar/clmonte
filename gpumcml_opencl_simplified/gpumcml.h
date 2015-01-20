@@ -152,6 +152,13 @@ typedef struct
   float z;
 } Point;
 
+typedef struct
+{
+  int N0;
+  int N1;
+  int N2;
+} TriNode;
+
 //////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////
 
@@ -176,7 +183,7 @@ void FreeDeviceSimStates(cl_context context, cl_command_queue command_queue, cl_
         cl_mem a_mem_obj, cl_mem x_mem_obj, cl_mem tetra_mesh_mem_obj, cl_mem materials_mem_obj,
         cl_mem scaled_w_mem_obj, cl_mem debug_mem_obj
         );
-void PopulateTetraFromMeshFile(const char* filename, Tetra **p_tetra_mesh, int *p_Np, int *p_Nt);
+void PopulateTetraFromMeshFile(const char* filename, Tetra **p_tetra_mesh, TriNode **p_trinodes, int *p_Np, int *p_Nt);
 void PopulateMaterialFromInput(const char*, Material **p_material_spec, int *Nm);
 void ParseSource(const char *fileName, Source **sourcePoint);
 void ParseMaterial(const char *fileName, Material **mat, int *p_Nm);

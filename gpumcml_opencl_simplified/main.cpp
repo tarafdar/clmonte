@@ -377,8 +377,9 @@ int main(int argc, char* argv[])
   banner();
 
   Tetra *tetra_mesh;
+  TriNode *trinodes;
   int Np, Nt, Nm;	//number of points, number of tetrahedra, number of materials
-  PopulateTetraFromMeshFile("cube_5med.mesh", &tetra_mesh, &Np, &Nt);
+  PopulateTetraFromMeshFile("cube_5med.mesh", &tetra_mesh, &trinodes, &Np, &Nt);
   Material *materialspec;
   OutputTetraMesh(tetra_mesh, Nt);	//debug code
 
@@ -430,6 +431,7 @@ int main(int argc, char* argv[])
   // Free the random number seed arrays.
   free(materialspec);
   free(tetra_mesh);
+  free(trinodes);
   free(x); free(a);
 
   return 0; 

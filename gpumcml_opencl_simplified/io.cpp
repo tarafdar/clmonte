@@ -177,12 +177,12 @@ void HandleFace(int tetraID, Tetra *tetra_mesh, list<TwoPointIDsToTetraID> *face
 	//Populate face parameters (normal vector and face constant)
 	PopulateFaceParameters(tetra, adjTetra, faceIndex, i, points[lowID], points[midID], points[highID], points[fourthID]);
 	//Delete the node
-	nodeList.remove(*node);
+	nodeList.remove(*node);	
   }
 }
 
 
-void PopulateTetraFromMeshFile(const char* filename, Tetra **p_tetra_mesh, int *p_Np, int *p_Nt)
+void PopulateTetraFromMeshFile(const char* filename, Tetra **p_tetra_mesh, TriNode **p_trinodes, int *p_Np, int *p_Nt)
 {
   int i;
   int pointIDs[4];	//store the ids of 4 points of each tetrahedron
@@ -208,6 +208,7 @@ void PopulateTetraFromMeshFile(const char* filename, Tetra **p_tetra_mesh, int *
   }
   
   *p_tetra_mesh = (Tetra*)malloc(sizeof(Tetra)*(*p_Nt+1));
+  *p_trinodes = (TriNode*)malloc(sizeof(TriNode)*4*(*p_Nt));
   list<TwoPointIDsToTetraID> *faceToTetraMap = new list<TwoPointIDsToTetraID>[*p_Np+1];
   for(i=1; i<*p_Nt+1; i++)
   {
@@ -263,6 +264,9 @@ void PopulateTetraFromMeshFile(const char* filename, Tetra **p_tetra_mesh, int *
         tetra.face[j][3] = -faceConstant;
       }
       nodeList.remove(firstNode);
+      (*p_trinodes)[4*(firstNode.TetraID-1)+j].N0 = i;
+      (*p_trinodes)[4*(firstNode.TetraID-1)+j].N0 = firstNode.lowerPointID;
+      (*p_trinodes)[4*(firstNode.TetraID-1)+j].N0 = firstNode.higherPointID;
     }
   }
   free(points);
