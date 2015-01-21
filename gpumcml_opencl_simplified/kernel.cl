@@ -3,9 +3,6 @@ typedef uint UINT32CL;
 // Critical weight for roulette
 #define WEIGHT 1E-4F        
 
-// scaling factor for packet weight, which is then converted to integer
-#define WEIGHT_SCALE 12000000
-
 #define PI_const 3.1415926F
 #define RPI 0.318309886F
 
@@ -217,16 +214,16 @@ void Hop(Packet *pkt)
 //////////////////////////////////////////////////////////////////////////////
 //   Drop a part of the weight of the packet to simulate absorption
 //////////////////////////////////////////////////////////////////////////////
-void absorb(UINT32 weight_scale, Packet *pkt, __global const Material *d_materialspecs, __global UINT64CL *d_scaled_w) {
+void absorb(UINT32 weight_scale, Packet *pkt, __global const Material *d_materialspecs, __global UINT64CL *absorption) {
     
     float w0 = pkt->w;
     float dw = w0*(d_materialspecs->absfrac);
     
     pkt->w = w0 - dw;
     
-    // Store the absorbed weight in the material -> score in the d_scaled_w
+    // Store the absorbed weight in the material -> score in the absorption array
     // UINT64 used to maintain compatibility with the "atomic_add" method
-    atomic_add(&(d_scaled_w[pkt->tetraID]), (UINT64CL)(dw * weight_scale) );
+    atomic_add(&(absorption[pkt->tetraID]), (UINT64CL)(dw * weight_scale) );
 }
 
 float GetCosCrit(float ni, float nt)
@@ -238,22 +235,25 @@ float GetCosCrit(float ni, float nt)
 
 
 ///<return>ID of the tetrahedron that the packet is entering (same as current ID if reflect, otherwise the correct adjacent tetra ID</return>
-UINT32CL FastReflectTransmit(SimParamGPU d_simparam, Packet *pkt, 
-                                    __global UINT64CL *rnd_x, __global UINT32CL *rnd_a, __global const Tetra *d_tetra_mesh,
-                                    __global const Material *d_materialspecs, __global float *debug, int index)
+void ReflectTransmit(SimParamGPU d_simparam, Packet *pkt, __global UINT64CL *transmittance,
+                     __global UINT64CL *rnd_x, __global UINT32CL *rnd_a, __global const Tetra *d_tetra_mesh,
+                     __global const Material *d_materialspecs, float *debug, int iIndex)
+
 {
   //TODO: Should we store the cos_crit in each Tetra for each face?
-  UINT32CL currTetraID = pkt->tetraID;
-  Tetra tetra = d_tetra_mesh[currTetraID];
-  UINT32CL nextTetraID = tetra.adjTetras[pkt->faceIndexToHit];
-  Tetra nextTetra = d_tetra_mesh[nextTetraID];
-  float ni = d_materialspecs[tetra.matID].n;
-  float nt = d_materialspecs[nextTetra.matID].n;
-  if (get_global_id(0)==4)
-  {
-    debug[index*20+0] = ni;
-    debug[index*20+1] = nt;
-  }
+  Tetra tetra = d_tetra_mesh[pkt->tetraID];
+  Tetra nextTetra;
+  int aboutToLeaveSurface = 0;
+  float ni, nt; //refractive indices
+  ni = d_materialspecs[tetra.matID].n;
+  
+  if (tetra.adjTetras[pkt->faceIndexToHit] == 0 ) {
+  	//about to leave the surface
+        aboutToLeaveSurface = 1;
+  } 
+  nextTetra = d_tetra_mesh[tetra.adjTetras[pkt->faceIndexToHit]];
+  nt = d_materialspecs[nextTetra.matID].n;  
+
   float crit_cos=0;	//initialize as cos=0, means total internal reflection never occurs.
   if (nt<ni)	//total internal reflection may occur
   {
@@ -264,15 +264,12 @@ UINT32CL FastReflectTransmit(SimParamGPU d_simparam, Packet *pkt,
   float costheta = -dot((float4)(pkt->dx,pkt->dy,pkt->dz,0), (float4)(normal[0],normal[1],normal[2],0));
 
   float ni_nt = native_divide(ni, nt);
-  if (get_global_id(0)==4)
-    debug[index*20+2] = ni_nt;
-  
   float ca1 = costheta; //ca1 is cos(theta incidence) 
-  if (get_global_id(0)==4)
-  {
-    debug[20*index+4] = crit_cos;
-    debug[20*index+5] = costheta;
-  }
+  float sa1 = sqrt(FP_ONE-ca1*ca1); //sa1 is sin(theta incidence)
+  if (ca1 > COSZERO) sa1 = MCML_FP_ZERO;
+  float sa2 = min(ni_nt * sa1, FP_ONE); //sa2 is sin(theta transmit)
+  float ca2 = sqrt(FP_ONE-sa2*sa2); //ca2 is cos(theta transmit)
+  
   if (costheta <= crit_cos)	//total internal reflection occurs
   {
     //reflected direction = original_direction - 2(original_direction dot normal)*normal
@@ -297,15 +294,10 @@ UINT32CL FastReflectTransmit(SimParamGPU d_simparam, Packet *pkt,
     pkt->bx = b.x;
     pkt->by = b.y;
     pkt->bz = b.z;
-    return currTetraID;
+    
   }
   else
   {    
-    float sa1 = sqrt(FP_ONE-ca1*ca1); //sa1 is sin(theta incidence)
-    if (ca1 > COSZERO) 
-      sa1 = MCML_FP_ZERO;
-    float sa2 = min(ni_nt * sa1, FP_ONE); //sa2 is sin(theta transmitt)
-    float ca2 = sqrt(FP_ONE-sa2*sa2); //ca2 is cos(theta transmitt)
     //Jeff's way of calculating Fresnel
     // Rs = [(n1 cos(theta_i) - n2 cos(theta_t))/((n1 cos(theta_i) + n2 cos(theta_t)))] ^ 2
     // Rp = [(n1 cos(theta_t) - n2 cos(theta_i))/((n1 cos(theta_t) + n2 cos(theta_i)))] ^ 2
@@ -321,26 +313,11 @@ UINT32CL FastReflectTransmit(SimParamGPU d_simparam, Packet *pkt,
 
     if (rFresnel < rand) //refract
     {
-      // entering the next tetrahedron
-      pkt->tetraID = nextTetraID;
-      if(get_global_id(0)==4)
-      {
-      debug[20*index+6] = pkt->dx;
-      debug[20*index+7] = pkt->dy;
-      debug[20*index+8] = pkt->dz;
-      debug[20*index+12] = pkt->faceIndexToHit;
-      }
       // refracted direction = n1/n2*original_direction - [n1/n2*cos(theta incidence) + sqrt(1-sin^2(theta transmitt))]*normal
-      pkt->dx = ni_nt*(pkt->dx) + (ni_nt*ca1-ca2)*normal[0]; 
-      pkt->dy = ni_nt*(pkt->dy) + (ni_nt*ca1-ca2)*normal[1]; 
-      pkt->dz = ni_nt*(pkt->dz) + (ni_nt*ca1-ca2)*normal[2]; 
-      if(get_global_id(0)==4)
-      {
-      debug[20*index+9] = pkt->dx;
-      debug[20*index+10] = pkt->dy;
-      debug[20*index+11] = pkt->dz;
-      debug[20*index+12] = pkt->faceIndexToHit;
-      }
+      pkt->dx = ni_nt*(pkt->dx) - (ni_nt*(-ca1)+ca2)*normal[0]; 
+      pkt->dy = ni_nt*(pkt->dy) - (ni_nt*(-ca1)+ca2)*normal[1]; 
+      pkt->dz = ni_nt*(pkt->dz) - (ni_nt*(-ca1)+ca2)*normal[2]; 
+      
       // auxilary updating function
       // vector a = (vector d) cross (positive z axis unit vector) and normalize it 
       float4 d = (float4)(pkt->dx, pkt->dy, pkt->dz, 0);
@@ -360,11 +337,16 @@ UINT32CL FastReflectTransmit(SimParamGPU d_simparam, Packet *pkt,
       pkt->by = b.y;
       pkt->bz = b.z;
       
-      if(nextTetraID == 0)	//Packet has moved out of the mesh, so stop tracing it.
-      {
-        pkt->w = MCML_FP_ZERO;
+      if (aboutToLeaveSurface == 1) {
+      
+      	//store surface fluence TODO: find more efficient way of donig this!
+      	atomic_add(&(transmittance[(pkt->tetraID - 1) * 4 + pkt->faceIndexToHit]), (UINT64CL)(pkt->w * d_simparam.weight_scale));
+      
+      
+      	// Kill the packet.
+      	pkt->w = MCML_FP_ZERO;
       }
-      return nextTetraID;
+      
     }
     else //reflect
     {
@@ -391,8 +373,8 @@ UINT32CL FastReflectTransmit(SimParamGPU d_simparam, Packet *pkt,
       pkt->bx = b.x;
       pkt->by = b.y;
       pkt->bz = b.z; 
-      return currTetraID;
     }
+
   }
 }
 
@@ -455,11 +437,11 @@ void Spin(Packet *pkt, __global UINT64CL *rnd_x, __global UINT32CL *rnd_a,
 __kernel void MCMLKernel(__global const SimParamGPU *d_simparam_addr,
                                   __global UINT32CL *d_state_n_photons_left_addr, __global UINT64CL *d_state_x, 
                                   __global UINT32CL *d_state_a, __global const Tetra *d_tetra_mesh,
-                                  __global const Material *d_materialspecs, __global UINT64CL *d_scaled_w, __global float *debug)
+                                  __global const Material *d_materialspecs, __global UINT64CL *absorption,__global UINT64CL *transmittance, __global float *debug)
 {
   // packet structure stored in registers
   Packet pkt; 
-  SimParamGPU d_simparam = d_simparam_addr[0];
+  SimParamGPU d_simparam = *d_simparam_addr;
   UINT32CL tid = get_global_id(0);
 
   LaunchPacket(&pkt, d_simparam, &d_state_x[tid], &d_state_a[tid]); // Launch a new packet.
@@ -468,7 +450,7 @@ __kernel void MCMLKernel(__global const SimParamGPU *d_simparam_addr,
   UINT32CL is_active ;
   is_active = 1;
 
-  for (int iIndex = 0; iIndex < 4; ++iIndex)
+  for (int iIndex = 0; iIndex < 50000; ++iIndex)
   {
     // Only process packet if the thread is active.
     if (is_active)
@@ -481,7 +463,7 @@ __kernel void MCMLKernel(__global const SimParamGPU *d_simparam_addr,
 
       if (pkt.hit)
       {
-        FastReflectTransmit(d_simparam, &pkt, &d_state_x[tid], &d_state_a[tid], d_tetra_mesh, d_materialspecs, debug, iIndex);
+        ReflectTransmit(d_simparam, &pkt, transmittance, &d_state_x[tid], &d_state_a[tid], d_tetra_mesh, d_materialspecs, debug, iIndex);
         if (pkt.tetraID == 0)	//exited the tissue
         {
           if (atomic_sub(d_state_n_photons_left_addr, 1) > NUM_THREADS)
@@ -497,7 +479,7 @@ __kernel void MCMLKernel(__global const SimParamGPU *d_simparam_addr,
       }
       else
       {
-        absorb (d_simparam_addr->weight_scale, &pkt, d_materialspecs, d_scaled_w);
+        absorb (d_simparam_addr->weight_scale, &pkt, d_materialspecs, absorption);
         Spin(&pkt, &d_state_x[tid], &d_state_a[tid], d_tetra_mesh, d_materialspecs);
       }
 

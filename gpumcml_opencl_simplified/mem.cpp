@@ -38,18 +38,13 @@ int InitDCMem(SimulationStruct *sim, Tetra *tetra_mesh, Material *materialspec, 
     exit(-1);
   }
   ret = clEnqueueWriteBuffer(command_queue, *simparam_mem_obj, CL_TRUE, 0, sizeof(SimParamGPU), &h_simparam, 0, NULL, NULL); 
-  ////CUDA_SAFE_CALL( cudaMemcpyToSymbol(d_simparam,
-  ////  &h_simparam, sizeof(SimParamGPU)) );
-  //if(ret!= CL_SUCCESS){
-  //  printf("Error writing to simparam buffer, exiting\n");
-  //  exit(-1);
-  //}
 
   *tetra_mesh_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, sizeof(Tetra)*(sim->nTetras+1), NULL, &ret);
   if(ret!= CL_SUCCESS){
     printf("Error create tetra mesh buffer, exiting\n");
     exit(-1);
   }
+  
   ret = clEnqueueWriteBuffer(command_queue, *tetra_mesh_mem_obj, CL_TRUE, 0, sizeof(Tetra)*(sim->nTetras+1), tetra_mesh, 0, NULL, NULL);
   // Copy tetra mesh data to constant device memory
   if(ret!= CL_SUCCESS){
@@ -62,6 +57,7 @@ int InitDCMem(SimulationStruct *sim, Tetra *tetra_mesh, Material *materialspec, 
     printf("Error create materials buffer, exiting\n");
     exit(-1);
   }
+
   ret = clEnqueueWriteBuffer(command_queue, *materials_mem_obj, CL_TRUE, 0, sizeof(Material)*(sim->nMaterials+1), materialspec, 0, NULL, NULL);
   // Copy material data to constant device memory
   if(ret!= CL_SUCCESS){
@@ -76,12 +72,8 @@ int InitDCMem(SimulationStruct *sim, Tetra *tetra_mesh, Material *materialspec, 
 //   Initialize Device Memory (global) for read/write data
 //////////////////////////////////////////////////////////////////////////////
 int InitSimStates(SimState* HostMem, SimulationStruct* sim, cl_context context, cl_command_queue command_queue, 
-        cl_mem *num_photons_left_mem_obj, cl_mem *a_mem_obj, cl_mem *x_mem_obj, 
-        cl_mem *scaled_w_mem_obj, cl_mem *debug_mem_obj
-        )
-{
-  int rz_size = sim->det.nr * sim->det.nz;
-  int ra_size = sim->det.nr * sim->det.na;
+        cl_mem *num_photons_simulated_mem_obj, cl_mem *a_mem_obj, cl_mem *x_mem_obj, cl_mem *absorption_mem_obj, cl_mem *transmittance_mem_obj, cl_mem *debug_mem_obj)
+{  
   unsigned int size;
   cl_int ret;
   size = sizeof(UINT32); 
@@ -125,16 +117,38 @@ int InitSimStates(SimState* HostMem, SimulationStruct* sim, cl_context context, 
     exit(-1);
   }
 
+  // output arrays absorption and transmittance
   size = (sim->nTetras+1) * sizeof(UINT64);
-  *scaled_w_mem_obj = clCreateBuffer(context, CL_MEM_READ_WRITE, size, NULL, &ret);
+  *absorption_mem_obj = clCreateBuffer(context, CL_MEM_READ_WRITE, size, NULL, &ret);
   if(ret!=CL_SUCCESS){
-    printf("Error creating scaled weight buffer, exiting\n");
+    printf("Error creating absorption mem buffer, exiting\n");
     exit(-1);
   }
-  HostMem->scaled_w = (UINT64*)malloc(size);
-  ret = clEnqueueWriteBuffer(command_queue, *scaled_w_mem_obj, CL_TRUE, 0, size, HostMem->scaled_w, 0, NULL, NULL);
+  HostMem->absorption = (UINT64*)malloc(size);
+  for(int i = 1; i < sim->nTetras+1; i++)
+  {
+    HostMem->absorption[i] = 0;
+  }
+  ret = clEnqueueWriteBuffer(command_queue, *absorption_mem_obj, CL_TRUE, 0, size, HostMem->absorption, 0, NULL, NULL);
   if(ret!=CL_SUCCESS){
-    printf("Error writing to scaled weight mem buffer, exiting\n");
+    printf("Error writing to absorption mem buffer, exiting\n");
+    exit(-1);
+  }
+
+  size = (sim->nTetras)* 4 * sizeof(UINT64);
+  *transmittance_mem_obj = clCreateBuffer(context, CL_MEM_READ_WRITE, size, NULL, &ret);
+  if(ret!=CL_SUCCESS){
+    printf("Error creating transmittance mem buffer, exiting\n");
+    exit(-1);
+  }
+  HostMem->transmittance = (UINT64*)malloc(size);
+  for(i = 0; i < (sim->nTetras)* 4; i++)
+  {
+    HostMem->transmittance[i] = 0;
+  }
+  ret = clEnqueueWriteBuffer(command_queue, *transmittance_mem_obj, CL_TRUE, 0, size, HostMem->transmittance, 0, NULL, NULL);
+  if(ret!=CL_SUCCESS){
+    printf("Error writing to transmittance mem buffer, exiting\n");
     exit(-1);
   }
 
@@ -151,7 +165,7 @@ int InitSimStates(SimState* HostMem, SimulationStruct* sim, cl_context context, 
     fprintf(stderr, "Error allocating debug");
     exit(1);
   }
-  for(int i = 0; i < 80; i++)
+  for(i = 0; i < 80; i++)
   {
     debug[i] = 0;
   }
@@ -163,14 +177,21 @@ int InitSimStates(SimState* HostMem, SimulationStruct* sim, cl_context context, 
 //////////////////////////////////////////////////////////////////////////////
 //   Transfer data from Device to Host memory after simulation
 //////////////////////////////////////////////////////////////////////////////
-int CopyDeviceToHostMem(SimState* HostMem,SimulationStruct* sim, cl_command_queue command_queue, cl_mem x_mem_obj, cl_mem scaled_w_mem_obj, cl_mem debug_mem_obj, Tetra *tetra_mesh)
+int CopyDeviceToHostMem(SimState* HostMem, cl_command_queue command_queue, cl_mem x_mem_obj, cl_mem absorption_mem_obj, cl_mem transmittance_mem_obj, cl_mem debug_mem_obj)
 {
   cl_int ret;
-  ret = clEnqueueReadBuffer(command_queue, scaled_w_mem_obj, CL_TRUE, 0, (sim->nTetras+1)*sizeof(UINT64), HostMem->scaled_w, 0, NULL, NULL);
+  ret = clEnqueueReadBuffer(command_queue, absorption_mem_obj, CL_TRUE, 0, (sim->nTetras+1)*sizeof(UINT64), HostMem->absorption, 0, NULL, NULL);
   if(ret != CL_SUCCESS){
-    printf("Error reading scaled weight buffer, exiting\n");
+    printf("Error reading absorption buffer, exiting\n");
     exit(-1);
   }
+
+  ret = clEnqueueReadBuffer(command_queue, transmittance_mem_obj, CL_TRUE, 0, (sim->nTetras+1)*sizeof(UINT64), HostMem->transmittance, 0, NULL, NULL);
+  if(ret != CL_SUCCESS){
+    printf("Error reading transmittance buffer, exiting\n");
+    exit(-1);
+  }
+
   ret = clEnqueueReadBuffer(command_queue, debug_mem_obj, CL_TRUE, 0, 80*sizeof(float), debug, 0, NULL, NULL);
   if(ret != CL_SUCCESS){
     printf("Error reading debug buffer, exiting\n");
@@ -197,20 +218,24 @@ void FreeHostSimState(SimState *hstate)
   }
 
   // DO NOT FREE RANDOM NUMBER SEEDS HERE.
-  if (hstate->scaled_w != NULL)
+  if (hstate->absorption != NULL)
   {
-    free(hstate->scaled_w); hstate->scaled_w = NULL;
+    free(hstate->absorption); hstate->absorption = NULL;
+  }
+
+  if (hstate->transmittance != NULL)
+  {
+    free(hstate->transmittance); hstate->transmittance = NULL;
   }
 }
 
 //////////////////////////////////////////////////////////////////////////////
 //   Free GPU Memory
 //////////////////////////////////////////////////////////////////////////////
-void FreeDeviceSimStates(cl_context context, cl_command_queue command_queue,cl_kernel initkernel, cl_kernel kernel, 
-        cl_program program, cl_mem simparam_mem_obj, cl_mem num_photons_left_mem_obj, 
-        cl_mem a_mem_obj, cl_mem x_mem_obj, 
-        cl_mem tetra_mesh_mem_obj, cl_mem materials_mem_obj,
-        cl_mem scaled_w_mem_obj, cl_mem debug_mem_obj
+void FreeDeviceSimStates(cl_context context, cl_command_queue command_queue, cl_kernel initkernel, cl_kernel kernel, 
+        cl_program program, cl_mem simparam_mem_obj, cl_mem num_photons_simulated_mem_obj, 
+        cl_mem a_mem_obj, cl_mem x_mem_obj, cl_mem tetra_mesh_mem_obj, cl_mem materials_mem_obj,
+        cl_mem absorption_mem_obj, cl_mem transmittance_mem_obj, cl_mem debug_mem_obj
      )
 {
  cl_int ret;
@@ -264,9 +289,14 @@ void FreeDeviceSimStates(cl_context context, cl_command_queue command_queue,cl_k
     printf("Error releasing x mem obj, exiting\n");
     exit(-1);
  }
- ret = clReleaseMemObject(scaled_w_mem_obj);
+ ret = clReleaseMemObject(absorption_mem_obj);
  if(ret!= CL_SUCCESS){
-    printf("Error releasing scaled weight mem obj, exiting\n");
+    printf("Error releasing absorption mem obj, exiting\n");
+    exit(-1);
+ }
+ ret = clReleaseMemObject(transmittance_mem_obj);
+ if(ret!= CL_SUCCESS){
+    printf("Error releasing transmittance mem obj, exiting\n");
     exit(-1);
  }
  ret = clReleaseMemObject(debug_mem_obj);

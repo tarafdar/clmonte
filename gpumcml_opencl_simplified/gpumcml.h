@@ -33,7 +33,7 @@
 #define WEIGHT 1E-4F        
 
 // scaling factor for photon weight, which is then converted to integer
-#define WEIGHT_SCALE 12000000
+#define WEIGHT_SCALE 10000000
 
 #define PI_const 3.1415926F
 #define RPI 0.318309886F
@@ -52,44 +52,14 @@
 //////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////
 
-// Data structure for specifying each layer
-typedef struct
-{
-  float z_min;		// Layer z_min [cm]
-  float z_max;		// Layer z_max [cm]
-  float mutr;			// Reciprocal mu_total [cm]
-  float mua;			// Absorption coefficient [1/cm]
-  float g;			  // Anisotropy factor [-]
-  float n;			  // Refractive index [-]
-} LayerStruct;
-
-// Detection Grid specifications
-typedef struct
-{
-  float dr;		    // Detection grid resolution, r-direction [cm]
-  float dz;		    // Detection grid resolution, z-direction [cm]
-
-  UINT32 na;		  // Number of grid elements in angular-direction [-]
-  UINT32 nr;		  // Number of grid elements in r-direction
-  UINT32 nz;		  // Number of grid elements in z-direction
-} DetStruct;
-
 // Simulation input parameters 
 typedef struct 
 {
   char outp_filename[STR_LEN];
   char inp_filename[STR_LEN];
 
-  // the starting and ending offset (in the input file) for this simulation
-  long begin, end;
-  // ASCII or binary output
-  char AorB;
-
   UINT32 number_of_photons;
 
-  DetStruct det;
-
-  UINT32 n_layers;
   int nTetras;	//total number of tetrahedra
   int nMaterials;	//total number of materials
 } SimulationStruct;
@@ -112,7 +82,8 @@ typedef struct
   UINT32 *a;
 
   // output data
-  UINT64* scaled_w;
+  UINT64* absorption;
+  UINT64* transmittance;
 } SimState;
 
 // Everything a host thread needs to know in order to run simulation on
@@ -179,19 +150,21 @@ extern void usage(const char *prog_name);
 // Return 0 if successfull or a +ive error code.
 extern int interpret_arg(int argc, char* argv[], SimulationStruct *p_simulation);
 
-extern int Write_Simulation_Results(SimState* HostMem,
-        SimulationStruct* sim, clock_t simulation_time);
+extern int Write_Simulation_Results(SimState* HostMem, SimulationStruct* sim, float simulation_time, TriNode* TriNodeList, TetraNode* TetraNodeList, Material* material_spec, Tetra* tetra_mesh, char* output_filename)
 
 int InitDCMem(SimulationStruct *sim, Tetra *tetra_mesh, Material *materialspec, cl_context context, cl_command_queue command_queue, cl_mem *simparam_mem_obj, cl_mem *tetra_mesh_mem_obj, cl_mem *materials_mem_obj);
+
 int InitSimStates(SimState* HostMem, SimulationStruct* sim, cl_context context, cl_command_queue command_queue, 
-        cl_mem *num_photons_simulated_mem_obj, cl_mem *a_mem_obj, cl_mem *x_mem_obj, cl_mem *scaled_w_mem_obj, cl_mem *debug_mem_obj
-        );
-int CopyDeviceToHostMem(SimState* HostMem,SimulationStruct* sim, cl_command_queue command_queue, cl_mem x_mem_obj, cl_mem scaled_w_mem_obj, cl_mem debug_mem_obj, Tetra *tetra_mesh);
+        cl_mem *num_photons_simulated_mem_obj, cl_mem *a_mem_obj, cl_mem *x_mem_obj, cl_mem *absorption_mem_obj, cl_mem *transmittance_mem_obj, cl_mem *debug_mem_obj);
+
+int CopyDeviceToHostMem(SimState* HostMem, cl_command_queue command_queue, cl_mem x_mem_obj, cl_mem absorption_mem_obj, cl_mem transmittance_mem_obj, cl_mem debug_mem_obj);
+
 void FreeHostSimState(SimState *hstate);
+
 void FreeDeviceSimStates(cl_context context, cl_command_queue command_queue, cl_kernel initkernel, cl_kernel kernel, 
         cl_program program, cl_mem simparam_mem_obj, cl_mem num_photons_simulated_mem_obj, 
         cl_mem a_mem_obj, cl_mem x_mem_obj, cl_mem tetra_mesh_mem_obj, cl_mem materials_mem_obj,
-        cl_mem scaled_w_mem_obj, cl_mem debug_mem_obj
+        cl_mem absorption_mem_obj, cl_mem transmittance_mem_obj, cl_mem debug_mem_obj
         );
 void PopulateTetraFromMeshFile(const char* filename, Tetra **p_tetra_mesh, TriNode **p_trinodes, TetraNode **p_tetranodes, int *p_Np, int *p_Nt);
 void PopulateMaterialFromInput(const char*, Material **p_material_spec, int *Nm);

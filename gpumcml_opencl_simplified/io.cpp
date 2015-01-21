@@ -47,12 +47,67 @@ int interpret_arg(int argc, char* argv[], SimulationStruct *p_simulation)
 //////////////////////////////////////////////////////////////////////////////
 //   Scale raw data and format data for file output 
 //////////////////////////////////////////////////////////////////////////////
-int Write_Simulation_Results(SimState* HostMem, SimulationStruct* sim, clock_t simulation_time)
+int Write_Simulation_Results(SimState* HostMem, SimulationStruct* sim, float simulation_time, TriNode* TriNodeList, TetraNode* TetraNodeList, Material* material_spec, Tetra* tetra_mesh, char* output_filename)
 {
-  FILE* pFile_outp;
-  pFile_outp = fopen (sim->outp_filename , "w");
-  if (pFile_outp == NULL){perror ("Error opening output file");return 0;}
-  fclose(pFile_outp);
+  ofstream fout;
+  
+  fout.open(output_filename, ofstream::out);
+  if(!fout.good()){
+    cerr << "Could not write to output_filename." << endl;
+    cerr << "Please check the write permission in this folder" << endl;
+    output_filename = "/tmp/timos_tmp_result.dat";
+    fout.open(output_filename, ofstream::out);
+    if(fout.good()){
+      cerr << "Current result will be write to: /tmp/timos_tmp_result.dat" << endl;
+    }else{
+      return 1;
+    }
+  }
+
+  // Write simulation time
+  fout <<"# User time: " << (double)simulation_time/CLOCKS_PER_SEC << " seconds" << endl;
+
+  // Calculate and write surface fluence!
+  
+  double fluence = 0;
+  int TriNodeIndex = 0;
+  
+  fout << "Surface Fluence" << endl;
+  for(int TetraID = 1; TetraID <= sim->nTetra; ++TetraID)
+  {
+    for(int FaceID = 0; FaceID < 4; ++FaceID)
+    {
+      TriNodeIndex = (TetraID -1)*4 + FaceID;
+      if (HostMem->transmittance[TriNodeIndex] >0){
+      
+      fluence = (double) HostMem->transmittance[TriNodeIndex]/(WEIGHT_SCALE* TriNodeList[TriNodeIndex].area);
+      
+      fout << TriNodeList[TriNodeIndex].N0 << " \t"
+           << TriNodeList[TriNodeIndex].N1 << " \t"
+           << TriNodeList[TriNodeIndex].N2 << " \t"
+           << TriNodeList[TriNodeIndex].area << " \t"
+           << fluence << endl;
+      }else{
+      //do nothing, not a surface element or just no light coming out of this part of the surface
+      }
+
+    }
+  }
+  
+  // Calculate and write absorption!
+  fout << "Internal Fluence" << endl;
+  for(TetraID = 1; TetraID <= sim->nTetra; ++TetraID)
+  {
+      fluence = (double) HostMem->absorption[TetraID]/(WEIGHT_SCALE * TetraNodeList[TetraID].volume * material_spec[tetra_mesh[TetraID].matID].mua);
+      fout << TetraNodeList[TetraID].N0 << " \t"
+           << TetraNodeList[TetraID].N1 << " \t"
+           << TetraNodeList[TetraID].N2 << " \t"
+           << TetraNodeList[TetraID].N3 << " \t"
+           << TetraNodeList[TetraID].volume << " \t"
+           << fluence << endl;
+  }
+
+  fout.close();
   return 0;
 }
 

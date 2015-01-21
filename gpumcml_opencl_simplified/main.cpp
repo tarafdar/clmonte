@@ -18,7 +18,8 @@ cl_mem x_mem_obj;
 cl_mem debug_mem_obj;
 cl_mem tetra_mesh_mem_obj;
 cl_mem materials_mem_obj;
-cl_mem scaled_w_mem_obj;
+cl_mem absorption_mem_obj;
+cl_mem transmittance_mem_obj;
 cl_kernel initkernel;
 cl_kernel kernel;
 cl_program program;
@@ -150,7 +151,7 @@ int RunGPUi(HostThreadState *hstate, Tetra *tetra_mesh, Material *materialspec)
   
   // Init the remaining states.
   InitSimStates(HostMem, hstate->sim, context, command_queue, &num_photons_left_mem_obj, 
-          &a_mem_obj, &x_mem_obj, &scaled_w_mem_obj, &debug_mem_obj);
+          &a_mem_obj, &x_mem_obj, &absorption_mem_obj, &transmittance_mem_obj, &debug_mem_obj);
 
   InitDCMem(hstate->sim, tetra_mesh, materialspec, context, command_queue, &simparam_mem_obj, &tetra_mesh_mem_obj, &materials_mem_obj);
 
@@ -220,9 +221,15 @@ int RunGPUi(HostThreadState *hstate, Tetra *tetra_mesh, Material *materialspec)
     exit(-1);
   }
   
-  ret = clSetKernelArg(kernel, argnum++, sizeof(cl_mem), (void *)&scaled_w_mem_obj);
+  ret = clSetKernelArg(kernel, argnum++, sizeof(cl_mem), (void *)&absorption_mem_obj);
   if(ret != CL_SUCCESS){
-    printf("Error setting scaled weight kernel argument, exiting\n");
+    printf("Error setting absorption kernel argument, exiting\n");
+    exit(-1);
+  }
+
+  ret = clSetKernelArg(kernel, argnum++, sizeof(cl_mem), (void *)&transmittance_mem_obj);
+  if(ret != CL_SUCCESS){
+    printf("Error setting transmittance kernel argument, exiting\n");
     exit(-1);
   }
   
@@ -236,7 +243,7 @@ int RunGPUi(HostThreadState *hstate, Tetra *tetra_mesh, Material *materialspec)
   size_t local_size = NUM_THREADS_PER_BLOCK;
 
   int i=0;
-  for (i=0; *HostMem->n_photons_left > 0 && i<1; ++i)
+  for (i=0; *HostMem->n_photons_left > 0; ++i)
   {
     // Run the kernel.
     ret = clEnqueueNDRangeKernel(command_queue, kernel, 1, NULL, &global_size, &local_size, 0, NULL, NULL);
@@ -273,9 +280,9 @@ int RunGPUi(HostThreadState *hstate, Tetra *tetra_mesh, Material *materialspec)
   
   printf("[GPU] simulation done!\n");
 
-  CopyDeviceToHostMem(HostMem, hstate->sim, command_queue, x_mem_obj, scaled_w_mem_obj, debug_mem_obj, tetra_mesh);
-  FreeDeviceSimStates(context, command_queue, initkernel,kernel, program, simparam_mem_obj, num_photons_left_mem_obj, a_mem_obj, x_mem_obj, tetra_mesh_mem_obj, materials_mem_obj, scaled_w_mem_obj, debug_mem_obj);
-  // We still need the host-side structure.
+  CopyDeviceToHostMem(HostMem, hstate->sim, command_queue, x_mem_obj, absorption_mem_obj, transmittance_mem_obj,  debug_mem_obj);
+  FreeDeviceSimStates(context, command_queue, initkernel,kernel, program, simparam_mem_obj, num_photons_left_mem_obj, a_mem_obj, x_mem_obj, tetra_mesh_mem_obj, materials_mem_obj, absorption_mem_obj, transmittance_mem_obj, debug_mem_obj);
+
   return i;
 }
 
@@ -283,7 +290,8 @@ int RunGPUi(HostThreadState *hstate, Tetra *tetra_mesh, Material *materialspec)
 //   Perform MCML simulation for one run out of N runs (in the input file)
 //////////////////////////////////////////////////////////////////////////////
 static void DoOneSimulation(int sim_id, SimulationStruct* simulation,
-                            unsigned long long *x, unsigned int *a, Tetra *tetra_mesh, Material *materialspec)
+                            unsigned long long *x, unsigned int *a, Tetra *tetra_mesh, Material *materialspec,
+                            TriNode *trinodes, TetraNode *tetranodes)
 {
   // Start simulation kernel exec timer
   clock_t start, end;
@@ -318,7 +326,7 @@ static void DoOneSimulation(int sim_id, SimulationStruct* simulation,
   printf("NUM_THREADS = %d\n", NUM_THREADS);
   printf( ">>>>>>Simulation Speed: %e photon events per second\n", total_steps/elapsedTime);
   
-  Write_Simulation_Results(hss, simulation, elapsedTime);
+  Write_Simulation_Results(hss, simulation, elapsedTime, trinodes, tetranodes, materialspec, tetra_mesh, simulation->outp_filename);
 
   // Free SimState structs.
   FreeHostSimState(hss);
@@ -427,7 +435,8 @@ int main(int argc, char* argv[])
   simulation.nTetras = Nt;
   simulation.nMaterials = Nm;
   // Run a simulation
-  DoOneSimulation(i, &simulation, x, a, tetra_mesh, materialspec);
+  DoOneSimulation(i, &simulation, x, a, tetra_mesh, materialspec, trinodes,
+  tetranodes);
 
   // Free the random number seed arrays.
   free(materialspec);
