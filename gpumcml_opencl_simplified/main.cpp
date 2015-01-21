@@ -378,8 +378,9 @@ int main(int argc, char* argv[])
 
   Tetra *tetra_mesh;
   TriNode *trinodes;
+  TetraNode *tetranodes;
   int Np, Nt, Nm;	//number of points, number of tetrahedra, number of materials
-  PopulateTetraFromMeshFile("cube_5med.mesh", &tetra_mesh, &trinodes, &Np, &Nt);
+  PopulateTetraFromMeshFile("cube_5med.mesh", &tetra_mesh, &trinodes, &tetranodes, &Np, &Nt);
   Material *materialspec;
   OutputTetraMesh(tetra_mesh, Nt);	//debug code
 
@@ -432,6 +433,7 @@ int main(int argc, char* argv[])
   free(materialspec);
   free(tetra_mesh);
   free(trinodes);
+  free(tetranodes);
   free(x); free(a);
 
   return 0; 

@@ -93,6 +93,20 @@ void Sort4Int(int *ids)
   Sort2Int(ids+1, ids+2);
 }
 
+float ComputeAreaFrom3Points(Point p1, Point p2, Point p3)
+{
+  //use Heron's formula
+  float side1 = sqrt((p1.x-p2.x)*(p1.x-p2.x)+(p1.y-p2.y)*(p1.y-p2.y)+(p1.z-p2.z)*(p1.z-p2.z));
+  float side2 = sqrt((p1.x-p3.x)*(p1.x-p3.x)+(p1.y-p3.y)*(p1.y-p3.y)+(p1.z-p3.z)*(p1.z-p3.z));
+  float side3 = sqrt((p3.x-p2.x)*(p3.x-p2.x)+(p3.y-p2.y)*(p3.y-p2.y)+(p3.z-p2.z)*(p3.z-p2.z));
+  float s = (side1+side2+side3)/2; //semiperimeter
+  return sqrt(s*(s-side1)*(s-side2)*(s-side3));
+}
+
+float ComputeVolume(Point p1, Point p2, Point p3, Point p4)
+{
+}
+
 void PopulateFaceParameters(Tetra &tetra, Tetra &adjTetra, int tetraIndex, int adjTetraIndex, Point &p1, Point &p2, 
                             Point &p3, Point &p4)
 {
@@ -182,7 +196,7 @@ void HandleFace(int tetraID, Tetra *tetra_mesh, list<TwoPointIDsToTetraID> *face
 }
 
 
-void PopulateTetraFromMeshFile(const char* filename, Tetra **p_tetra_mesh, TriNode **p_trinodes, int *p_Np, int *p_Nt)
+void PopulateTetraFromMeshFile(const char* filename, Tetra **p_tetra_mesh, TriNode **p_trinodes, TetraNode **p_tetranodes, int *p_Np, int *p_Nt)
 {
   int i;
   int pointIDs[4];	//store the ids of 4 points of each tetrahedron
@@ -209,6 +223,7 @@ void PopulateTetraFromMeshFile(const char* filename, Tetra **p_tetra_mesh, TriNo
   
   *p_tetra_mesh = (Tetra*)malloc(sizeof(Tetra)*(*p_Nt+1));
   *p_trinodes = (TriNode*)malloc(sizeof(TriNode)*4*(*p_Nt));
+  *p_tetranodes = (TetraNode*)malloc(sizeof(TetraNode)*(*p_Nt+1));
   list<TwoPointIDsToTetraID> *faceToTetraMap = new list<TwoPointIDsToTetraID>[*p_Np+1];
   for(i=1; i<*p_Nt+1; i++)
   {
@@ -221,6 +236,10 @@ void PopulateTetraFromMeshFile(const char* filename, Tetra **p_tetra_mesh, TriNo
     HandleFace(i, *p_tetra_mesh, faceToTetraMap, points, pointIDs[0], pointIDs[1], pointIDs[3], pointIDs[2], 1);
     HandleFace(i, *p_tetra_mesh, faceToTetraMap, points, pointIDs[0], pointIDs[2], pointIDs[3], pointIDs[1], 2);
     HandleFace(i, *p_tetra_mesh, faceToTetraMap, points, pointIDs[1], pointIDs[2], pointIDs[3], pointIDs[0], 3);
+    (*p_tetranodes)[i].N0 = pointIDs[0];
+    (*p_tetranodes)[i].N1 = pointIDs[1];
+    (*p_tetranodes)[i].N2 = pointIDs[2];
+    (*p_tetranodes)[i].N3 = pointIDs[3];
   }
   fclose(pFile);
   //Now parameters of all the faces inside the mesh are populated, the rest are the mesh surfaces, which are the remaining nodes
