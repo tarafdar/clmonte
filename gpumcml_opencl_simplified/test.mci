@@ -1,4 +1,4 @@
-#####
+####
 # Template of input files for Monte Carlo simulation (mcml).
 # Anything in a line after "#" is ignored as comments.
 # Space lines are also ignored.
