@@ -15,14 +15,6 @@ int InitDCMem(SimulationStruct *sim, Tetra *tetra_mesh, Material *materialspec, 
 {
   SimParamGPU h_simparam;
 
-  h_simparam.dz = sim->det.dz;
-  h_simparam.dr = sim->det.dr;
-  
-  
-  h_simparam.na = sim->det.na;
-  h_simparam.nz = sim->det.nz;
-  h_simparam.nr = sim->det.nr;
-
   h_simparam.originX = 0.3;
   h_simparam.originY = 1.31;
   h_simparam.originZ = 1.333;
@@ -72,7 +64,7 @@ int InitDCMem(SimulationStruct *sim, Tetra *tetra_mesh, Material *materialspec, 
 //   Initialize Device Memory (global) for read/write data
 //////////////////////////////////////////////////////////////////////////////
 int InitSimStates(SimState* HostMem, SimulationStruct* sim, cl_context context, cl_command_queue command_queue, 
-        cl_mem *num_photons_simulated_mem_obj, cl_mem *a_mem_obj, cl_mem *x_mem_obj, cl_mem *absorption_mem_obj, cl_mem *transmittance_mem_obj, cl_mem *debug_mem_obj)
+        cl_mem *num_photons_left_mem_obj, cl_mem *a_mem_obj, cl_mem *x_mem_obj, cl_mem *absorption_mem_obj, cl_mem *transmittance_mem_obj, cl_mem *debug_mem_obj)
 {  
   unsigned int size;
   cl_int ret;
@@ -142,7 +134,7 @@ int InitSimStates(SimState* HostMem, SimulationStruct* sim, cl_context context, 
     exit(-1);
   }
   HostMem->transmittance = (UINT64*)malloc(size);
-  for(i = 0; i < (sim->nTetras)* 4; i++)
+  for(int i = 0; i < (sim->nTetras)* 4; i++)
   {
     HostMem->transmittance[i] = 0;
   }
@@ -165,7 +157,7 @@ int InitSimStates(SimState* HostMem, SimulationStruct* sim, cl_context context, 
     fprintf(stderr, "Error allocating debug");
     exit(1);
   }
-  for(i = 0; i < 80; i++)
+  for(int i = 0; i < 80; i++)
   {
     debug[i] = 0;
   }
@@ -177,7 +169,7 @@ int InitSimStates(SimState* HostMem, SimulationStruct* sim, cl_context context, 
 //////////////////////////////////////////////////////////////////////////////
 //   Transfer data from Device to Host memory after simulation
 //////////////////////////////////////////////////////////////////////////////
-int CopyDeviceToHostMem(SimState* HostMem, cl_command_queue command_queue, cl_mem x_mem_obj, cl_mem absorption_mem_obj, cl_mem transmittance_mem_obj, cl_mem debug_mem_obj)
+int CopyDeviceToHostMem(SimState* HostMem, SimulationStruct* sim, cl_command_queue command_queue, cl_mem x_mem_obj, cl_mem absorption_mem_obj, cl_mem transmittance_mem_obj, cl_mem debug_mem_obj)
 {
   cl_int ret;
   ret = clEnqueueReadBuffer(command_queue, absorption_mem_obj, CL_TRUE, 0, (sim->nTetras+1)*sizeof(UINT64), HostMem->absorption, 0, NULL, NULL);
@@ -233,7 +225,7 @@ void FreeHostSimState(SimState *hstate)
 //   Free GPU Memory
 //////////////////////////////////////////////////////////////////////////////
 void FreeDeviceSimStates(cl_context context, cl_command_queue command_queue, cl_kernel initkernel, cl_kernel kernel, 
-        cl_program program, cl_mem simparam_mem_obj, cl_mem num_photons_simulated_mem_obj, 
+        cl_program program, cl_mem simparam_mem_obj, cl_mem num_photons_left_mem_obj, 
         cl_mem a_mem_obj, cl_mem x_mem_obj, cl_mem tetra_mesh_mem_obj, cl_mem materials_mem_obj,
         cl_mem absorption_mem_obj, cl_mem transmittance_mem_obj, cl_mem debug_mem_obj
      )

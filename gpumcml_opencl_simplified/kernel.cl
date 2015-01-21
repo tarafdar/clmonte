@@ -237,7 +237,7 @@ float GetCosCrit(float ni, float nt)
 ///<return>ID of the tetrahedron that the packet is entering (same as current ID if reflect, otherwise the correct adjacent tetra ID</return>
 void ReflectTransmit(SimParamGPU d_simparam, Packet *pkt, __global UINT64CL *transmittance,
                      __global UINT64CL *rnd_x, __global UINT32CL *rnd_a, __global const Tetra *d_tetra_mesh,
-                     __global const Material *d_materialspecs, float *debug, int iIndex)
+                     __global const Material *d_materialspecs, __global float *debug, int iIndex)
 
 {
   //TODO: Should we store the cos_crit in each Tetra for each face?

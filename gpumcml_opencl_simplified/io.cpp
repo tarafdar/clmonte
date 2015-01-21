@@ -9,7 +9,8 @@
 #include <float.h>
 #include <string.h>
 #include <list>
-
+#include <fstream>
+#include <iostream>
 #include <CL/cl.h>
 
 #include "kernel.h"
@@ -55,8 +56,7 @@ int Write_Simulation_Results(SimState* HostMem, SimulationStruct* sim, float sim
   if(!fout.good()){
     cerr << "Could not write to output_filename." << endl;
     cerr << "Please check the write permission in this folder" << endl;
-    output_filename = "/tmp/timos_tmp_result.dat";
-    fout.open(output_filename, ofstream::out);
+    fout.open("timos_tmp_result.dat", ofstream::out);
     if(fout.good()){
       cerr << "Current result will be write to: /tmp/timos_tmp_result.dat" << endl;
     }else{
@@ -73,7 +73,7 @@ int Write_Simulation_Results(SimState* HostMem, SimulationStruct* sim, float sim
   int TriNodeIndex = 0;
   
   fout << "Surface Fluence" << endl;
-  for(int TetraID = 1; TetraID <= sim->nTetra; ++TetraID)
+  for(int TetraID = 1; TetraID <= sim->nTetras; ++TetraID)
   {
     for(int FaceID = 0; FaceID < 4; ++FaceID)
     {
@@ -96,9 +96,9 @@ int Write_Simulation_Results(SimState* HostMem, SimulationStruct* sim, float sim
   
   // Calculate and write absorption!
   fout << "Internal Fluence" << endl;
-  for(TetraID = 1; TetraID <= sim->nTetra; ++TetraID)
+  for(int TetraID = 1; TetraID <= sim->nTetras; ++TetraID)
   {
-      fluence = (double) HostMem->absorption[TetraID]/(WEIGHT_SCALE * TetraNodeList[TetraID].volume * material_spec[tetra_mesh[TetraID].matID].mua);
+      fluence = (double) HostMem->absorption[TetraID]/(WEIGHT_SCALE * TetraNodeList[TetraID].volume * material_spec[tetra_mesh[TetraID].matID].mu_a);
       fout << TetraNodeList[TetraID].N0 << " \t"
            << TetraNodeList[TetraID].N1 << " \t"
            << TetraNodeList[TetraID].N2 << " \t"
