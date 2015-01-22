@@ -150,7 +150,7 @@ extern void usage(const char *prog_name);
 // Return 0 if successfull or a +ive error code.
 extern int interpret_arg(int argc, char* argv[], SimulationStruct *p_simulation);
 
-extern int Write_Simulation_Results(SimState* HostMem, SimulationStruct* sim, float simulation_time, TriNode* TriNodeList, TetraNode* TetraNodeList, Material* material_spec, Tetra* tetra_mesh, char* output_filename);
+extern int Write_Simulation_Results(SimState* HostMem, SimulationStruct* sim, double simulation_time, TriNode* TriNodeList, TetraNode* TetraNodeList, Material* material_spec, Tetra* tetra_mesh, char* output_filename);
 
 int InitDCMem(SimulationStruct *sim, Source *p_src, Tetra *tetra_mesh, Material *materialspec, cl_context context, cl_command_queue command_queue, cl_mem *simparam_mem_obj, cl_mem *tetra_mesh_mem_obj, cl_mem *materials_mem_obj);
 

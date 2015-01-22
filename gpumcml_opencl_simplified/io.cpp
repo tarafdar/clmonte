@@ -48,7 +48,7 @@ int interpret_arg(int argc, char* argv[], SimulationStruct *p_simulation)
 //////////////////////////////////////////////////////////////////////////////
 //   Scale raw data and format data for file output 
 //////////////////////////////////////////////////////////////////////////////
-int Write_Simulation_Results(SimState* HostMem, SimulationStruct* sim, float simulation_time, TriNode* TriNodeList, TetraNode* TetraNodeList, Material* material_spec, Tetra* tetra_mesh, char* output_filename)
+int Write_Simulation_Results(SimState* HostMem, SimulationStruct* sim, double simulation_time, TriNode* TriNodeList, TetraNode* TetraNodeList, Material* material_spec, Tetra* tetra_mesh, char* output_filename)
 {
   ofstream fout;
   
@@ -65,7 +65,7 @@ int Write_Simulation_Results(SimState* HostMem, SimulationStruct* sim, float sim
   }
 
   // Write simulation time
-  fout <<"# User time: " << (double)simulation_time/CLOCKS_PER_SEC << " seconds" << endl;
+  fout <<"Wall clock simulation time: " << simulation_time << " seconds\n";
 
   // Calculate and write surface fluence!
   

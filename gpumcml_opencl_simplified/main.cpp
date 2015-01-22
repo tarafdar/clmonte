@@ -1,11 +1,14 @@
 #include <float.h> //for FLT_MAX 
 #include <stdio.h>
-#include <time.h> 
+#include <sys/time.h>
+#include <time.h>
 #include <string.h>
 #include <math.h>
 #include <CL/cl.h>
 #include "kernel.h"
 #include "gpumcml.h"
+#include <iostream>
+using namespace std;
 #define MAX_SOURCE_SIZE 0x100000
 
 cl_context context;
@@ -25,7 +28,17 @@ cl_kernel kernel;
 cl_program program;
 
 //////////////////////////////////////////////////////////////////////////////
+// time measuring helper function
 //////////////////////////////////////////////////////////////////////////////
+
+double get_wall_time(){
+    struct timeval time;
+    if (gettimeofday(&time,NULL)){
+        printf("Error getting time of day!\n");
+        return 0;
+    }
+    return (double)time.tv_sec + (double)time.tv_usec * .000001;
+}
 
 //////////////////////////////////////////////////////////////////////////////
 //   Initialize random number generator 
@@ -294,9 +307,7 @@ static void DoOneSimulation(int sim_id, SimulationStruct* simulation,
                             TriNode *trinodes, TetraNode *tetranodes, Source *p_src)
 {
   // Start simulation kernel exec timer
-  clock_t start, end;
-  double time_elapsed;
-  start = clock();
+  double wall0 = get_wall_time();
   // For each GPU, init the host-side structure.
   HostThreadState* hstates;
   hstates = (HostThreadState*)malloc(sizeof(HostThreadState));
@@ -317,16 +328,16 @@ static void DoOneSimulation(int sim_id, SimulationStruct* simulation,
   int number_of_iterations = RunGPUi (hstates, tetra_mesh, materialspec, p_src);
 
   // End the timer.
-  end = clock();
-  float elapsedTime = ((float) end - start)/CLOCKS_PER_SEC;
-  float total_steps = (float)number_of_iterations*(float)NUM_STEPS*(float)NUM_THREADS;
-  printf( "\n\n>>>>>>Simulation time: %f (s)\n", elapsedTime);
+  double wall1 = get_wall_time();
+  double elapsed = wall1 - wall0;
+  float total_steps = (float)number_of_iterations*NUM_STEPS*NUM_THREADS;
+  cout << "Wall Time = " << elapsed << " seconds\n";
   printf("total num of iterations = %d\n", number_of_iterations);
   printf("NUM_STEPS = %d\n", NUM_STEPS);
   printf("NUM_THREADS = %d\n", NUM_THREADS);
-  printf( ">>>>>>Simulation Speed: %e photon events per second\n", total_steps/elapsedTime);
+  printf( ">>>>>>Simulation Speed: %e photon events per second\n", total_steps/elapsed);
   
-  Write_Simulation_Results(hss, simulation, elapsedTime, trinodes, tetranodes, materialspec, tetra_mesh, simulation->outp_filename);
+  Write_Simulation_Results(hss, simulation, elapsed, trinodes, tetranodes, materialspec, tetra_mesh, simulation->outp_filename);
 
   // Free SimState structs.
   FreeHostSimState(hss);
