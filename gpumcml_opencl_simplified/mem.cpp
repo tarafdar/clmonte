@@ -11,17 +11,14 @@
 //   Initialize Device Constant Memory with read-only data
 //////////////////////////////////////////////////////////////////////////////
 extern float *debug;
-int InitDCMem(SimulationStruct *sim, Tetra *tetra_mesh, Material *materialspec, cl_context context, cl_command_queue command_queue, cl_mem *simparam_mem_obj, cl_mem *tetra_mesh_mem_obj, cl_mem *materials_mem_obj)
+int InitDCMem(SimulationStruct *sim, Source *p_src, Tetra *tetra_mesh, Material *materialspec, cl_context context, cl_command_queue command_queue, cl_mem *simparam_mem_obj, cl_mem *tetra_mesh_mem_obj, cl_mem *materials_mem_obj)
 {
   SimParamGPU h_simparam;
 
-  h_simparam.originX = 0.3;
-  h_simparam.originY = 1.31;
-  h_simparam.originZ = 1.333;
-  h_simparam.init_tetraID = 48;
-  h_simparam.terminationThresh = 0.5;
-  h_simparam.proulettewin = 0.5;
-  h_simparam.weight_scale = 10000000;
+  h_simparam.originX = p_src->x;
+  h_simparam.originY = p_src->y;
+  h_simparam.originZ = p_src->z;
+  h_simparam.init_tetraID = p_src->IDt;
 
   cl_int ret;
   *simparam_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, sizeof(SimParamGPU), NULL, &ret);
@@ -119,7 +116,7 @@ int InitSimStates(SimState* HostMem, SimulationStruct* sim, cl_context context, 
   HostMem->absorption = (UINT64*)malloc(size);
   for(int i = 1; i < sim->nTetras+1; i++)
   {
-    HostMem->absorption[i] = 0;
+    HostMem->absorption[i] = 1;
   }
   ret = clEnqueueWriteBuffer(command_queue, *absorption_mem_obj, CL_TRUE, 0, size, HostMem->absorption, 0, NULL, NULL);
   if(ret!=CL_SUCCESS){
@@ -189,6 +186,7 @@ int CopyDeviceToHostMem(SimState* HostMem, SimulationStruct* sim, cl_command_que
     printf("Error reading debug buffer, exiting\n");
     exit(-1);
   }
+  printf("loop per packet life: %f\n", debug[0]);
   //Also copy the state of the RNG's
   ret = clEnqueueReadBuffer(command_queue, x_mem_obj, CL_TRUE, 0, NUM_THREADS * sizeof(UINT64), HostMem->x, 0, NULL, NULL);
   if(ret != CL_SUCCESS){

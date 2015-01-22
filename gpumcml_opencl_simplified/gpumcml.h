@@ -33,7 +33,7 @@
 #define WEIGHT 1E-4F        
 
 // scaling factor for photon weight, which is then converted to integer
-#define WEIGHT_SCALE 10000000
+#define WEIGHT_SCALE 12000000
 
 #define PI_const 3.1415926F
 #define RPI 0.318309886F
@@ -152,7 +152,7 @@ extern int interpret_arg(int argc, char* argv[], SimulationStruct *p_simulation)
 
 extern int Write_Simulation_Results(SimState* HostMem, SimulationStruct* sim, float simulation_time, TriNode* TriNodeList, TetraNode* TetraNodeList, Material* material_spec, Tetra* tetra_mesh, char* output_filename);
 
-int InitDCMem(SimulationStruct *sim, Tetra *tetra_mesh, Material *materialspec, cl_context context, cl_command_queue command_queue, cl_mem *simparam_mem_obj, cl_mem *tetra_mesh_mem_obj, cl_mem *materials_mem_obj);
+int InitDCMem(SimulationStruct *sim, Source *p_src, Tetra *tetra_mesh, Material *materialspec, cl_context context, cl_command_queue command_queue, cl_mem *simparam_mem_obj, cl_mem *tetra_mesh_mem_obj, cl_mem *materials_mem_obj);
 
 int InitSimStates(SimState* HostMem, SimulationStruct* sim, cl_context context, cl_command_queue command_queue, 
         cl_mem *num_photons_simulated_mem_obj, cl_mem *a_mem_obj, cl_mem *x_mem_obj, cl_mem *absorption_mem_obj, cl_mem *transmittance_mem_obj, cl_mem *debug_mem_obj);

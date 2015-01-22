@@ -2,6 +2,7 @@ typedef ulong UINT64CL;
 typedef uint UINT32CL;
 // Critical weight for roulette
 #define WEIGHT 1E-4F        
+#define WEIGHT_SCALE 12000000
 
 #define PI_const 3.1415926F
 #define RPI 0.318309886F
@@ -86,7 +87,6 @@ void LaunchPacket(Packet *pkt, SimParamGPU d_simparam, __global UINT64CL *rnd_x,
   pkt->dz = native_cos(phi);
   pkt->w = FP_ONE;
   pkt->sleft = MCML_FP_ZERO;
-  pkt->layer = 1;
 
   // vector a = (vector d) cross (positive z axis unit vector) and normalize it 
   float4 d = (float4)(pkt->dx, pkt->dy, pkt->dz, 0);
@@ -131,9 +131,6 @@ void ComputeStepSize(Packet *pkt,
     pkt->s = pkt->sleft * d_materials[materialID].rmu_as;
     pkt->sleft = MCML_FP_ZERO;
   }
-  if(get_global_id(0)==4)
-  debug[index*20+3] = pkt->s;
-
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -187,6 +184,8 @@ int HitBoundary(Packet *pkt, __global const Tetra *d_tetra_mesh, __global float 
   
   //TODO in tuning: Should we also store move_dis[minIndex] into Packet to avoid recomputing?
   pkt->faceIndexToHit = minIndex;
+  pkt->nextTetraID = tetra.adjTetras[minIndex];
+  pkt->matID = tetra.matID;
   if(move_dis[minIndex] > pkt->s)
   {
     pkt->s = pkt->sleft;
@@ -214,16 +213,16 @@ void Hop(Packet *pkt)
 //////////////////////////////////////////////////////////////////////////////
 //   Drop a part of the weight of the packet to simulate absorption
 //////////////////////////////////////////////////////////////////////////////
-void absorb(UINT32 weight_scale, Packet *pkt, __global const Material *d_materialspecs, __global UINT64CL *absorption) {
+void absorb(Packet *pkt, __global const Material *d_materialspecs, __global UINT64CL *absorption, __global float *debug, int iIndex) {
     
     float w0 = pkt->w;
-    float dw = w0*(d_materialspecs->absfrac);
-    
+    float dw = w0*(d_materialspecs[pkt->matID].absfrac);
+
     pkt->w = w0 - dw;
-    
+
     // Store the absorbed weight in the material -> score in the absorption array
     // UINT64 used to maintain compatibility with the "atomic_add" method
-    atomic_add(&(absorption[pkt->tetraID]), (UINT64CL)(dw * weight_scale) );
+    atomic_add(&(absorption[pkt->tetraID]), WEIGHT_SCALE );
 }
 
 float GetCosCrit(float ni, float nt)
@@ -340,13 +339,13 @@ void ReflectTransmit(SimParamGPU d_simparam, Packet *pkt, __global UINT64CL *tra
       if (aboutToLeaveSurface == 1) {
       
       	//store surface fluence TODO: find more efficient way of donig this!
-      	atomic_add(&(transmittance[(pkt->tetraID - 1) * 4 + pkt->faceIndexToHit]), (UINT64CL)(pkt->w * d_simparam.weight_scale));
+      	atomic_add(&(transmittance[(pkt->tetraID - 1) * 4 + pkt->faceIndexToHit]), (UINT64CL)(pkt->w * WEIGHT_SCALE));
       
       
       	// Kill the packet.
       	pkt->w = MCML_FP_ZERO;
       }
-      
+      pkt->tetraID = pkt->nextTetraID;
     }
     else //reflect
     {
@@ -396,7 +395,7 @@ void Spin(Packet *pkt, __global UINT64CL *rnd_x, __global UINT32CL *rnd_a,
 
   rand = FP_TWO * rand_MWC_co(rnd_x, rnd_a) - FP_ONE;	//rand is sampled from -1 to 1
 
-  Material mat = d_materialspec[d_tetra_mesh[pkt->tetraID].matID];
+  Material mat = d_materialspec[pkt->matID];
   cost = mat.HGCoeff1 - native_divide(mat.HGCoeff2, (1-mat.g * rand));
   
   sint = sqrt(FP_ONE - cost * cost);
@@ -449,7 +448,12 @@ __kernel void MCMLKernel(__global const SimParamGPU *d_simparam_addr,
   // Flag to indicate if this thread is active
   UINT32CL is_active ;
   is_active = 1;
-
+if(get_global_id(0)==4)
+{
+  debug[0] = 0;
+  debug[1] = 0;
+  debug[2] = 0;
+}
   for (int iIndex = 0; iIndex < 50000; ++iIndex)
   {
     // Only process packet if the thread is active.
@@ -479,20 +483,21 @@ __kernel void MCMLKernel(__global const SimParamGPU *d_simparam_addr,
       }
       else
       {
-        absorb (d_simparam_addr->weight_scale, &pkt, d_materialspecs, absorption);
+        absorb (&pkt, d_materialspecs, absorption, debug, iIndex);
         Spin(&pkt, &d_state_x[tid], &d_state_a[tid], d_tetra_mesh, d_materialspecs);
       }
-
+            if(get_global_id(0)==4)
+              debug[0] = pkt.w;
       // >>>>>>>>> Roulette()
       // If the pkt weight is small, the packet tries
       // to survive a roulette.
-      // if (pkt.w < WEIGHT + d_simparam_addr->terminationThresh)
+      if (pkt.w < WEIGHT)
       {
         float rand = rand_MWC_co(&d_state_x[tid], &d_state_a[tid]);
 
         // This pkt survives the roulette.
-        if (pkt.w != MCML_FP_ZERO && rand < CHANCE + d_simparam_addr->proulettewin)
-          pkt.w *= (FP_ONE / CHANCE + d_simparam_addr->proulettewin);
+        if (pkt.w != MCML_FP_ZERO && rand < CHANCE)
+          pkt.w *= (FP_ONE / CHANCE);
         // This pkt is terminated.
         else if (atomic_sub(d_state_n_photons_left_addr, 1) > NUM_THREADS){
             

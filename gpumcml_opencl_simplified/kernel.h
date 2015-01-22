@@ -126,6 +126,10 @@ typedef struct
   UINT32 tetraID;
   // index (0,1,2,3) of the current tetra's face to hit
   UINT32 faceIndexToHit;
+  // id of the tetrahedron which the packet may refract into
+  UINT32 nextTetraID;
+  // id of the material where the packet is at, redundant data to improve performance
+  UINT32 matID;
 } Packet;
 
 typedef struct
@@ -134,8 +138,8 @@ typedef struct
   // The face normal vectors (face[i][0],face[i][1],face[i][2]) always point into the tetrahedron. They are always unit vector.
   float face[4][4];
   
-  unsigned adjTetras[4];
-  unsigned matID;    
+  UINT32 adjTetras[4];
+  UINT32 matID;    
 } Tetra ;
 
 typedef struct

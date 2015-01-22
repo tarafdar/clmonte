@@ -99,7 +99,7 @@ int init_RNG(UINT64 *x, UINT32 *a,
 //   Supports 1 GPU only
 //   Calls RunGPU with HostThreadState parameters
 //////////////////////////////////////////////////////////////////////////////
-int RunGPUi(HostThreadState *hstate, Tetra *tetra_mesh, Material *materialspec)
+int RunGPUi(HostThreadState *hstate, Tetra *tetra_mesh, Material *materialspec, Source *p_src)
 {
   SimState *HostMem = &(hstate->host_sim_state);
 
@@ -153,7 +153,7 @@ int RunGPUi(HostThreadState *hstate, Tetra *tetra_mesh, Material *materialspec)
   InitSimStates(HostMem, hstate->sim, context, command_queue, &num_photons_left_mem_obj, 
           &a_mem_obj, &x_mem_obj, &absorption_mem_obj, &transmittance_mem_obj, &debug_mem_obj);
 
-  InitDCMem(hstate->sim, tetra_mesh, materialspec, context, command_queue, &simparam_mem_obj, &tetra_mesh_mem_obj, &materials_mem_obj);
+  InitDCMem(hstate->sim, p_src, tetra_mesh, materialspec, context, command_queue, &simparam_mem_obj, &tetra_mesh_mem_obj, &materials_mem_obj);
 
   program = clCreateProgramWithSource(context, 1, (const char**)&source_str, (const size_t *)&source_size, &ret);
   if(ret != CL_SUCCESS){
@@ -291,7 +291,7 @@ int RunGPUi(HostThreadState *hstate, Tetra *tetra_mesh, Material *materialspec)
 //////////////////////////////////////////////////////////////////////////////
 static void DoOneSimulation(int sim_id, SimulationStruct* simulation,
                             unsigned long long *x, unsigned int *a, Tetra *tetra_mesh, Material *materialspec,
-                            TriNode *trinodes, TetraNode *tetranodes)
+                            TriNode *trinodes, TetraNode *tetranodes, Source *p_src)
 {
   // Start simulation kernel exec timer
   clock_t start, end;
@@ -314,7 +314,7 @@ static void DoOneSimulation(int sim_id, SimulationStruct* simulation,
 
   printf("simulation number of photons %d\n", *(hss->n_photons_left));
   // Launch simulation
-  int number_of_iterations = RunGPUi (hstates, tetra_mesh, materialspec);
+  int number_of_iterations = RunGPUi (hstates, tetra_mesh, materialspec, p_src);
 
   // End the timer.
   end = clock();
@@ -342,7 +342,7 @@ void banner()
 void OutputTetraMesh(Tetra *tetra_mesh, int Nt)	//debug code
 {
   int i;
-  for(i=1; i<=1; i++)
+  for(i=48; i<=48; i++)
   {
     Tetra &t = tetra_mesh[i];
     printf("Tetra%d: material: %d\n", i, t.matID);
@@ -436,7 +436,7 @@ int main(int argc, char* argv[])
   simulation.nMaterials = Nm;
   // Run a simulation
   DoOneSimulation(i, &simulation, x, a, tetra_mesh, materialspec, trinodes,
-  tetranodes);
+  tetranodes, sourcepoint);
 
   // Free the random number seed arrays.
   free(materialspec);

@@ -80,7 +80,7 @@ int Write_Simulation_Results(SimState* HostMem, SimulationStruct* sim, float sim
       TriNodeIndex = (TetraID -1)*4 + FaceID;
       if (HostMem->transmittance[TriNodeIndex] >0){
       
-      fluence = (double) HostMem->transmittance[TriNodeIndex]/(WEIGHT_SCALE* TriNodeList[TriNodeIndex].area);
+      fluence = (double) HostMem->transmittance[TriNodeIndex]/(WEIGHT_SCALE * TriNodeList[TriNodeIndex].area);
       
       fout << TriNodeList[TriNodeIndex].N0 << " \t"
            << TriNodeList[TriNodeIndex].N1 << " \t"
@@ -99,6 +99,7 @@ int Write_Simulation_Results(SimState* HostMem, SimulationStruct* sim, float sim
   for(int TetraID = 1; TetraID <= sim->nTetras; ++TetraID)
   {
       fluence = (double) HostMem->absorption[TetraID]/(WEIGHT_SCALE * TetraNodeList[TetraID].volume * material_spec[tetra_mesh[TetraID].matID].mu_a);
+      //fluence = (double) HostMem->absorption[TetraID];
       fout << TetraNodeList[TetraID].N0 << " \t"
            << TetraNodeList[TetraID].N1 << " \t"
            << TetraNodeList[TetraID].N2 << " \t"
@@ -160,6 +161,26 @@ float ComputeAreaFrom3Points(Point p1, Point p2, Point p3)
 
 float ComputeVolume(Point p1, Point p2, Point p3, Point p4)
 {
+  //1. Get vectors of any two sides of the face triangle
+  float x1 = p1.x - p2.x;
+  float y1 = p1.y - p2.y;
+  float z1 = p1.z - p2.z;
+  float x2 = p1.x - p3.x;
+  float y2 = p1.y - p3.y;
+  float z2 = p1.z - p3.z;
+  //2. Take the cross product of those two sides to get the normal vector
+  float nx,ny,nz;
+  cross(x1,y1,z1,x2,y2,z2,&nx,&ny,&nz);
+  //3. Normalize the normal vector to unit length
+  normalize(nx,ny,nz);
+  //4. Get the face constant
+  float faceConstant = nx*p1.x + ny*p1.y + nz*p1.z;
+  //5. Get the height--distance from p4 to the face (p1,p2,p3)
+  float height = fabs(nx*p4.x+ny*p4.y+nz*p4.z - faceConstant);
+  //6. Get the bottom surface (p1,p2,p3) area
+  float area = ComputeAreaFrom3Points(p1,p2,p3);
+  //7. return the volume
+  return (height*area)/3.0f;
 }
 
 void PopulateFaceParameters(Tetra &tetra, Tetra &adjTetra, int tetraIndex, int adjTetraIndex, Point &p1, Point &p2, 
@@ -295,6 +316,7 @@ void PopulateTetraFromMeshFile(const char* filename, Tetra **p_tetra_mesh, TriNo
     (*p_tetranodes)[i].N1 = pointIDs[1];
     (*p_tetranodes)[i].N2 = pointIDs[2];
     (*p_tetranodes)[i].N3 = pointIDs[3];
+    (*p_tetranodes)[i].volume = ComputeVolume(points[pointIDs[0]], points[pointIDs[1]], points[pointIDs[2]], points[pointIDs[3]]);
   }
   fclose(pFile);
   //Now parameters of all the faces inside the mesh are populated, the rest are the mesh surfaces, which are the remaining nodes
