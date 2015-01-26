@@ -75,10 +75,11 @@ int Write_Simulation_Results(SimState* HostMem, SimulationStruct* sim, double si
   fout << "Surface Fluence" << endl;
   for(int TetraID = 1; TetraID <= sim->nTetras; ++TetraID)
   {
-    for(int FaceID = 0; FaceID < 4; ++FaceID)
+    for(int FaceID = 0; FaceID < 4; FaceID++)
     {
-      TriNodeIndex = (TetraID -1)*4 + FaceID;
-      if (HostMem->transmittance[TriNodeIndex] >0){
+      TriNodeIndex = (TetraID-1)*4 + FaceID;
+      //if (HostMem->transmittance[TriNodeIndex] > 0 ){
+      if(TriNodeList[TriNodeIndex].N0!=0){
       
       fluence = (double) HostMem->transmittance[TriNodeIndex]/(WEIGHT_SCALE * TriNodeList[TriNodeIndex].area);
       
@@ -300,6 +301,14 @@ void PopulateTetraFromMeshFile(const char* filename, Tetra **p_tetra_mesh, TriNo
   *p_tetra_mesh = (Tetra*)malloc(sizeof(Tetra)*(*p_Nt+1));
   *p_trinodes = (TriNode*)malloc(sizeof(TriNode)*4*(*p_Nt));
   *p_tetranodes = (TetraNode*)malloc(sizeof(TetraNode)*(*p_Nt+1));
+for(i=0;i<*p_Nt+1;i++)
+{
+  (*p_tetranodes)[i].N0 = 0;
+  (*p_tetranodes)[i].N1 = 0;
+  (*p_tetranodes)[i].N2 = 0;
+  (*p_tetranodes)[i].N3 = 0;
+  (*p_tetranodes)[i].volume = 0;
+}
   list<TwoPointIDsToTetraID> *faceToTetraMap = new list<TwoPointIDsToTetraID>[*p_Np+1];
   for(i=1; i<*p_Nt+1; i++)
   {
@@ -361,8 +370,9 @@ void PopulateTetraFromMeshFile(const char* filename, Tetra **p_tetra_mesh, TriNo
       }
       nodeList.remove(firstNode);
       (*p_trinodes)[4*(firstNode.TetraID-1)+j].N0 = i;
-      (*p_trinodes)[4*(firstNode.TetraID-1)+j].N0 = firstNode.lowerPointID;
-      (*p_trinodes)[4*(firstNode.TetraID-1)+j].N0 = firstNode.higherPointID;
+      (*p_trinodes)[4*(firstNode.TetraID-1)+j].N1 = firstNode.lowerPointID;
+      (*p_trinodes)[4*(firstNode.TetraID-1)+j].N2 = firstNode.higherPointID;
+      (*p_trinodes)[4*(firstNode.TetraID-1)+j].area = ComputeAreaFrom3Points(p1, p2, p3);
     }
   }
   free(points);
@@ -556,6 +566,7 @@ void ParseSource(const char* filename, Source** sourcepoint)
       // Point Position -> Cartesian Coordinates
       case 1:
         sscanf (linesource, "%d %f %f %f %d", &(sourcepoint[i]->stype), &(sourcepoint[i]->x), &(sourcepoint[i]->y), &(sourcepoint[i]->z), &(sourcepoint[i]->Np) );
+	sourcepoint[i]->IDt = 25515;
         break;
 
       // IDt position

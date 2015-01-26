@@ -175,7 +175,7 @@ int CopyDeviceToHostMem(SimState* HostMem, SimulationStruct* sim, cl_command_que
     exit(-1);
   }
 
-  ret = clEnqueueReadBuffer(command_queue, transmittance_mem_obj, CL_TRUE, 0, (sim->nTetras+1)*sizeof(UINT64), HostMem->transmittance, 0, NULL, NULL);
+  ret = clEnqueueReadBuffer(command_queue, transmittance_mem_obj, CL_TRUE, 0, (sim->nTetras)*4*sizeof(UINT64), HostMem->transmittance, 0, NULL, NULL);
   if(ret != CL_SUCCESS){
     printf("Error reading transmittance buffer, exiting\n");
     exit(-1);
