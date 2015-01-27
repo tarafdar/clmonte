@@ -258,8 +258,12 @@ int RunGPUi(HostThreadState *hstate, Tetra *tetra_mesh, Material *materialspec, 
   int i=0;
   for (i=0; *HostMem->n_photons_left > 0; ++i)
   {
+    if(*HostMem->n_photons_left < global_size)
+    {
+      global_size = *HostMem->n_photons_left;
+    }
     // Run the kernel.
-    ret = clEnqueueNDRangeKernel(command_queue, kernel, 1, NULL, &global_size, &local_size, 0, NULL, NULL);
+    ret = clEnqueueNDRangeKernel(command_queue, kernel, 1, NULL, &global_size, NULL, 0, NULL, NULL);
     if(ret != CL_SUCCESS){
       printf("Error enqueundrange of kernel in loop iteration %d, exiting\n", i);
       exit(-1);
@@ -267,7 +271,7 @@ int RunGPUi(HostThreadState *hstate, Tetra *tetra_mesh, Material *materialspec, 
     clFinish(command_queue); //good practice for synchronization purposes in OpenCL
 
     // Copy the number of photons left from device to host.
-    ret = clEnqueueReadBuffer(command_queue, num_photons_left_mem_obj, CL_TRUE, 0, sizeof(UINT32), HostMem->n_photons_left, 0, NULL, NULL);
+    ret = clEnqueueReadBuffer(command_queue, num_photons_left_mem_obj, CL_TRUE, 0, sizeof(int), HostMem->n_photons_left, 0, NULL, NULL);
     if(ret != CL_SUCCESS){
       printf("Error reading number of photons left of kernel in loop iteration %d, exiting %d\n", i, ret);
       exit(-1);
@@ -278,14 +282,14 @@ int RunGPUi(HostThreadState *hstate, Tetra *tetra_mesh, Material *materialspec, 
       printf("Error reading x buffer, exiting\n");
       exit(-1);
     }
-    printf("x[1] = %E\n", (double)HostMem->x[1]);
+    //printf("x[1] = %E\n", (double)HostMem->x[1]);
   
     ret = clEnqueueReadBuffer(command_queue, a_mem_obj, CL_TRUE, 0, NUM_THREADS * sizeof(UINT32), HostMem->a, 0, NULL, NULL);
     if(ret != CL_SUCCESS){
       printf("Error reading a buffer, exiting\n");
       exit(-1);
     }
-    printf("a[1] = %E\n", (double)HostMem->a[1]);
+    //printf("a[1] = %E\n", (double)HostMem->a[1]);
     ////////////////////////////////////////////////////////////
 
     printf("[GPU] batch %d, number of photons left %d\n",i, *HostMem->n_photons_left);
@@ -405,14 +409,14 @@ int main(int argc, char* argv[])
   int Np, Nt, Nm;	//number of points, number of tetrahedra, number of materials
   PopulateTetraFromMeshFile("cube_5med.mesh", &tetra_mesh, &trinodes, &tetranodes, &Np, &Nt);
   Material *materialspec;
-  OutputTetraMesh(tetra_mesh, Nt);	//debug code
+  //OutputTetraMesh(tetra_mesh, Nt);	//debug code
 
   Source *sourcepoint;
   ParseSource("cube_5med.source", &sourcepoint);
-  OutputSource(sourcepoint);	//debug code
+  //OutputSource(sourcepoint);	//debug code
   Material *mat;
   ParseMaterial("cube_5med.opt", &materialspec, &Nm);
-  OutputMaterial(materialspec, Nm);	//debug code
+  //OutputMaterial(materialspec, Nm);	//debug code
 
   char* filename = NULL;
   unsigned long long seed = (unsigned long long) time(NULL);

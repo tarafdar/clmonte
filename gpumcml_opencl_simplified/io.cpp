@@ -56,7 +56,7 @@ int Conservation_Of_Energy(SimState* HostMem, SimulationStruct* sim, TriNode* Tr
   int i;
   for (i = 1; i <= sim->nTetras; i++)
     {
-      output_energy += (HostMem->absorption[i])/WEIGHT_SCALE;
+      output_energy += (double)(HostMem->absorption[i])/(double)WEIGHT_SCALE;
     }
 
   // Next sum up the transmitted energy
@@ -69,7 +69,7 @@ int Conservation_Of_Energy(SimState* HostMem, SimulationStruct* sim, TriNode* Tr
 
       if(TriNodeList[TriNodeIndex].N0!=0)
       {
-        output_energy += (double) HostMem->transmittance[TriNodeIndex]/(WEIGHT_SCALE);
+        output_energy += (double) HostMem->transmittance[TriNodeIndex]/(double)(WEIGHT_SCALE);
       }else
       {
         //do nothing, not a surface element or just no light coming out of this part of the surface

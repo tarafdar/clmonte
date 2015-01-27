@@ -436,7 +436,7 @@ void Spin(Packet *pkt, __global UINT64CL *rnd_x, __global UINT32CL *rnd_a,
 //////////////////////////////////////////////////////////////////////////////
 
 __kernel void MCMLKernel(__global const SimParamGPU *d_simparam_addr,
-                                  __global UINT32CL *d_state_n_photons_left_addr, __global UINT64CL *d_state_x, 
+                                  __global int *d_state_n_photons_left_addr, __global UINT64CL *d_state_x, 
                                   __global UINT32CL *d_state_a, __global const Tetra *d_tetra_mesh,
                                   __global const Material *d_materialspecs, __global UINT64CL *absorption,__global UINT64CL *transmittance, __global float *debug)
 {
@@ -450,12 +450,7 @@ __kernel void MCMLKernel(__global const SimParamGPU *d_simparam_addr,
   // Flag to indicate if this thread is active
   UINT32CL is_active ;
   is_active = 1;
-if(get_global_id(0)==4)
-{
-  debug[0] = 0;
-  debug[1] = 0;
-  debug[2] = 0;
-}
+
   for (int iIndex = 0; iIndex < 50000; ++iIndex)
   {
     // Only process packet if the thread is active.
@@ -480,6 +475,7 @@ if(get_global_id(0)==4)
           else
           {
             is_active = 0;
+            break;
           }
         }
       }
@@ -488,8 +484,7 @@ if(get_global_id(0)==4)
         absorb (&pkt, d_materialspecs, absorption, debug, iIndex);
         Spin(&pkt, &d_state_x[tid], &d_state_a[tid], d_tetra_mesh, d_materialspecs);
       }
-            if(get_global_id(0)==4)
-              debug[0] = pkt.w;
+
       // >>>>>>>>> Roulette()
       // If the pkt weight is small, the packet tries
       // to survive a roulette.
@@ -509,6 +504,7 @@ if(get_global_id(0)==4)
         // No need to process any more packets.
         else{
             is_active = 0;
+            break;
         }
       }
     }
