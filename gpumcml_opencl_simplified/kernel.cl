@@ -431,6 +431,106 @@ void Spin(Packet *pkt, __global UINT64CL *rnd_x, __global UINT32CL *rnd_a,
   pkt->bz = sinp*last_az + cosp*last_bz;
 }
 
+__kernel void InitThreadState(__global float *tstates_photon_x, __global float *tstates_photon_y, __global float *tstates_photon_z,
+                                 __global float *tstates_photon_dx, __global float *tstates_photon_dy, __global float *tstates_photon_dz,
+                                 __global float *tstates_photon_w, __global float *tstates_photon_sleft,
+                                 __global UINT32CL *tstates_photon_tetra_id, __global UINT32CL *tstates_photon_mat_id, 
+                                 __global UINT32CL *tstates_is_active, __global const SimParamGPU *d_simparam_addr,
+                                 __global UINT64CL *d_state_x, __global UINT32CL *d_state_a)
+{
+  Packet pkt; 
+  SimParamGPU d_simparam = *d_simparam_addr;
+  // This is the unique ID for each thread (or thread ID = tid)
+  UINT32CL tid = get_global_id(0);
+  // Initialize the photon and copy into photon_<parameter x>
+  LaunchPacket(&pkt, d_simparam, &d_state_x[tid], &d_state_a[tid]); // Launch a new packet.
+
+  tstates_photon_x[tid] = pkt.x;
+  tstates_photon_y[tid] = pkt.y;
+  tstates_photon_z[tid] = pkt.z;
+  tstates_photon_dx[tid] = pkt.dx;
+  tstates_photon_dy[tid] = pkt.dy;
+  tstates_photon_dz[tid] = pkt.dz;
+  tstates_photon_w[tid] = pkt.w;
+  tstates_photon_sleft[tid] = pkt.sleft;
+  tstates_photon_tetra_id[tid] = pkt.tetraID;
+  tstates_photon_mat_id[tid] = pkt.matID;
+//
+  tstates_is_active[tid] = 1;
+}
+
+//////////////////////////////////////////////////////////////////////////////
+//   Save thread states (tstates), by copying the current photon 
+//   data from registers into global memory
+//////////////////////////////////////////////////////////////////////////////
+void SaveThreadState(__global float *tstates_photon_x, __global float *tstates_photon_y, __global float *tstates_photon_z,
+                                 __global float *tstates_photon_dx, __global float *tstates_photon_dy, __global float *tstates_photon_dz,
+                                 __global float *tstates_photon_w, __global float *tstates_photon_sleft,
+                                 __global UINT32CL *tstates_photon_tetra_id, __global UINT32CL *tstates_photon_mat_id,
+                                 __global UINT32CL *tstates_is_active,  
+                                 Packet *pkt, UINT32CL is_active)
+{
+  UINT32CL tid = get_global_id(0);
+
+  tstates_photon_x[tid] = pkt->x;
+  tstates_photon_y[tid] = pkt->y;
+  tstates_photon_z[tid] = pkt->z;
+  tstates_photon_dx[tid] = pkt->dx;
+  tstates_photon_dy[tid] = pkt->dy;
+  tstates_photon_dz[tid] = pkt->dz;
+  tstates_photon_w[tid] = pkt->w;
+  tstates_photon_sleft[tid] = pkt->sleft;
+  tstates_photon_tetra_id[tid] = pkt->tetraID;
+  tstates_photon_mat_id[tid] = pkt->matID;
+
+  tstates_is_active[tid] = is_active;
+}
+
+//////////////////////////////////////////////////////////////////////////////
+//   Restore thread states (tstates), by copying the latest photon 
+//   data from global memory back into the registers
+//////////////////////////////////////////////////////////////////////////////
+void RestoreThreadState(__global float *tstates_photon_x, __global float *tstates_photon_y, __global float *tstates_photon_z,
+                                 __global float *tstates_photon_dx, __global float *tstates_photon_dy, __global float *tstates_photon_dz,
+                                 __global float *tstates_photon_w, __global float *tstates_photon_sleft,
+                                 __global UINT32CL *tstates_photon_tetra_id, __global UINT32CL *tstates_photon_mat_id,
+                                 __global UINT32 *tstates_is_active,  
+                                 Packet *pkt, UINT32 *is_active)
+{
+  UINT32 tid = get_global_id(0);
+
+  pkt->x = tstates_photon_x[tid];
+  pkt->y = tstates_photon_y[tid];
+  pkt->z = tstates_photon_z[tid];
+  pkt->dx = tstates_photon_dx[tid];
+  pkt->dy = tstates_photon_dy[tid];
+  pkt->dz = tstates_photon_dz[tid];
+  pkt->w = tstates_photon_w[tid];
+  pkt->sleft = tstates_photon_sleft[tid];
+  pkt->tetraID = tstates_photon_tetra_id[tid];
+  pkt->matID = tstates_photon_mat_id[tid];
+
+  // vector a = (vector d) cross (positive z axis unit vector) and normalize it 
+  float4 d = (float4)(pkt->dx, pkt->dy, pkt->dz, 0);
+  float4 crossProduct;
+  if(d.x==0 && d.y==0)
+    crossProduct = cross(d, (float4)(1,0,0,0));
+  else
+    crossProduct = cross(d, (float4)(0,0,1,0));
+  float4 a = normalize(crossProduct);
+  pkt->ax = a.x;
+  pkt->ay = a.y;
+  pkt->az = a.z;
+
+  // vector b = (vector d) cross (vector a)
+  float4 b = cross(d,a);
+  pkt->bx = b.x;
+  pkt->by = b.y;
+  pkt->bz = b.z;
+
+  *is_active = tstates_is_active[tid];
+}
+
 //////////////////////////////////////////////////////////////////////////////
 //   Main Kernel for MCML (Calls the above inline device functions)
 //////////////////////////////////////////////////////////////////////////////
@@ -438,18 +538,27 @@ void Spin(Packet *pkt, __global UINT64CL *rnd_x, __global UINT32CL *rnd_a,
 __kernel void MCMLKernel(__global const SimParamGPU *d_simparam_addr,
                                   __global int *d_state_n_photons_left_addr, __global UINT64CL *d_state_x, 
                                   __global UINT32CL *d_state_a, __global const Tetra *d_tetra_mesh,
-                                  __global const Material *d_materialspecs, __global UINT64CL *absorption,__global UINT64CL *transmittance, __global float *debug)
+                                  __global const Material *d_materialspecs, __global UINT64CL *absorption,__global UINT64CL *transmittance, __global float *debug,
+                                   //__global GPUThreadStates tstates
+                                 __global float *tstates_photon_x, __global float *tstates_photon_y, __global float *tstates_photon_z,
+                                 __global float *tstates_photon_dx, __global float *tstates_photon_dy, __global float *tstates_photon_dz,
+                                 __global float *tstates_photon_w, __global float *tstates_photon_sleft,
+                                 __global UINT32 *tstates_photon_tetra_id, __global UINT32 *tstates_photon_mat_id, 
+                                 __global UINT32 *tstates_is_active  )
 {
   // packet structure stored in registers
   Packet pkt; 
   SimParamGPU d_simparam = *d_simparam_addr;
   UINT32CL tid = get_global_id(0);
 
-  LaunchPacket(&pkt, d_simparam, &d_state_x[tid], &d_state_a[tid]); // Launch a new packet.
-
   // Flag to indicate if this thread is active
   UINT32CL is_active ;
-  is_active = 1;
+  RestoreThreadState(
+     tstates_photon_x, tstates_photon_y, tstates_photon_z,
+     tstates_photon_dx, tstates_photon_dy, tstates_photon_dz, 
+     tstates_photon_w, tstates_photon_sleft, 
+     tstates_photon_tetra_id, tstates_photon_mat_id, tstates_is_active,
+     &pkt, &is_active);
 
   for (int iIndex = 0; iIndex < 50000; ++iIndex)
   {
@@ -465,19 +574,6 @@ __kernel void MCMLKernel(__global const SimParamGPU *d_simparam_addr,
       if (pkt.hit)
       {
         ReflectTransmit(d_simparam, &pkt, transmittance, &d_state_x[tid], &d_state_a[tid], d_tetra_mesh, d_materialspecs, debug, iIndex);
-        if (pkt.tetraID == 0)	//exited the tissue
-        {
-          if (atomic_sub(d_state_n_photons_left_addr, 1) > NUM_THREADS)
-          {
-            LaunchPacket(&pkt, d_simparam, &d_state_x[tid], &d_state_a[tid]); // Launch a new packet.
-          }
-          // No need to process any more packets.
-          else
-          {
-            is_active = 0;
-            break;
-          }
-        }
       }
       else
       {
@@ -496,7 +592,7 @@ __kernel void MCMLKernel(__global const SimParamGPU *d_simparam_addr,
         if (pkt.w != MCML_FP_ZERO && rand < CHANCE)
           pkt.w *= (FP_ONE / CHANCE);
         // This pkt is terminated.
-        else if (atomic_sub(d_state_n_photons_left_addr, 1) > NUM_THREADS){
+        else if (atomic_sub(d_state_n_photons_left_addr, 1) > 0){
             
           LaunchPacket(&pkt, d_simparam, &d_state_x[tid], &d_state_a[tid]); // Launch a new packet.
         
@@ -504,11 +600,18 @@ __kernel void MCMLKernel(__global const SimParamGPU *d_simparam_addr,
         // No need to process any more packets.
         else{
             is_active = 0;
-            break;
         }
       }
     }
-  } 
+  }
+  
+  barrier(CLK_GLOBAL_MEM_FENCE); 
+  SaveThreadState(
+     tstates_photon_x, tstates_photon_y, tstates_photon_z,
+     tstates_photon_dx, tstates_photon_dy, tstates_photon_dz, 
+     tstates_photon_w, tstates_photon_sleft, 
+     tstates_photon_tetra_id, tstates_photon_mat_id, tstates_is_active,
+     &pkt, is_active);
 }
 
 //////////////////////////////////////////////////////////////////////////////

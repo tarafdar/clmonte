@@ -117,9 +117,6 @@ typedef struct
   float s;            // step size [cm] to be consumed in next Hop
   float sleft;        // leftover step size [cm]
 
-  // index to layer where the photon resides
-  UINT32 layer;
-
   // flag to indicate if packet hits a boundary
   UINT32 hit;
   // id of the tetrahedron where the packet is currently in

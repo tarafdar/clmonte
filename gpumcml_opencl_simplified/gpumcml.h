@@ -157,7 +157,10 @@ int Conservation_Of_Energy(SimState* HostMem, SimulationStruct* sim, TriNode* Tr
 int InitDCMem(SimulationStruct *sim, Source *p_src, Tetra *tetra_mesh, Material *materialspec, cl_context context, cl_command_queue command_queue, cl_mem *simparam_mem_obj, cl_mem *tetra_mesh_mem_obj, cl_mem *materials_mem_obj);
 
 int InitSimStates(SimState* HostMem, SimulationStruct* sim, cl_context context, cl_command_queue command_queue, 
-        cl_mem *num_photons_simulated_mem_obj, cl_mem *a_mem_obj, cl_mem *x_mem_obj, cl_mem *absorption_mem_obj, cl_mem *transmittance_mem_obj, cl_mem *debug_mem_obj);
+        cl_mem *num_photons_simulated_mem_obj, cl_mem *a_mem_obj, cl_mem *x_mem_obj, cl_mem *absorption_mem_obj, cl_mem *transmittance_mem_obj, 
+        cl_mem *debug_mem_obj, cl_mem *photon_x_mem_obj, cl_mem *photon_y_mem_obj, cl_mem *photon_z_mem_obj, cl_mem *photon_dx_mem_obj, 
+        cl_mem *photon_dy_mem_obj, cl_mem *photon_dz_mem_obj, cl_mem *photon_w_mem_obj, cl_mem *photon_sleft_mem_obj, 
+        cl_mem *photon_tetra_id_mem_obj, cl_mem *photon_mat_id_mem_obj, cl_mem *is_active_mem_obj);
 
 int CopyDeviceToHostMem(SimState* HostMem, SimulationStruct* sim, cl_command_queue command_queue, cl_mem x_mem_obj, cl_mem absorption_mem_obj, cl_mem transmittance_mem_obj, cl_mem debug_mem_obj);
 
@@ -166,7 +169,10 @@ void FreeHostSimState(SimState *hstate);
 void FreeDeviceSimStates(cl_context context, cl_command_queue command_queue, cl_kernel initkernel, cl_kernel kernel, 
         cl_program program, cl_mem simparam_mem_obj, cl_mem num_photons_simulated_mem_obj, 
         cl_mem a_mem_obj, cl_mem x_mem_obj, cl_mem tetra_mesh_mem_obj, cl_mem materials_mem_obj,
-        cl_mem absorption_mem_obj, cl_mem transmittance_mem_obj, cl_mem debug_mem_obj
+        cl_mem absorption_mem_obj, cl_mem transmittance_mem_obj, cl_mem debug_mem_obj,
+        cl_mem photon_x_mem_obj, cl_mem photon_y_mem_obj,cl_mem photon_z_mem_obj, cl_mem photon_dx_mem_obj, 
+        cl_mem photon_dy_mem_obj, cl_mem photon_dz_mem_obj, cl_mem photon_w_mem_obj, cl_mem photon_sleft_mem_obj,
+        cl_mem photon_tetra_id_mem_obj, cl_mem photon_mat_id_mem_obj, cl_mem is_active_mem_obj
         );
 void PopulateTetraFromMeshFile(const char* filename, Tetra **p_tetra_mesh, TriNode **p_trinodes, TetraNode **p_tetranodes, int *p_Np, int *p_Nt);
 void PopulateMaterialFromInput(const char*, Material **p_material_spec, int *Nm);
