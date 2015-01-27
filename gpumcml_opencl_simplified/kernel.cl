@@ -220,9 +220,10 @@ void absorb(Packet *pkt, __global const Material *d_materialspecs, __global UINT
 
     pkt->w = w0 - dw;
 
+    //float dw = dw*WEIGHT_SCALE;
     // Store the absorbed weight in the material -> score in the absorption array
     // UINT64 used to maintain compatibility with the "atomic_add" method
-    atomic_add(&(absorption[pkt->tetraID]), WEIGHT_SCALE );
+    atomic_add(&(absorption[pkt->tetraID]), (UINT64CL)(dw*WEIGHT_SCALE));
 }
 
 float GetCosCrit(float ni, float nt)
@@ -263,6 +264,7 @@ void ReflectTransmit(SimParamGPU d_simparam, Packet *pkt, __global UINT64CL *tra
   float costheta = -dot((float4)(pkt->dx,pkt->dy,pkt->dz,0), (float4)(normal[0],normal[1],normal[2],0));
 
   float ni_nt = native_divide(ni, nt);
+
   float ca1 = costheta; //ca1 is cos(theta incidence) 
   float sa1 = sqrt(FP_ONE-ca1*ca1); //sa1 is sin(theta incidence)
   if (ca1 > COSZERO) sa1 = MCML_FP_ZERO;
@@ -338,7 +340,7 @@ void ReflectTransmit(SimParamGPU d_simparam, Packet *pkt, __global UINT64CL *tra
       
       if (aboutToLeaveSurface == 1) {
       
-      	//store surface fluence TODO: find more efficient way of donig this!
+      	//store surface fluence TODO: find more efficient way of doing this!
       	atomic_add(&(transmittance[(pkt->tetraID - 1) * 4 + pkt->faceIndexToHit]), (UINT64CL)(pkt->w * WEIGHT_SCALE));
       
       

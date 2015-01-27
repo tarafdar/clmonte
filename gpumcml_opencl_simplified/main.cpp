@@ -296,6 +296,8 @@ int RunGPUi(HostThreadState *hstate, Tetra *tetra_mesh, Material *materialspec, 
   CopyDeviceToHostMem(HostMem, hstate->sim, command_queue, x_mem_obj, absorption_mem_obj, transmittance_mem_obj,  debug_mem_obj);
   FreeDeviceSimStates(context, command_queue, initkernel,kernel, program, simparam_mem_obj, num_photons_left_mem_obj, a_mem_obj, x_mem_obj, tetra_mesh_mem_obj, materials_mem_obj, absorption_mem_obj, transmittance_mem_obj, debug_mem_obj);
 
+	
+
   return i;
 }
 
@@ -338,6 +340,8 @@ static void DoOneSimulation(int sim_id, SimulationStruct* simulation,
   printf( ">>>>>>Simulation Speed: %e photon events per second\n", total_steps/elapsed);
   
   Write_Simulation_Results(hss, simulation, elapsed, trinodes, tetranodes, materialspec, tetra_mesh, simulation->outp_filename);
+
+  Conservation_Of_Energy(hss, simulation, trinodes);
 
   // Free SimState structs.
   FreeHostSimState(hss);

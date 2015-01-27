@@ -82,8 +82,8 @@ typedef struct
   UINT32 *a;
 
   // output data
-  UINT64* absorption;
-  UINT64* transmittance;
+  UINT64* absorption; // Array of nTetras + 1
+  UINT64* transmittance; // Array of nTetras * 4
 } SimState;
 
 // Everything a host thread needs to know in order to run simulation on
@@ -151,6 +151,8 @@ extern void usage(const char *prog_name);
 extern int interpret_arg(int argc, char* argv[], SimulationStruct *p_simulation);
 
 extern int Write_Simulation_Results(SimState* HostMem, SimulationStruct* sim, double simulation_time, TriNode* TriNodeList, TetraNode* TetraNodeList, Material* material_spec, Tetra* tetra_mesh, char* output_filename);
+
+int Conservation_Of_Energy(SimState* HostMem, SimulationStruct* sim, TriNode* TriNodeList);
 
 int InitDCMem(SimulationStruct *sim, Source *p_src, Tetra *tetra_mesh, Material *materialspec, cl_context context, cl_command_queue command_queue, cl_mem *simparam_mem_obj, cl_mem *tetra_mesh_mem_obj, cl_mem *materials_mem_obj);
 
