@@ -496,6 +496,7 @@ void ParseMaterial(const char* filename, Material** p_mats, int *p_Nm)
     mat.HGCoeff1 = (1+mat.g * mat.g)/(2*mat.g);
     mat.HGCoeff2 = (1-mat.g * mat.g)*(1-mat.g * mat.g) / (2*mat.g);
     mat.absfrac = 1 - mat.mu_s / (mat.mu_s+mat.mu_a);
+    mat.n = 1;
   }
 
   // Get E-Type

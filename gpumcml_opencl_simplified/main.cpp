@@ -424,8 +424,8 @@ int RunGPUi(HostThreadState *hstate, Tetra *tetra_mesh, Material *materialspec, 
     exit(-1);
   }
 
-  size_t global_size = NUM_BLOCKS*NUM_THREADS_PER_BLOCK;
-  size_t local_size = NUM_THREADS_PER_BLOCK;
+  size_t global_size = 1;//NUM_BLOCKS*NUM_THREADS_PER_BLOCK;
+  size_t local_size = 1;//NUM_THREADS_PER_BLOCK;
 
   ret = clEnqueueNDRangeKernel(command_queue, initkernel, 1, NULL, &global_size, &local_size, 0, NULL, NULL);
   if(ret != CL_SUCCESS){

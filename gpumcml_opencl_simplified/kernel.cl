@@ -170,7 +170,13 @@ int HitBoundary(Packet *pkt, __global const Tetra *d_tetra_mesh, __global float 
   orth_dis[1] = dot(p,n[1])-n[1].w;
   orth_dis[2] = dot(p,n[2])-n[2].w;
   orth_dis[3] = dot(p,n[3])-n[3].w;
-
+if(get_global_id(0)==0)
+{
+if(orth_dis[0]<0 || orth_dis[1]<0 || orth_dis[2]<0 || orth_dis[3]<0)
+{
+  debug[0] = debug[0]+1;
+}
+}
   //if the packet is moving away from a face, its distance to that face's intersection is infinity.
   move_dis[0] = cosdn[0]>=0 ? FLT_MAX : -native_divide(orth_dis[0], cosdn[0]);
   move_dis[1] = cosdn[1]>=0 ? FLT_MAX : -native_divide(orth_dis[1], cosdn[1]);
@@ -245,15 +251,18 @@ void ReflectTransmit(SimParamGPU d_simparam, Packet *pkt, __global UINT64CL *tra
   Tetra nextTetra;
   int aboutToLeaveSurface = 0;
   float ni, nt; //refractive indices
-  ni = d_materialspecs[tetra.matID].n;
-  
+  ni = d_materialspecs[tetra.matID].n;  
   if (tetra.adjTetras[pkt->faceIndexToHit] == 0 ) {
   	//about to leave the surface
         aboutToLeaveSurface = 1;
   } 
   nextTetra = d_tetra_mesh[tetra.adjTetras[pkt->faceIndexToHit]];
   nt = d_materialspecs[nextTetra.matID].n;  
-
+if(get_global_id(0)==0)
+{
+  if(nt != ni)
+    debug[1]=debug[1]+1;
+}
   float crit_cos=0;	//initialize as cos=0, means total internal reflection never occurs.
   if (nt<ni)	//total internal reflection may occur
   {
@@ -273,6 +282,10 @@ void ReflectTransmit(SimParamGPU d_simparam, Packet *pkt, __global UINT64CL *tra
   
   if (costheta <= crit_cos)	//total internal reflection occurs
   {
+if(get_global_id(0)==0)
+{
+    debug[2]=debug[2]+1;
+}
     //reflected direction = original_direction - 2(original_direction dot normal)*normal
     pkt->dx = pkt->dx + 2*ca1*normal[0]; //here the costheta must be the same as the one Li defined during the TIR step, which is negative d dot n, so the plus sign in the middle is consistent with the minus sign in the formula that's in the comment above
     pkt->dy = pkt->dy + 2*ca1*normal[1];
@@ -314,11 +327,28 @@ void ReflectTransmit(SimParamGPU d_simparam, Packet *pkt, __global UINT64CL *tra
 
     if (rFresnel < rand) //refract
     {
+if(get_global_id(0)==0)
+{
+    debug[4]=debug[4]+1;
+    debug[13] = rFresnel;
+    debug[14] = rand;
+}
       // refracted direction = n1/n2*original_direction - [n1/n2*cos(theta incidence) + sqrt(1-sin^2(theta transmitt))]*normal
+if(get_global_id(0)==0)
+{
+    debug[5]=pkt->dx;
+    debug[6]=pkt->dy;
+    debug[7]=pkt->dz;
+}
       pkt->dx = ni_nt*(pkt->dx) - (ni_nt*(-ca1)+ca2)*normal[0]; 
       pkt->dy = ni_nt*(pkt->dy) - (ni_nt*(-ca1)+ca2)*normal[1]; 
       pkt->dz = ni_nt*(pkt->dz) - (ni_nt*(-ca1)+ca2)*normal[2]; 
-      
+if(get_global_id(0)==0)
+{
+    debug[8]=pkt->dx;
+    debug[9]=pkt->dy;
+    debug[10]=pkt->dz;
+}      
       // auxilary updating function
       // vector a = (vector d) cross (positive z axis unit vector) and normalize it 
       float4 d = (float4)(pkt->dx, pkt->dy, pkt->dz, 0);
@@ -351,6 +381,16 @@ void ReflectTransmit(SimParamGPU d_simparam, Packet *pkt, __global UINT64CL *tra
     }
     else //reflect
     {
+if(get_global_id(0)==0)
+{
+    debug[3]=debug[3]+1;
+    debug[11] = rFresnel;
+    debug[12] = rand;
+    debug[15] = ni;
+    debug[16] = nt;
+    debug[17] = ca1;
+    debug[18] = ca2;
+}
       //reflected direction = original_direction - 2(original_direction dot normal)*normal
       pkt->dx = pkt->dx + 2*ca1*normal[0]; //here the costheta must be the same as the one Li defined during the TIR step, which is negative d dot n, so the plus sign in the middle is consistent with the minus sign in the formula that's in the comment above
       pkt->dy = pkt->dy + 2*ca1*normal[1];
