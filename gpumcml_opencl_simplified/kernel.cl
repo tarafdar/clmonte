@@ -86,7 +86,6 @@ void LaunchPacket(Packet *pkt, SimParamGPU d_simparam, __global UINT64CL *rnd_x,
   pkt->dy = native_sin(phi) * native_sin(theta);
   pkt->dz = native_cos(phi);
   pkt->w = FP_ONE;
-  pkt->sleft = MCML_FP_ZERO;
 
   // vector a = (vector d) cross (positive z axis unit vector) and normalize it 
   float4 d = (float4)(pkt->dx, pkt->dy, pkt->dz, 0);
@@ -118,18 +117,12 @@ void ComputeStepSize(Packet *pkt,
                                 __global float *debug, int index)
 {
   // Make a new step if no leftover.
-  if (pkt->sleft == MCML_FP_ZERO)
+  if (pkt->s == MCML_FP_ZERO)
   {
     //TEMP CHANGE: CHANGE BACK!!! CHANGED BACK :)
     float rand = rand_MWC_oc(rnd_x, rnd_a);
     //float rand = 0;
-    UINT32CL materialID = d_tetra_mesh[pkt->tetraID].matID;
-    pkt->s = -log(rand) * d_materials[materialID].rmu_as;
-  }
-  else {
-    UINT32CL materialID = d_tetra_mesh[pkt->tetraID].matID;
-    pkt->s = pkt->sleft * d_materials[materialID].rmu_as;
-    pkt->sleft = MCML_FP_ZERO;
+    pkt->s = -log(rand);
   }
 }
 
@@ -140,7 +133,7 @@ void ComputeStepSize(Packet *pkt,
 //   If the projected step hits the boundary, the packet steps to the boundary
 //   and the remainder of the step size is stored in sleft for the next iteration
 //////////////////////////////////////////////////////////////////////////////
-int HitBoundary(Packet *pkt, __global const Tetra *d_tetra_mesh, __global float *debug, int i)
+int HitBoundary(Packet *pkt, __global const Tetra *d_tetra_mesh, __global const Material *d_materials, __global float *debug, int i)
 {
   /* step size to boundary. */
   //cos of the angle between direction and normal vector.
@@ -170,13 +163,7 @@ int HitBoundary(Packet *pkt, __global const Tetra *d_tetra_mesh, __global float 
   orth_dis[1] = dot(p,n[1])-n[1].w;
   orth_dis[2] = dot(p,n[2])-n[2].w;
   orth_dis[3] = dot(p,n[3])-n[3].w;
-if(get_global_id(0)==0)
-{
-if(orth_dis[0]<0 || orth_dis[1]<0 || orth_dis[2]<0 || orth_dis[3]<0)
-{
-  debug[0] = debug[0]+1;
-}
-}
+
   //if the packet is moving away from a face, its distance to that face's intersection is infinity.
   move_dis[0] = cosdn[0]>=0 ? FLT_MAX : -native_divide(orth_dis[0], cosdn[0]);
   move_dis[1] = cosdn[1]>=0 ? FLT_MAX : -native_divide(orth_dis[1], cosdn[1]);
@@ -192,28 +179,26 @@ if(orth_dis[0]<0 || orth_dis[1]<0 || orth_dis[2]<0 || orth_dis[3]<0)
   pkt->faceIndexToHit = minIndex;
   pkt->nextTetraID = tetra.adjTetras[minIndex];
   pkt->matID = tetra.matID;
-  if(move_dis[minIndex] > pkt->s)
+  
+  float rmu_as = d_materials[tetra.matID].rmu_as;
+  float mu_as = d_materials[tetra.matID].mu_as;
+  float canmove = pkt->s * rmu_as;
+  if(move_dis[minIndex] > canmove)
   {
-    pkt->s = pkt->sleft;
-    pkt->sleft = 0;
+    pkt->s = MCML_FP_ZERO;
+    pkt->x += canmove *pkt->dx;
+    pkt->y += canmove *pkt->dy;
+    pkt->z += canmove *pkt->dz;
     return 0;	//means won't hit in this step
   }
   else
   {
-    pkt->sleft = pkt->s - move_dis[minIndex];
-    pkt->s = move_dis[minIndex];
+    pkt->s = pkt->s - move_dis[minIndex] * mu_as;
+    pkt->x += move_dis[minIndex] * pkt->dx;
+    pkt->y += move_dis[minIndex] * pkt->dy;
+    pkt->z += move_dis[minIndex] * pkt->dz;
     return 1;	//means will hit the face specified by minIndex
   }
-}
-
-//////////////////////////////////////////////////////////////////////////////
-//   Move the packet by step size (s) along direction (dx,dy,dz) 
-//////////////////////////////////////////////////////////////////////////////
-void Hop(Packet *pkt)
-{
-  pkt->x += pkt->s * pkt->dx;
-  pkt->y += pkt->s * pkt->dy;
-  pkt->z += pkt->s * pkt->dz;
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -249,20 +234,23 @@ void ReflectTransmit(SimParamGPU d_simparam, Packet *pkt, __global UINT64CL *tra
   //TODO: Should we store the cos_crit in each Tetra for each face?
   Tetra tetra = d_tetra_mesh[pkt->tetraID];
   Tetra nextTetra;
-  int aboutToLeaveSurface = 0;
   float ni, nt; //refractive indices
   ni = d_materialspecs[tetra.matID].n;  
-  if (tetra.adjTetras[pkt->faceIndexToHit] == 0 ) {
-  	//about to leave the surface
-        aboutToLeaveSurface = 1;
-  } 
-  nextTetra = d_tetra_mesh[tetra.adjTetras[pkt->faceIndexToHit]];
+  UINT32CL adjTetraID = pkt->nextTetraID;
+  nextTetra = d_tetra_mesh[adjTetraID];
   nt = d_materialspecs[nextTetra.matID].n;  
-if(get_global_id(0)==0)
-{
-  if(nt != ni)
-    debug[1]=debug[1]+1;
-}
+  
+  if (ni==nt)
+  {
+    pkt->tetraID = adjTetraID;
+    if (adjTetraID == 0)
+    {
+      atomic_add(&(transmittance[(pkt->tetraID - 1) * 4 + pkt->faceIndexToHit]), (UINT64CL)(pkt->w * WEIGHT_SCALE));
+      pkt->w = MCML_FP_ZERO;
+    }
+    return;
+  }
+
   float crit_cos=0;	//initialize as cos=0, means total internal reflection never occurs.
   if (nt<ni)	//total internal reflection may occur
   {
@@ -282,10 +270,6 @@ if(get_global_id(0)==0)
   
   if (costheta <= crit_cos)	//total internal reflection occurs
   {
-if(get_global_id(0)==0)
-{
-    debug[2]=debug[2]+1;
-}
     //reflected direction = original_direction - 2(original_direction dot normal)*normal
     pkt->dx = pkt->dx + 2*ca1*normal[0]; //here the costheta must be the same as the one Li defined during the TIR step, which is negative d dot n, so the plus sign in the middle is consistent with the minus sign in the formula that's in the comment above
     pkt->dy = pkt->dy + 2*ca1*normal[1];
@@ -327,28 +311,11 @@ if(get_global_id(0)==0)
 
     if (rFresnel < rand) //refract
     {
-if(get_global_id(0)==0)
-{
-    debug[4]=debug[4]+1;
-    debug[13] = rFresnel;
-    debug[14] = rand;
-}
       // refracted direction = n1/n2*original_direction - [n1/n2*cos(theta incidence) + sqrt(1-sin^2(theta transmitt))]*normal
-if(get_global_id(0)==0)
-{
-    debug[5]=pkt->dx;
-    debug[6]=pkt->dy;
-    debug[7]=pkt->dz;
-}
       pkt->dx = ni_nt*(pkt->dx) - (ni_nt*(-ca1)+ca2)*normal[0]; 
       pkt->dy = ni_nt*(pkt->dy) - (ni_nt*(-ca1)+ca2)*normal[1]; 
       pkt->dz = ni_nt*(pkt->dz) - (ni_nt*(-ca1)+ca2)*normal[2]; 
-if(get_global_id(0)==0)
-{
-    debug[8]=pkt->dx;
-    debug[9]=pkt->dy;
-    debug[10]=pkt->dz;
-}      
+   
       // auxilary updating function
       // vector a = (vector d) cross (positive z axis unit vector) and normalize it 
       float4 d = (float4)(pkt->dx, pkt->dy, pkt->dz, 0);
@@ -368,7 +335,7 @@ if(get_global_id(0)==0)
       pkt->by = b.y;
       pkt->bz = b.z;
       
-      if (aboutToLeaveSurface == 1) {
+      if (adjTetraID == 0) {
       
       	//store surface fluence TODO: find more efficient way of doing this!
       	atomic_add(&(transmittance[(pkt->tetraID - 1) * 4 + pkt->faceIndexToHit]), (UINT64CL)(pkt->w * WEIGHT_SCALE));
@@ -381,16 +348,6 @@ if(get_global_id(0)==0)
     }
     else //reflect
     {
-if(get_global_id(0)==0)
-{
-    debug[3]=debug[3]+1;
-    debug[11] = rFresnel;
-    debug[12] = rand;
-    debug[15] = ni;
-    debug[16] = nt;
-    debug[17] = ca1;
-    debug[18] = ca2;
-}
       //reflected direction = original_direction - 2(original_direction dot normal)*normal
       pkt->dx = pkt->dx + 2*ca1*normal[0]; //here the costheta must be the same as the one Li defined during the TIR step, which is negative d dot n, so the plus sign in the middle is consistent with the minus sign in the formula that's in the comment above
       pkt->dy = pkt->dy + 2*ca1*normal[1];
@@ -607,9 +564,7 @@ __kernel void MCMLKernel(__global const SimParamGPU *d_simparam_addr,
     {
       ComputeStepSize(&pkt,&d_state_x[tid], &d_state_a[tid], d_tetra_mesh, d_materialspecs, debug, iIndex);
       
-      pkt.hit = HitBoundary(&pkt, d_tetra_mesh, debug, iIndex);
-
-      Hop(&pkt);
+      pkt.hit = HitBoundary(&pkt, d_tetra_mesh, d_materialspecs, debug, iIndex);
 
       if (pkt.hit)
       {

@@ -51,12 +51,14 @@ int interpret_arg(int argc, char* argv[], SimulationStruct *p_simulation)
 int Conservation_Of_Energy(SimState* HostMem, SimulationStruct* sim, TriNode* TriNodeList)
 {
   float output_energy = 0;
-
+  float absorption = 0;
+  float transmittance = 0;
   // First sum the total absorption energy
   int i;
   for (i = 1; i <= sim->nTetras; i++)
     {
       output_energy += (double)(HostMem->absorption[i])/(double)WEIGHT_SCALE;
+      absorption += (double)(HostMem->absorption[i])/(double)WEIGHT_SCALE;
     }
 
   // Next sum up the transmitted energy
@@ -70,6 +72,7 @@ int Conservation_Of_Energy(SimState* HostMem, SimulationStruct* sim, TriNode* Tr
       if(TriNodeList[TriNodeIndex].N0!=0)
       {
         output_energy += (double) HostMem->transmittance[TriNodeIndex]/(double)(WEIGHT_SCALE);
+        transmittance += (double) HostMem->transmittance[TriNodeIndex]/(double)(WEIGHT_SCALE);
       }else
       {
         //do nothing, not a surface element or just no light coming out of this part of the surface
@@ -78,7 +81,8 @@ int Conservation_Of_Energy(SimState* HostMem, SimulationStruct* sim, TriNode* Tr
   }
 
   printf ("Total Output Energy:	%f\n", output_energy);
-
+  printf ("transmittance ratio: %f\n", transmittance/output_energy);
+  printf ("absorption ratio: %f\n", absorption/output_energy);
   return 0;
 }
 
@@ -119,7 +123,7 @@ int Write_Simulation_Results(SimState* HostMem, SimulationStruct* sim, double si
       //if (HostMem->transmittance[TriNodeIndex] > 0 ){
       if(TriNodeList[TriNodeIndex].N0!=0){
       
-      fluence = (double) HostMem->transmittance[TriNodeIndex]/(WEIGHT_SCALE * TriNodeList[TriNodeIndex].area);
+      fluence = (double) HostMem->transmittance[TriNodeIndex]/(WEIGHT_SCALE);// * TriNodeList[TriNodeIndex].area);
       
       fout << TriNodeList[TriNodeIndex].N0 << " \t"
            << TriNodeList[TriNodeIndex].N1 << " \t"
@@ -137,7 +141,7 @@ int Write_Simulation_Results(SimState* HostMem, SimulationStruct* sim, double si
   fout << "Internal Fluence" << endl;
   for(int TetraID = 1; TetraID <= sim->nTetras; ++TetraID)
   {
-      fluence = (double) HostMem->absorption[TetraID]/(WEIGHT_SCALE * TetraNodeList[TetraID].volume * material_spec[tetra_mesh[TetraID].matID].mu_a);
+      fluence = (double) HostMem->absorption[TetraID]/(WEIGHT_SCALE);// * TetraNodeList[TetraID].volume * material_spec[tetra_mesh[TetraID].matID].mu_a);
       //fluence = (double) HostMem->absorption[TetraID];
       fout << TetraNodeList[TetraID].N0 << " \t"
            << TetraNodeList[TetraID].N1 << " \t"
@@ -492,11 +496,10 @@ void ParseMaterial(const char* filename, Material** p_mats, int *p_Nm)
     Material &mat = (*p_mats)[i];
     sscanf (linemat, "%f %f %f %f", &(mat.mu_a), &(mat.mu_s), &(mat.g), &(mat.n));
     mat.mu_as = mat.mu_a + mat.mu_s;
-    mat.rmu_as = 1.0/mat.mu_as;
+    mat.rmu_as = 1.0f/mat.mu_as;
     mat.HGCoeff1 = (1+mat.g * mat.g)/(2*mat.g);
     mat.HGCoeff2 = (1-mat.g * mat.g)*(1-mat.g * mat.g) / (2*mat.g);
     mat.absfrac = 1 - mat.mu_s / (mat.mu_s+mat.mu_a);
-    mat.n = 1;
   }
 
   // Get E-Type

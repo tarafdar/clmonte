@@ -260,25 +260,7 @@ int CopyDeviceToHostMem(SimState* HostMem, SimulationStruct* sim, cl_command_que
     printf("Error reading debug buffer, exiting\n");
     exit(-1);
   }
-  printf("# of times when packet is outside the tetrahedron it should be in: %d\n", (int)debug[0]);
-  printf("# of times when nt != ni: %d\n", (int)debug[1]);
-  printf("# of times when total internal reflection occurs: %d\n", (int)debug[2]);
-  printf("# of times when fresnel reflection occurs: %d\n", (int)debug[3]);
-  printf("# of times when fresnel refraction occurs: %d\n", (int)debug[4]);
-  printf("before refraction, dx: %f\n", debug[5]);
-  printf("before refraction, dy: %f\n", debug[6]);
-  printf("before refraction, dz: %f\n", debug[7]);
-  printf("after refraction, dx: %f\n", debug[8]);
-  printf("after refraction, dy: %f\n", debug[9]);
-  printf("after refraction, dz: %f\n", debug[10]);
-  printf("Fresnel reflection rFresnel: %f\n", debug[11]);
-  printf("Fresnel reflection rand: %f\n", debug[12]);
-  printf("Fresnel refraction rFresnel: %f\n", debug[13]);
-  printf("Fresnel refraction rand: %f\n", debug[14]);
-  printf("Fresnel refraction ni: %f\n", debug[15]);
-  printf("Fresnel refraction nt: %f\n", debug[16]);
-  printf("Fresnel refraction ca1: %f\n", debug[17]);
-  printf("Fresnel refraction ca2: %f\n", debug[18]);
+  
   //Also copy the state of the RNG's
   ret = clEnqueueReadBuffer(command_queue, x_mem_obj, CL_TRUE, 0, NUM_THREADS * sizeof(UINT64), HostMem->x, 0, NULL, NULL);
   if(ret != CL_SUCCESS){
