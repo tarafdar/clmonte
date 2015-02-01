@@ -382,7 +382,7 @@ void ReflectTransmit(SimParamGPU d_simparam, Packet *pkt, __global UINT64CL *tra
 // 	 azimuthal angle psi.
 //////////////////////////////////////////////////////////////////////////////
 void Spin(Packet *pkt, __global UINT64CL *rnd_x, __global UINT32CL *rnd_a,
-                     __global const Tetra *d_tetra_mesh, __global const Material *d_materialspec)
+                     __global const Tetra *d_tetra_mesh, __global const Material *d_materialspec, __global float *debug)
 {
   float cost, sint; // cosine and sine of the polar deflection angle theta
   float cosp, sinp; // cosine and sine of the azimuthal angle psi
@@ -395,7 +395,7 @@ void Spin(Packet *pkt, __global UINT64CL *rnd_x, __global UINT32CL *rnd_a,
   rand = FP_TWO * rand_MWC_co(rnd_x, rnd_a) - FP_ONE;	//rand is sampled from -1 to 1
 
   Material mat = d_materialspec[pkt->matID];
-  cost = mat.HGCoeff1 - native_divide(mat.HGCoeff2, (1-mat.g * rand));
+  cost = mat.HGCoeff1 - native_divide(mat.HGCoeff2, (1-mat.g*rand)*(1-mat.g*rand));
   
   sint = sqrt(FP_ONE - cost * cost);
 
@@ -573,7 +573,7 @@ __kernel void MCMLKernel(__global const SimParamGPU *d_simparam_addr,
       else
       {
         absorb (&pkt, d_materialspecs, absorption, debug, iIndex);
-        Spin(&pkt, &d_state_x[tid], &d_state_a[tid], d_tetra_mesh, d_materialspecs);
+        Spin(&pkt, &d_state_x[tid], &d_state_a[tid], d_tetra_mesh, d_materialspecs, debug);
       }
 
       // >>>>>>>>> Roulette()

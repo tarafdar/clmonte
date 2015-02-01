@@ -118,7 +118,7 @@ int InitSimStates(SimState* HostMem, SimulationStruct* sim, cl_context context, 
   HostMem->absorption = (UINT64*)malloc(size);
   for(int i = 1; i < sim->nTetras+1; i++)
   {
-    HostMem->absorption[i] = 1;
+    HostMem->absorption[i] = 0;
   }
   ret = clEnqueueWriteBuffer(command_queue, *absorption_mem_obj, CL_TRUE, 0, size, HostMem->absorption, 0, NULL, NULL);
   if(ret!=CL_SUCCESS){
@@ -260,7 +260,7 @@ int CopyDeviceToHostMem(SimState* HostMem, SimulationStruct* sim, cl_command_que
     printf("Error reading debug buffer, exiting\n");
     exit(-1);
   }
-  
+  printf("bad d: %d\n", (int)debug[0]);
   //Also copy the state of the RNG's
   ret = clEnqueueReadBuffer(command_queue, x_mem_obj, CL_TRUE, 0, NUM_THREADS * sizeof(UINT64), HostMem->x, 0, NULL, NULL);
   if(ret != CL_SUCCESS){
