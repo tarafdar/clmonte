@@ -62,7 +62,7 @@ int InitDCMem(SimulationStruct *sim, Source *p_src, Tetra *tetra_mesh, Material 
 //////////////////////////////////////////////////////////////////////////////
 int InitSimStates(SimState* HostMem, SimulationStruct* sim, cl_context context, cl_command_queue command_queue, 
         cl_mem *num_photons_left_mem_obj, cl_mem *a_mem_obj, cl_mem *x_mem_obj, cl_mem *absorption_mem_obj, cl_mem *transmittance_mem_obj, cl_mem *debug_mem_obj, cl_mem *photon_x_mem_obj ,cl_mem *photon_y_mem_obj, cl_mem *photon_z_mem_obj, cl_mem *photon_dx_mem_obj, 
-        cl_mem *photon_dy_mem_obj, cl_mem *photon_dz_mem_obj, cl_mem *photon_w_mem_obj, cl_mem *photon_sleft_mem_obj, 
+        cl_mem *photon_dy_mem_obj, cl_mem *photon_dz_mem_obj, cl_mem *photon_w_mem_obj,
         cl_mem *photon_tetra_id_mem_obj, cl_mem *photon_mat_id_mem_obj, cl_mem *is_active_mem_obj)
 {  
   unsigned int size;
@@ -208,11 +208,6 @@ int InitSimStates(SimState* HostMem, SimulationStruct* sim, cl_context context, 
     printf("Error creating photon_w buffer, exiting\n");
     exit(-1);
   }
-  *photon_sleft_mem_obj = clCreateBuffer(context, CL_MEM_READ_WRITE, size, NULL, &ret);
-  if(ret!= CL_SUCCESS){
-    printf("Error creating photon_sleft buffer, exiting\n");
-    exit(-1);
-  }
   size = NUM_THREADS * sizeof(UINT32);
   *photon_tetra_id_mem_obj = clCreateBuffer(context, CL_MEM_READ_WRITE, size, NULL, &ret);
   if(ret!= CL_SUCCESS){
@@ -301,7 +296,7 @@ void FreeDeviceSimStates(cl_context context, cl_command_queue command_queue, cl_
         cl_mem a_mem_obj, cl_mem x_mem_obj, cl_mem tetra_mesh_mem_obj, cl_mem materials_mem_obj,
         cl_mem absorption_mem_obj, cl_mem transmittance_mem_obj, cl_mem debug_mem_obj,
         cl_mem photon_x_mem_obj, cl_mem photon_y_mem_obj,cl_mem photon_z_mem_obj, cl_mem photon_dx_mem_obj, 
-        cl_mem photon_dy_mem_obj, cl_mem photon_dz_mem_obj, cl_mem photon_w_mem_obj, cl_mem photon_sleft_mem_obj,
+        cl_mem photon_dy_mem_obj, cl_mem photon_dz_mem_obj, cl_mem photon_w_mem_obj,
         cl_mem photon_tetra_id_mem_obj, cl_mem photon_mat_id_mem_obj, cl_mem is_active_mem_obj
      )
 {
@@ -404,11 +399,6 @@ void FreeDeviceSimStates(cl_context context, cl_command_queue command_queue, cl_
  ret = clReleaseMemObject(photon_w_mem_obj);
  if(ret!= CL_SUCCESS){
     printf("Error releasing photon_w mem obj, exiting\n");
-    exit(-1);
- }
- ret = clReleaseMemObject(photon_sleft_mem_obj);
- if(ret!= CL_SUCCESS){
-    printf("Error releasing photon_sleft mem obj, exiting\n");
     exit(-1);
  }
  ret = clReleaseMemObject(photon_tetra_id_mem_obj);

@@ -31,7 +31,6 @@ cl_mem photon_dx_mem_obj;
 cl_mem photon_dy_mem_obj;
 cl_mem photon_dz_mem_obj;
 cl_mem photon_w_mem_obj;
-cl_mem photon_sleft_mem_obj;
 cl_mem photon_tetra_id_mem_obj;
 cl_mem photon_mat_id_mem_obj;
 cl_mem is_active_mem_obj;
@@ -178,7 +177,7 @@ int RunGPUi(HostThreadState *hstate, Tetra *tetra_mesh, Material *materialspec, 
   // Init the remaining states.
   InitSimStates(HostMem, hstate->sim, context, command_queue, &num_photons_left_mem_obj, 
           &a_mem_obj, &x_mem_obj, &absorption_mem_obj, &transmittance_mem_obj, &debug_mem_obj, &photon_x_mem_obj, &photon_y_mem_obj,
-          &photon_z_mem_obj, &photon_dx_mem_obj, &photon_dy_mem_obj, &photon_dz_mem_obj, &photon_w_mem_obj, &photon_sleft_mem_obj,           
+          &photon_z_mem_obj, &photon_dx_mem_obj, &photon_dy_mem_obj, &photon_dz_mem_obj, &photon_w_mem_obj,
           &photon_tetra_id_mem_obj, &photon_mat_id_mem_obj, &is_active_mem_obj);
 
   InitDCMem(hstate->sim, p_src, tetra_mesh, materialspec, context, command_queue, &simparam_mem_obj, &tetra_mesh_mem_obj, &materials_mem_obj);
@@ -254,43 +253,37 @@ int RunGPUi(HostThreadState *hstate, Tetra *tetra_mesh, Material *materialspec, 
     exit(-1);
   }
 
-  ret = clSetKernelArg(initkernel, 7, sizeof(cl_mem),(void *)&photon_sleft_mem_obj);
-  if(ret != CL_SUCCESS){
-    printf("Error setting photon sleft init kernel argument, exiting\n");
-    exit(-1);
-  }
-
-  ret = clSetKernelArg(initkernel, 8, sizeof(cl_mem),(void *)&photon_tetra_id_mem_obj);
+  ret = clSetKernelArg(initkernel, 7, sizeof(cl_mem),(void *)&photon_tetra_id_mem_obj);
   if(ret != CL_SUCCESS){
     printf("Error setting photon tetra id init kernel argument, exiting\n");
     exit(-1);
   }
 
-  ret = clSetKernelArg(initkernel, 9, sizeof(cl_mem),(void *)&photon_mat_id_mem_obj);
+  ret = clSetKernelArg(initkernel, 8, sizeof(cl_mem),(void *)&photon_mat_id_mem_obj);
   if(ret != CL_SUCCESS){
     printf("Error setting photon mat id init kernel argument, exiting\n");
     exit(-1);
   }
 
-  ret = clSetKernelArg(initkernel, 10, sizeof(cl_mem),(void *)&is_active_mem_obj);
+  ret = clSetKernelArg(initkernel, 9, sizeof(cl_mem),(void *)&is_active_mem_obj);
   if(ret != CL_SUCCESS){
     printf("Error setting is active init kernel argument, exiting\n");
     exit(-1);
   }
 
-  ret = clSetKernelArg(initkernel, 11, sizeof(cl_mem),(void *)&simparam_mem_obj);
+  ret = clSetKernelArg(initkernel, 10, sizeof(cl_mem),(void *)&simparam_mem_obj);
   if(ret != CL_SUCCESS){
     printf("Error setting simparam init kernel argument, exiting\n");
     exit(-1);
   }
 
-  ret = clSetKernelArg(initkernel, 12, sizeof(cl_mem),(void *)&x_mem_obj);
+  ret = clSetKernelArg(initkernel, 11, sizeof(cl_mem),(void *)&x_mem_obj);
   if(ret != CL_SUCCESS){
     printf("Error setting x init kernel argument, exiting\n");
     exit(-1);
   }
   
-  ret = clSetKernelArg(initkernel, 13, sizeof(cl_mem),(void *)&a_mem_obj);
+  ret = clSetKernelArg(initkernel, 12, sizeof(cl_mem),(void *)&a_mem_obj);
   if(ret != CL_SUCCESS){
     printf("Error setting a init kernel argument, exiting\n");
     exit(-1);
@@ -400,12 +393,6 @@ int RunGPUi(HostThreadState *hstate, Tetra *tetra_mesh, Material *materialspec, 
     exit(-1);
   }
   
-  ret = clSetKernelArg(kernel, argnum++, sizeof(cl_mem),(void *)&photon_sleft_mem_obj);
-  if(ret != CL_SUCCESS){
-    printf("Error setting photon_sleft kernel argument, exiting\n");
-    exit(-1);
-  }
-  
   ret = clSetKernelArg(kernel, argnum++, sizeof(cl_mem),(void *)&photon_tetra_id_mem_obj);
   if(ret != CL_SUCCESS){
     printf("Error setting photon_tetra_id kernel argument, exiting\n");
@@ -470,7 +457,7 @@ int RunGPUi(HostThreadState *hstate, Tetra *tetra_mesh, Material *materialspec, 
   CopyDeviceToHostMem(HostMem, hstate->sim, command_queue, x_mem_obj, absorption_mem_obj, transmittance_mem_obj,  debug_mem_obj);
   FreeDeviceSimStates(context, command_queue, initkernel,kernel, program, simparam_mem_obj, num_photons_left_mem_obj, a_mem_obj, x_mem_obj, 
           tetra_mesh_mem_obj, materials_mem_obj, absorption_mem_obj, transmittance_mem_obj, debug_mem_obj, photon_x_mem_obj, photon_y_mem_obj,
-          photon_z_mem_obj, photon_dx_mem_obj, photon_dy_mem_obj, photon_dz_mem_obj, photon_w_mem_obj, photon_sleft_mem_obj,           
+          photon_z_mem_obj, photon_dx_mem_obj, photon_dy_mem_obj, photon_dz_mem_obj, photon_w_mem_obj, 
           photon_tetra_id_mem_obj, photon_mat_id_mem_obj, is_active_mem_obj);
 
 	

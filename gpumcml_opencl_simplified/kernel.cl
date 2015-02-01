@@ -65,11 +65,6 @@ float rand_MWC_oc(__global UINT64CL* x,__global UINT32CL* a)
 //  //atomic_add(address, (int)add);
 //}
 
-//////////////////////////////////////////////////////////////////////////////
-//   Initialize packet position (x, y, z), direction (dx, dy, dz), weight (w), 
-//   step size remainder (sleft), current layer (layer), and auxiliary vectors a,b
-//   Note: Infinitely narrow beam (pointing in the +z direction = downwards)
-//////////////////////////////////////////////////////////////////////////////
 void LaunchPacket(Packet *pkt, SimParamGPU d_simparam, __global UINT64CL *rnd_x, __global UINT32CL *rnd_a)
 {
   pkt->x = d_simparam.originX;
@@ -77,14 +72,18 @@ void LaunchPacket(Packet *pkt, SimParamGPU d_simparam, __global UINT64CL *rnd_x,
   pkt->z = d_simparam.originZ;
   pkt->tetraID = d_simparam.init_tetraID;
   
-  float rand, theta, phi;  
+  float rand, theta, phi, sinp, cosp, sint, cost;  
   rand = rand_MWC_co(rnd_x, rnd_a);
   theta = PI_const * rand;
+  rand = rand_MWC_co(rnd_x, rnd_a);
   phi = FP_TWO * PI_const * rand;
 
-  pkt->dx = native_sin(phi) * native_cos(theta); 
-  pkt->dy = native_sin(phi) * native_sin(theta);
-  pkt->dz = native_cos(phi);
+  sint = sincos(theta, &cost);
+  sinp = sincos(phi, &cosp);
+
+  pkt->dx = sinp * cost; 
+  pkt->dy = sinp * sint;
+  pkt->dz = cosp;
   pkt->w = FP_ONE;
 
   // vector a = (vector d) cross (positive z axis unit vector) and normalize it 
@@ -108,8 +107,7 @@ void LaunchPacket(Packet *pkt, SimParamGPU d_simparam, __global UINT64CL *rnd_x,
 
 //////////////////////////////////////////////////////////////////////////////
 //   Compute the step size for a packet when it is in tissue
-//   If sleft is 0, calculate new step size: -log(rnd)/(mua+mus).
-//   Otherwise, pick up the leftover in sleft.
+//   If s is 0, calculate new step size: -log(rnd)/(mua+mus).
 //////////////////////////////////////////////////////////////////////////////
 void ComputeStepSize(Packet *pkt,
                                 __global UINT64CL *rnd_x, __global UINT32CL *rnd_a,
@@ -131,7 +129,6 @@ void ComputeStepSize(Packet *pkt,
 //   boundary between 2 layers.
 //   Return 1 for a hit, 0 otherwise.
 //   If the projected step hits the boundary, the packet steps to the boundary
-//   and the remainder of the step size is stored in sleft for the next iteration
 //////////////////////////////////////////////////////////////////////////////
 int HitBoundary(Packet *pkt, __global const Tetra *d_tetra_mesh, __global const Material *d_materials, __global float *debug, int i)
 {
@@ -180,8 +177,10 @@ int HitBoundary(Packet *pkt, __global const Tetra *d_tetra_mesh, __global const 
   pkt->nextTetraID = tetra.adjTetras[minIndex];
   pkt->matID = tetra.matID;
   
-  float rmu_as = d_materials[tetra.matID].rmu_as;
-  float mu_as = d_materials[tetra.matID].mu_as;
+  Material mat = d_materials[tetra.matID];
+  float rmu_as = mat.rmu_as;
+  float mu_as = mat.mu_as;
+  pkt->absfrac = mat.absfrac;
   float canmove = pkt->s * rmu_as;
   if(move_dis[minIndex] > canmove)
   {
@@ -207,7 +206,7 @@ int HitBoundary(Packet *pkt, __global const Tetra *d_tetra_mesh, __global const 
 void absorb(Packet *pkt, __global const Material *d_materialspecs, __global UINT64CL *absorption, __global float *debug, int iIndex) {
     
     float w0 = pkt->w;
-    float dw = w0*(d_materialspecs[pkt->matID].absfrac);
+    float dw = w0*pkt->absfrac;
 
     pkt->w = w0 - dw;
 
@@ -299,9 +298,9 @@ void ReflectTransmit(SimParamGPU d_simparam, Packet *pkt, __global UINT64CL *tra
     //Jeff's way of calculating Fresnel
     // Rs = [(n1 cos(theta_i) - n2 cos(theta_t))/((n1 cos(theta_i) + n2 cos(theta_t)))] ^ 2
     // Rp = [(n1 cos(theta_t) - n2 cos(theta_i))/((n1 cos(theta_t) + n2 cos(theta_i)))] ^ 2
-    float Rs = (ni*ca1 - nt*ca2)/(ni*ca1 + nt*ca2);
+    float Rs = native_divide(ni*ca1 - nt*ca2, ni*ca1 + nt*ca2);
     Rs *= Rs;
-    float Rp = (ni*ca2 - nt*ca1)/(ni*ca2 + nt*ca1);
+    float Rp = native_divide(ni*ca2 - nt*ca1, ni*ca2 + nt*ca1);
     Rp *= Rp;
     float rFresnel = (Rs+Rp)/2;
 
@@ -430,7 +429,7 @@ void Spin(Packet *pkt, __global UINT64CL *rnd_x, __global UINT32CL *rnd_a,
 
 __kernel void InitThreadState(__global float *tstates_photon_x, __global float *tstates_photon_y, __global float *tstates_photon_z,
                                  __global float *tstates_photon_dx, __global float *tstates_photon_dy, __global float *tstates_photon_dz,
-                                 __global float *tstates_photon_w, __global float *tstates_photon_sleft,
+                                 __global float *tstates_photon_w,
                                  __global UINT32CL *tstates_photon_tetra_id, __global UINT32CL *tstates_photon_mat_id, 
                                  __global UINT32CL *tstates_is_active, __global const SimParamGPU *d_simparam_addr,
                                  __global UINT64CL *d_state_x, __global UINT32CL *d_state_a)
@@ -449,7 +448,6 @@ __kernel void InitThreadState(__global float *tstates_photon_x, __global float *
   tstates_photon_dy[tid] = pkt.dy;
   tstates_photon_dz[tid] = pkt.dz;
   tstates_photon_w[tid] = pkt.w;
-  tstates_photon_sleft[tid] = pkt.sleft;
   tstates_photon_tetra_id[tid] = pkt.tetraID;
   tstates_photon_mat_id[tid] = pkt.matID;
 //
@@ -462,7 +460,7 @@ __kernel void InitThreadState(__global float *tstates_photon_x, __global float *
 //////////////////////////////////////////////////////////////////////////////
 void SaveThreadState(__global float *tstates_photon_x, __global float *tstates_photon_y, __global float *tstates_photon_z,
                                  __global float *tstates_photon_dx, __global float *tstates_photon_dy, __global float *tstates_photon_dz,
-                                 __global float *tstates_photon_w, __global float *tstates_photon_sleft,
+                                 __global float *tstates_photon_w,
                                  __global UINT32CL *tstates_photon_tetra_id, __global UINT32CL *tstates_photon_mat_id,
                                  __global UINT32CL *tstates_is_active,  
                                  Packet *pkt, UINT32CL is_active)
@@ -476,7 +474,6 @@ void SaveThreadState(__global float *tstates_photon_x, __global float *tstates_p
   tstates_photon_dy[tid] = pkt->dy;
   tstates_photon_dz[tid] = pkt->dz;
   tstates_photon_w[tid] = pkt->w;
-  tstates_photon_sleft[tid] = pkt->sleft;
   tstates_photon_tetra_id[tid] = pkt->tetraID;
   tstates_photon_mat_id[tid] = pkt->matID;
 
@@ -489,7 +486,7 @@ void SaveThreadState(__global float *tstates_photon_x, __global float *tstates_p
 //////////////////////////////////////////////////////////////////////////////
 void RestoreThreadState(__global float *tstates_photon_x, __global float *tstates_photon_y, __global float *tstates_photon_z,
                                  __global float *tstates_photon_dx, __global float *tstates_photon_dy, __global float *tstates_photon_dz,
-                                 __global float *tstates_photon_w, __global float *tstates_photon_sleft,
+                                 __global float *tstates_photon_w,
                                  __global UINT32CL *tstates_photon_tetra_id, __global UINT32CL *tstates_photon_mat_id,
                                  __global UINT32 *tstates_is_active,  
                                  Packet *pkt, UINT32 *is_active)
@@ -503,7 +500,6 @@ void RestoreThreadState(__global float *tstates_photon_x, __global float *tstate
   pkt->dy = tstates_photon_dy[tid];
   pkt->dz = tstates_photon_dz[tid];
   pkt->w = tstates_photon_w[tid];
-  pkt->sleft = tstates_photon_sleft[tid];
   pkt->tetraID = tstates_photon_tetra_id[tid];
   pkt->matID = tstates_photon_mat_id[tid];
 
@@ -539,7 +535,7 @@ __kernel void MCMLKernel(__global const SimParamGPU *d_simparam_addr,
                                    //__global GPUThreadStates tstates
                                  __global float *tstates_photon_x, __global float *tstates_photon_y, __global float *tstates_photon_z,
                                  __global float *tstates_photon_dx, __global float *tstates_photon_dy, __global float *tstates_photon_dz,
-                                 __global float *tstates_photon_w, __global float *tstates_photon_sleft,
+                                 __global float *tstates_photon_w,
                                  __global UINT32 *tstates_photon_tetra_id, __global UINT32 *tstates_photon_mat_id, 
                                  __global UINT32 *tstates_is_active  )
 {
@@ -553,7 +549,7 @@ __kernel void MCMLKernel(__global const SimParamGPU *d_simparam_addr,
   RestoreThreadState(
      tstates_photon_x, tstates_photon_y, tstates_photon_z,
      tstates_photon_dx, tstates_photon_dy, tstates_photon_dz, 
-     tstates_photon_w, tstates_photon_sleft, 
+     tstates_photon_w, 
      tstates_photon_tetra_id, tstates_photon_mat_id, tstates_is_active,
      &pkt, &is_active);
 
@@ -604,7 +600,7 @@ __kernel void MCMLKernel(__global const SimParamGPU *d_simparam_addr,
   SaveThreadState(
      tstates_photon_x, tstates_photon_y, tstates_photon_z,
      tstates_photon_dx, tstates_photon_dy, tstates_photon_dz, 
-     tstates_photon_w, tstates_photon_sleft, 
+     tstates_photon_w, 
      tstates_photon_tetra_id, tstates_photon_mat_id, tstates_is_active,
      &pkt, is_active);
 }

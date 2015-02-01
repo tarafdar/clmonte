@@ -115,8 +115,8 @@ typedef struct
   float w;            // packet weight
 
   float s;            // step size [cm] to be consumed in next Hop
-  float sleft;        // leftover step size [cm]
 
+  float absfrac;      // absorption fraction of the material where the packet is at, redundant data to 
   // flag to indicate if packet hits a boundary
   UINT32 hit;
   // id of the tetrahedron where the packet is currently in
