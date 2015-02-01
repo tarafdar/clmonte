@@ -250,11 +250,7 @@ void ReflectTransmit(SimParamGPU d_simparam, Packet *pkt, __global UINT64CL *tra
     return;
   }
 
-  float crit_cos=0;	//initialize as cos=0, means total internal reflection never occurs.
-  if (nt<ni)	//total internal reflection may occur
-  {
-    crit_cos = GetCosCrit(ni, nt);
-  }
+  float crit_cos = tetra.crit_cos[pkt->faceIndexToHit];//GetCosCrit(ni, nt);
   
   float *normal = tetra.face[pkt->faceIndexToHit];
   float costheta = -dot((float4)(pkt->dx,pkt->dy,pkt->dz,0), (float4)(normal[0],normal[1],normal[2],0));

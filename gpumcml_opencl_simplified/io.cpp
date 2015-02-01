@@ -222,7 +222,7 @@ float ComputeVolume(Point p1, Point p2, Point p3, Point p4)
   float height = fabs(nx*p4.x+ny*p4.y+nz*p4.z - faceConstant);
   //6. Get the bottom surface (p1,p2,p3) area
   float area = ComputeAreaFrom3Points(p1,p2,p3);
-  //7. return the volume
+  //7. return the volume (1/3)*(height * bottom area)
   return (height*area)/3.0f;
 }
 

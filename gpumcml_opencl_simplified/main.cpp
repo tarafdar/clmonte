@@ -556,6 +556,30 @@ void OutputSource(Source *p_src)
   printf("\n");
 }
 
+void PopulateCritAngleCosine(Tetra *tetra_mesh, Material *materialspec, const int NTetras)
+{
+  for (int i=1; i<=NTetras; i++)
+  {
+    Tetra &tetra = tetra_mesh[i];
+    float ni = materialspec[tetra.matID].n;
+    for (int j=0; j<4; j++)
+    {
+      UINT32 adjTetraID = tetra.adjTetras[j];
+      UINT32 adjMatID = tetra_mesh[adjTetraID].matID;
+      float nt = materialspec[adjMatID].n;
+      if (nt >= ni)	//total internal reflection won't occur
+      {
+        tetra.crit_cos[j]=0;
+      }
+      else
+      {
+        double crit_sin = nt/ni;
+        tetra.crit_cos[j] = (float)sqrt(1.0-crit_sin*crit_sin);
+      }
+    }
+  }
+}
+
 //////////////////////////////////////////////////////////////////////////////
 //   Perform MCML simulation for one run out of N runs (in the input file)
 //////////////////////////////////////////////////////////////////////////////
@@ -577,6 +601,7 @@ int main(int argc, char* argv[])
   Material *mat;
   ParseMaterial("cube_5med.opt", &materialspec, &Nm);
   //OutputMaterial(materialspec, Nm);	//debug code
+  PopulateCritAngleCosine(tetra_mesh, materialspec, Nt);
 
   char* filename = NULL;
   unsigned long long seed = (unsigned long long) time(NULL);

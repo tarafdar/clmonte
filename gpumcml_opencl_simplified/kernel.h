@@ -134,8 +134,8 @@ typedef struct
   // The face i's plane is defined by equation (face[i][0]) * x + (face[i][1]) * y + (face[i][2]) * z = face[i][3]
   // The face normal vectors (face[i][0],face[i][1],face[i][2]) always point into the tetrahedron. They are always unit vector.
   float face[4][4];
-  
   UINT32 adjTetras[4];
+  float crit_cos[4];
   UINT32 matID;    
 } Tetra ;
 
