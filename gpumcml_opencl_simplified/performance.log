@@ -1,0 +1,67 @@
+5 million packets
+
+FullMonte
+45.231138
+46.062170
+
+CLM3
+beginning
+38.5897
+38.9546
+44.034
+38.6502
+
+remove hitboundary
+39.7934
+38.7389
+38.7345
+
+39.865
+38.8156
+
+
+merge orth_dis and move_dis to dis
+40.7124
+38.9259
+39.0141
+
+remove absorption
+39.9035
+38.5776
+38.8909
+39.0803
+
+remove redundant pkt.absfrac
+40.4618
+39.1985
+38.811
+39.0022
+
+remove spin
+40.0763
+39.0867
+43.0062
+42.3642
+39.6759
+38.8823
+38.8396
+
+move termination
+39.9934
+39.4423
+39.2126
+
+remove transmittance reflect
+35.7294
+34.5687
+35.7203
+35.5587
+35.6023
+35.7677
+
+avoid doing all reflect-refract stuff when ni==nt
+32.6344
+31.9667
+31.9162
+31.7706
+32.6344

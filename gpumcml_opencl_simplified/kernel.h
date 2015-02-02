@@ -40,26 +40,6 @@ typedef struct
   UINT32 weight_scale;
 } SimParamGPU;
 
-typedef struct 
-{
-  float z0, z1;             // z coordinates of a layer. [cm] 
-  float n;                  // refractive index of a layer. 
-
-  float muas;               // mua + mus 
-  float rmuas;              // 1/(mua+mus) 
-  float mua_muas;           // mua/(mua+mus)
-
-  float g;                  // anisotropy.
-
-  float cos_crit0, cos_crit1;
-} LayerStructGPU;
-
-// The max number of layers supported (MAX_LAYERS including 2 ambient layers)
-#define MAX_LAYERS 100
-
-//__constant SimParamGPU d_simparam;
-//__constant LayerStructGPU d_layerspecs[MAX_LAYERS];
-
 //////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////
 
@@ -116,7 +96,6 @@ typedef struct
 
   float s;            // step size [cm] to be consumed in next Hop
 
-  float absfrac;      // absorption fraction of the material where the packet is at, redundant data to 
   // flag to indicate if packet hits a boundary
   UINT32 hit;
   // id of the tetrahedron where the packet is currently in
