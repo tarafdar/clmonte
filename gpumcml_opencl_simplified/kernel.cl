@@ -2,7 +2,7 @@ typedef ulong UINT64CL;
 typedef uint UINT32CL;
 // Critical weight for roulette
 #define WEIGHT 1E-4F        
-#define WEIGHT_SCALE 12000000
+#define WEIGHT_SCALE 8388608//12000000
 
 #define PI_const 3.1415926F
 #define RPI 0.318309886F
@@ -29,7 +29,7 @@ float dot_product (float x1, float y1, float z1, float x2, float y2, float z2) {
 //////////////////////////////////////////////////////////////////////////////
 //   Generates a random number between 0 and 1 [0,1) 
 //////////////////////////////////////////////////////////////////////////////
-float rand_MWC_co(__global UINT64CL* x,__global UINT32CL* a)
+float rand_MWC_co(UINT64CL* x,UINT32CL* a)
 {
   *x=(*x&0xfffffffful)*(*a)+(*x>>32);
   return native_divide(convert_float_rtz((UINT32CL)(*x)),(float)0x100000000);
@@ -46,7 +46,7 @@ float rand_MWC_co(__global UINT64CL* x,__global UINT32CL* a)
 //////////////////////////////////////////////////////////////////////////////
 //   Generates a random number between 0 and 1 (0,1]
 //////////////////////////////////////////////////////////////////////////////
-float rand_MWC_oc(__global UINT64CL* x,__global UINT32CL* a)
+float rand_MWC_oc(UINT64CL* x, UINT32CL* a)
 {
   return 1.0f-rand_MWC_co(x,a);
 } 
@@ -64,46 +64,6 @@ float rand_MWC_oc(__global UINT64CL* x,__global UINT32CL* a)
 //  }
 //  //atomic_add(address, (int)add);
 //}
-
-void LaunchPacket(Packet *pkt, SimParamGPU d_simparam, __global UINT64CL *rnd_x, __global UINT32CL *rnd_a)
-{
-  pkt->x = d_simparam.originX;
-  pkt->y = d_simparam.originY;
-  pkt->z = d_simparam.originZ;
-  pkt->tetraID = d_simparam.init_tetraID;
-  
-  float rand, theta, phi, sinp, cosp, sint, cost;  
-  rand = rand_MWC_co(rnd_x, rnd_a);
-  theta = PI_const * rand;
-  rand = rand_MWC_co(rnd_x, rnd_a);
-  phi = FP_TWO * PI_const * rand;
-
-  sint = sincos(theta, &cost);
-  sinp = sincos(phi, &cosp);
-
-  pkt->dx = sinp * cost; 
-  pkt->dy = sinp * sint;
-  pkt->dz = cosp;
-  pkt->w = FP_ONE;
-
-  // vector a = (vector d) cross (positive z axis unit vector) and normalize it 
-  float4 d = (float4)(pkt->dx, pkt->dy, pkt->dz, 0);
-  float4 crossProduct;
-  if(d.x==0 && d.y==0)
-    crossProduct = cross(d, (float4)(1,0,0,0));
-  else
-    crossProduct = cross(d, (float4)(0,0,1,0));
-  float4 a = normalize(crossProduct);
-  pkt->ax = a.x;
-  pkt->ay = a.y;
-  pkt->az = a.z;
-
-  // vector b = (vector d) cross (vector a)
-  float4 b = cross(d,a);
-  pkt->bx = b.x;
-  pkt->by = b.y;
-  pkt->bz = b.z;
-}
 
 float GetCosCrit(float ni, float nt)
 {
@@ -123,18 +83,27 @@ __kernel void InitThreadState(__global float *tstates_photon_x, __global float *
   SimParamGPU d_simparam = *d_simparam_addr;
   // This is the unique ID for each thread (or thread ID = tid)
   UINT32CL tid = get_global_id(0);
+  UINT64CL rnd_x=d_state_x[tid];
+  UINT32CL rnd_a=d_state_a[tid];
   // Initialize the photon and copy into photon_<parameter x>
-  LaunchPacket(&pkt, d_simparam, &d_state_x[tid], &d_state_a[tid]); // Launch a new packet.
+  
+  float rand, theta, phi, sinp, cosp, sint, cost;  
+  rand = rand_MWC_co(&rnd_x, &rnd_a);
+  theta = PI_const * rand;
+  rand = rand_MWC_co(&rnd_x, &rnd_a);
+  phi = FP_TWO * PI_const * rand;
 
-  tstates_photon_x[tid] = pkt.x;
-  tstates_photon_y[tid] = pkt.y;
-  tstates_photon_z[tid] = pkt.z;
-  tstates_photon_dx[tid] = pkt.dx;
-  tstates_photon_dy[tid] = pkt.dy;
-  tstates_photon_dz[tid] = pkt.dz;
-  tstates_photon_w[tid] = pkt.w;
-  tstates_photon_tetra_id[tid] = pkt.tetraID;
-  tstates_photon_mat_id[tid] = pkt.matID;
+  sint = sincos(theta, &cost);
+  sinp = sincos(phi, &cosp);
+
+  tstates_photon_x[tid] = d_simparam.originX;
+  tstates_photon_y[tid] = d_simparam.originY;
+  tstates_photon_z[tid] = d_simparam.originZ;
+  tstates_photon_dx[tid] = sinp*cost;
+  tstates_photon_dy[tid] = sinp*sint;
+  tstates_photon_dz[tid] = cosp;
+  tstates_photon_w[tid] = FP_ONE;
+  tstates_photon_tetra_id[tid] = d_simparam.init_tetraID;
 //
   tstates_is_active[tid] = 1;
 }
@@ -143,15 +112,19 @@ __kernel void InitThreadState(__global float *tstates_photon_x, __global float *
 //   Save thread states (tstates), by copying the current photon 
 //   data from registers into global memory
 //////////////////////////////////////////////////////////////////////////////
-void SaveThreadState(__global float *tstates_photon_x, __global float *tstates_photon_y, __global float *tstates_photon_z,
+void SaveThreadState(__global UINT64CL *d_state_x, __global UINT32CL *d_state_a,
+                                 __global float *tstates_photon_x, __global float *tstates_photon_y, __global float *tstates_photon_z,
                                  __global float *tstates_photon_dx, __global float *tstates_photon_dy, __global float *tstates_photon_dz,
                                  __global float *tstates_photon_w,
                                  __global UINT32CL *tstates_photon_tetra_id, __global UINT32CL *tstates_photon_mat_id,
                                  __global UINT32CL *tstates_is_active,  
-                                 Packet *pkt, UINT32CL is_active)
+                                 Packet *pkt, UINT64CL rnd_x, UINT32CL rnd_a, UINT32CL is_active)
 {
   UINT32CL tid = get_global_id(0);
 
+  d_state_x[tid] = rnd_x;
+  d_state_a[tid] = rnd_a;
+  
   tstates_photon_x[tid] = pkt->x;
   tstates_photon_y[tid] = pkt->y;
   tstates_photon_z[tid] = pkt->z;
@@ -160,7 +133,6 @@ void SaveThreadState(__global float *tstates_photon_x, __global float *tstates_p
   tstates_photon_dz[tid] = pkt->dz;
   tstates_photon_w[tid] = pkt->w;
   tstates_photon_tetra_id[tid] = pkt->tetraID;
-  tstates_photon_mat_id[tid] = pkt->matID;
 
   tstates_is_active[tid] = is_active;
 }
@@ -169,15 +141,19 @@ void SaveThreadState(__global float *tstates_photon_x, __global float *tstates_p
 //   Restore thread states (tstates), by copying the latest photon 
 //   data from global memory back into the registers
 //////////////////////////////////////////////////////////////////////////////
-void RestoreThreadState(__global float *tstates_photon_x, __global float *tstates_photon_y, __global float *tstates_photon_z,
+void RestoreThreadState(__global UINT64CL *d_state_x, __global UINT32CL *d_state_a,
+                                 __global float *tstates_photon_x, __global float *tstates_photon_y, __global float *tstates_photon_z,
                                  __global float *tstates_photon_dx, __global float *tstates_photon_dy, __global float *tstates_photon_dz,
                                  __global float *tstates_photon_w,
                                  __global UINT32CL *tstates_photon_tetra_id, __global UINT32CL *tstates_photon_mat_id,
-                                 __global UINT32 *tstates_is_active,  
-                                 Packet *pkt, UINT32 *is_active)
+                                 __global UINT32CL *tstates_is_active,  
+                                 Packet *pkt, UINT64CL *rnd_x, UINT32CL *rnd_a, UINT32CL *is_active)
 {
-  UINT32 tid = get_global_id(0);
-
+  UINT32CL tid = get_global_id(0);
+  
+  *rnd_x = d_state_x[tid];
+  *rnd_a = d_state_a[tid];
+  
   pkt->x = tstates_photon_x[tid];
   pkt->y = tstates_photon_y[tid];
   pkt->z = tstates_photon_z[tid];
@@ -186,7 +162,6 @@ void RestoreThreadState(__global float *tstates_photon_x, __global float *tstate
   pkt->dz = tstates_photon_dz[tid];
   pkt->w = tstates_photon_w[tid];
   pkt->tetraID = tstates_photon_tetra_id[tid];
-  pkt->matID = tstates_photon_mat_id[tid];
 
   // vector a = (vector d) cross (positive z axis unit vector) and normalize it 
   float4 d = (float4)(pkt->dx, pkt->dy, pkt->dz, 0);
@@ -221,24 +196,28 @@ __kernel void MCMLKernel(__global const SimParamGPU *d_simparam_addr,
                                  __global float *tstates_photon_x, __global float *tstates_photon_y, __global float *tstates_photon_z,
                                  __global float *tstates_photon_dx, __global float *tstates_photon_dy, __global float *tstates_photon_dz,
                                  __global float *tstates_photon_w,
-                                 __global UINT32 *tstates_photon_tetra_id, __global UINT32 *tstates_photon_mat_id, 
-                                 __global UINT32 *tstates_is_active  )
+                                 __global UINT32CL *tstates_photon_tetra_id, __global UINT32CL *tstates_photon_mat_id, 
+                                 __global UINT32CL *tstates_is_active  )
 {
   // packet structure stored in registers
   Packet pkt; 
   SimParamGPU d_simparam = *d_simparam_addr;
   UINT32CL tid = get_global_id(0);
 
+  UINT64CL rnd_x;
+  UINT32CL rnd_a;
+  
   // Flag to indicate if this thread is active
   UINT32CL is_active ;
-  RestoreThreadState(
+  RestoreThreadState(d_state_x, d_state_a, 
      tstates_photon_x, tstates_photon_y, tstates_photon_z,
      tstates_photon_dx, tstates_photon_dy, tstates_photon_dz, 
      tstates_photon_w, 
      tstates_photon_tetra_id, tstates_photon_mat_id, tstates_is_active,
-     &pkt, &is_active);
+     &pkt, &rnd_x, &rnd_a, &is_active);
   float rand;
-  for (int iIndex = 0; iIndex < 50000; ++iIndex)
+  
+  for (int iIndex = 0; iIndex < 32768; ++iIndex)
   {
     // Only process packet if the thread is active.
     if (is_active)
@@ -246,15 +225,13 @@ __kernel void MCMLKernel(__global const SimParamGPU *d_simparam_addr,
       //ComputeStepSize(&pkt,&d_state_x[tid], &d_state_a[tid], d_tetra_mesh, d_materialspecs);
       if (pkt.s == MCML_FP_ZERO)
       {
-        rand = rand_MWC_oc(&d_state_x[tid], &d_state_a[tid]);
+        rand = rand_MWC_oc(&rnd_x, &rnd_a);
         pkt.s = -log(rand);
       }
       
       float cosdn[4], dis[4];
       Tetra tetra = d_tetra_mesh[pkt.tetraID];
       Material mat = d_materialspecs[tetra.matID];
-      float rmu_as = mat.rmu_as;
-      float mu_as = mat.mu_as;
       
       cosdn[0] = dot_product(pkt.dx, pkt.dy, pkt.dz, tetra.face[0][0], tetra.face[0][1], tetra.face[0][2]);
       cosdn[1] = dot_product(pkt.dx, pkt.dy, pkt.dz, tetra.face[1][0], tetra.face[1][1], tetra.face[1][2]);
@@ -278,10 +255,9 @@ __kernel void MCMLKernel(__global const SimParamGPU *d_simparam_addr,
       minIndex = dis[localMinIndex1]<dis[localMinIndex2] ? localMinIndex1 : localMinIndex2;
   
       pkt.faceIndexToHit = minIndex;
-      UINT32 nextTetraID = tetra.adjTetras[minIndex];
-      pkt.matID = tetra.matID;
+      UINT32CL nextTetraID = tetra.adjTetras[minIndex];
   
-      float canmove = pkt.s * rmu_as;
+      float canmove = pkt.s * mat.rmu_as;
       if(dis[minIndex] > canmove)
       {
         pkt.s = MCML_FP_ZERO;
@@ -295,29 +271,69 @@ __kernel void MCMLKernel(__global const SimParamGPU *d_simparam_addr,
         
         if (pkt.w < WEIGHT)
         {
-          rand = rand_MWC_co(&d_state_x[tid], &d_state_a[tid]);
+          rand = rand_MWC_co(&rnd_x, &rnd_a);
 
           // This pkt survives the roulette.
           if (pkt.w != MCML_FP_ZERO && rand < CHANCE)
             pkt.w *= (FP_ONE / CHANCE);
           // This pkt is terminated.
           else if (atomic_sub(d_state_n_photons_left_addr, 1) > 0)
-            LaunchPacket(&pkt, d_simparam, &d_state_x[tid], &d_state_a[tid]);
+          {
+          
+          
+            pkt.x = d_simparam.originX;
+            pkt.y = d_simparam.originY;
+            pkt.z = d_simparam.originZ;
+            pkt.tetraID = d_simparam.init_tetraID;
+  
+            float rand, theta, phi, sinp, cosp, sint, cost;  
+            rand = rand_MWC_co(&rnd_x, &rnd_a);
+            theta = PI_const * rand;
+            rand = rand_MWC_co(&rnd_x, &rnd_a);
+            phi = FP_TWO * PI_const * rand;
+
+            sint = sincos(theta, &cost);
+            sinp = sincos(phi, &cosp);
+
+            pkt.dx = sinp * cost; 
+            pkt.dy = sinp * sint;
+            pkt.dz = cosp;
+            pkt.w = FP_ONE;
+
+            // vector a = (vector d) cross (positive z axis unit vector) and normalize it 
+            float4 d = (float4)(pkt.dx, pkt.dy, pkt.dz, 0);
+            float4 crossProduct;
+            if(d.x==0 && d.y==0)
+              crossProduct = cross(d, (float4)(1,0,0,0));
+            else
+              crossProduct = cross(d, (float4)(0,0,1,0));
+            float4 a = normalize(crossProduct);
+            pkt.ax = a.x;
+            pkt.ay = a.y;
+            pkt.az = a.z;
+
+            // vector b = (vector d) cross (vector a)
+            float4 b = cross(d,a);
+            pkt.bx = b.x;
+            pkt.by = b.y;
+            pkt.bz = b.z;
+          
+          
+          }
           else
             is_active = 0;
         }
         else
         {
-          float cost, sint, cosp, sinp, psi, SIGN, temp;
+          float cost, sint, cosp, sinp;
           float last_dx, last_dy, last_dz, last_ax, last_ay, last_az, last_bx, last_by, last_bz;
-          rand = FP_TWO * rand_MWC_co(&d_state_x[tid], &d_state_a[tid]) - FP_ONE;
+          rand = FP_TWO * rand_MWC_co(&rnd_x, &rnd_a) - FP_ONE;
           cost = mat.HGCoeff1 - native_divide(mat.HGCoeff2, (1-mat.g*rand)*(1-mat.g*rand));
           sint = sqrt(FP_ONE - cost * cost);
 
           /* spin psi 0-2pi. */
-          rand = rand_MWC_co(&d_state_x[tid], &d_state_a[tid]);
-          psi = FP_TWO * PI_const * rand;
-          sinp = sincos(psi, &cosp);
+          rand = rand_MWC_co(&rnd_x, &rnd_a);
+          sinp = sincos(FP_TWO * PI_const * rand, &cosp);
 
           float stcp = sint * cosp;
           float stsp = sint * sinp;
@@ -346,7 +362,7 @@ __kernel void MCMLKernel(__global const SimParamGPU *d_simparam_addr,
       }
       else
       {
-        pkt.s = pkt.s - dis[minIndex] * mu_as;
+        pkt.s = pkt.s - dis[minIndex] * mat.mu_as;
         pkt.x += dis[minIndex] * pkt.dx;
         pkt.y += dis[minIndex] * pkt.dy;
         pkt.z += dis[minIndex] * pkt.dz;
@@ -354,7 +370,7 @@ __kernel void MCMLKernel(__global const SimParamGPU *d_simparam_addr,
         
         Tetra nextTetra = d_tetra_mesh[nextTetraID];
         float ni, nt; //refractive indices
-        ni = d_materialspecs[tetra.matID].n;  
+        ni = mat.n;  
         nt = d_materialspecs[nextTetra.matID].n;  
   
         if (ni==nt)
@@ -415,7 +431,7 @@ __kernel void MCMLKernel(__global const SimParamGPU *d_simparam_addr,
 
           if (ca1 < COSNINETYDEG || sa2 == FP_ONE) rFresnel = FP_ONE;
 
-          rand = rand_MWC_co(&d_state_x[tid], &d_state_a[tid]);
+          rand = rand_MWC_co(&rnd_x, &rnd_a);
 
           if (rFresnel < rand) //refract
           {
@@ -485,12 +501,12 @@ __kernel void MCMLKernel(__global const SimParamGPU *d_simparam_addr,
   }
   
   //barrier(CLK_GLOBAL_MEM_FENCE); 
-  SaveThreadState(
+  SaveThreadState(d_state_x, d_state_a, 
      tstates_photon_x, tstates_photon_y, tstates_photon_z,
      tstates_photon_dx, tstates_photon_dy, tstates_photon_dz, 
      tstates_photon_w, 
      tstates_photon_tetra_id, tstates_photon_mat_id, tstates_is_active,
-     &pkt, is_active);
+     &pkt, rnd_x, rnd_a, is_active);
 }
 
 //////////////////////////////////////////////////////////////////////////////

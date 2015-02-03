@@ -422,30 +422,6 @@ for(i=0;i<*p_Nt+1;i++)
   return;
 }
 
-void PopulateMaterialFromInput(const char* fileName, Material **p_material_spec, int *Nm)
-{
-  *Nm = 1;
-  *p_material_spec = (Material *)malloc( sizeof(Material) * ((*Nm)+1) );
-  Material &material = (*p_material_spec)[1];
-  material.mu_as = (0.2+1);
-  material.rmu_as = 1.0/(material.mu_as);
-  material.n = 1.53;
-  material.g = 0.9;
-  material.HGCoeff1 = (1+material.g*material.g)/(2*material.g);
-  material.HGCoeff2 = (1-material.g*material.g)*(1-material.g*material.g) / (2*material.g);
-  material.absfrac = 1- 1000/(1000+0.2);
-  
-  Material &exterior = (*p_material_spec)[0];
-  exterior.mu_as = (0.2+1000);
-  exterior.rmu_as = 1.0/(exterior.rmu_as);
-  exterior.n = 1;
-  exterior.g = 0.9;
-  exterior.HGCoeff1 = (1+exterior.g*material.g)/(2*exterior.g);
-  exterior.HGCoeff2 = (1-exterior.g*material.g)*(1-exterior.g*exterior.g) / (2*exterior.g);
-  exterior.absfrac = 1- 1000/(1000+0.2);
-  return;
-}
-
 void ParseMaterial(const char* filename, Material** p_mats, int *p_Nm) 
 {
 
@@ -494,12 +470,13 @@ void ParseMaterial(const char* filename, Material** p_mats, int *p_Nm)
       return;
     }
     Material &mat = (*p_mats)[i];
-    sscanf (linemat, "%f %f %f %f", &(mat.mu_a), &(mat.mu_s), &(mat.g), &(mat.n));
-    mat.mu_as = mat.mu_a + mat.mu_s;
+    float mu_a, mu_s;
+    sscanf (linemat, "%f %f %f %f", &mu_a, &mu_s, &(mat.g), &(mat.n));
+    mat.mu_as = mu_a + mu_s;
     mat.rmu_as = 1.0f/mat.mu_as;
     mat.HGCoeff1 = (1+mat.g * mat.g)/(2*mat.g);
     mat.HGCoeff2 = (1-mat.g * mat.g)*(1-mat.g * mat.g) / (2*mat.g);
-    mat.absfrac = 1 - mat.mu_s / (mat.mu_s+mat.mu_a);
+    mat.absfrac = 1 - mu_s / (mu_s+mu_a);
   }
 
   // Get E-Type
@@ -544,8 +521,6 @@ void ParseMaterial(const char* filename, Material** p_mats, int *p_Nm)
     return;
   }
 
-  (*p_mats)[0].mu_a = 0;
-  (*p_mats)[0].mu_s = 0;
   (*p_mats)[0].g = 0;
   (*p_mats)[0].n = n_e;
 

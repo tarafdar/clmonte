@@ -96,16 +96,12 @@ typedef struct
 
   float s;            // step size [cm] to be consumed in next Hop
 
-  // flag to indicate if packet hits a boundary
-  UINT32 hit;
   // id of the tetrahedron where the packet is currently in
   UINT32 tetraID;
   // index (0,1,2,3) of the current tetra's face to hit
   UINT32 faceIndexToHit;
   // id of the tetrahedron which the packet may refract into
   UINT32 nextTetraID;
-  // id of the material where the packet is at, redundant data to improve performance
-  UINT32 matID;
 } Packet;
 
 typedef struct
