@@ -535,11 +535,38 @@ void ParseMaterial(const char* filename, Material** p_mats, int *p_Nm)
   fclose (pFile);
 }
 
+int GetTetraIDFromCoordinates(const Tetra *tetra_mesh, const int Nt, const float x, const float y, const float z)
+{
+  for(int i = 1; i <= Nt; i++)
+  {
+    const Tetra &tetra = tetra_mesh[i];
+    if(tetra.face[0][0]*x+tetra.face[0][1]*y+tetra.face[0][2]*z-tetra.face[0][3]<0)
+    {
+      continue;
+    }
+    if(tetra.face[1][0]*x+tetra.face[1][1]*y+tetra.face[1][2]*z-tetra.face[1][3]<0)
+    {
+      continue;
+    }
+    if(tetra.face[2][0]*x+tetra.face[2][1]*y+tetra.face[2][2]*z-tetra.face[2][3]<0)
+    {
+      continue;
+    }
+    if(tetra.face[3][0]*x+tetra.face[3][1]*y+tetra.face[3][2]*z-tetra.face[3][3]<0)
+    {
+      continue;
+    }
+    return i;
+  }
+  printf("Error: The source position is not inside the tissue.\n");
+  return -1;
+}
+
 //////////////////////////////////////////////////////////////////////////////
 // Parse Source (.Source File)
 //////////////////////////////////////////////////////////////////////////////
 
-void ParseSource(const char* filename, Source** sourcepoint) 
+void ParseSource(const char* filename, Source** sourcepoint, const Tetra *tetra_mesh, const int Nt) 
 {
   FILE *sourcefile;
 
@@ -591,7 +618,7 @@ void ParseSource(const char* filename, Source** sourcepoint)
       // Point Position -> Cartesian Coordinates
       case 1:
         sscanf (linesource, "%d %f %f %f %d", &(sourcepoint[i]->stype), &(sourcepoint[i]->x), &(sourcepoint[i]->y), &(sourcepoint[i]->z), &(sourcepoint[i]->Np) );
-	sourcepoint[i]->IDt = 25515;
+        sourcepoint[i]->IDt = GetTetraIDFromCoordinates(tetra_mesh, Nt, sourcepoint[i]->x, sourcepoint[i]->y, sourcepoint[i]->z);
         break;
 
       // IDt position

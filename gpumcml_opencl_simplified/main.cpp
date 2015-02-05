@@ -572,7 +572,7 @@ int main(int argc, char* argv[])
   //OutputTetraMesh(tetra_mesh, Nt);	//debug code
 
   Source *sourcepoint;
-  ParseSource("cube_5med.source", &sourcepoint);
+  ParseSource("cube_5med.source", &sourcepoint, tetra_mesh, Nt);
   //OutputSource(sourcepoint);	//debug code
   Material *mat;
   ParseMaterial("cube_5med.opt", &materialspec, &Nm);
