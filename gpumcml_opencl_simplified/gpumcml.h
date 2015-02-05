@@ -123,13 +123,22 @@ typedef struct
   float z;
 } Point;
 
-typedef struct
+class TriNode
 {
+  public:
+  //Convention here is N0<N1<N2 must be guaranteed.
   int N0;
   int N1;
   int N2;
   float area;
-} TriNode;
+  float fluence;
+  bool operator<(const TriNode &value)
+  {
+    return (this->N0<value.N0)
+        || (this->N0==value.N0 && this->N1<value.N1)
+        || (this->N0==value.N0 && this->N1==value.N1 && this->N2<value.N2);
+  }
+};
 
 typedef struct
 {

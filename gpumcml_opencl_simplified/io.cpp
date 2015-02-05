@@ -111,37 +111,45 @@ int Write_Simulation_Results(SimState* HostMem, SimulationStruct* sim, double si
 
   // Calculate and write surface fluence!
   
-  double fluence = 0;
   int TriNodeIndex = 0;
-  
-  fout << "Surface Fluence" << endl;
+  list<TriNode> surfaceList;
   for(int TetraID = 1; TetraID <= sim->nTetras; ++TetraID)
   {
     for(int FaceID = 0; FaceID < 4; FaceID++)
     {
       TriNodeIndex = (TetraID-1)*4 + FaceID;
       //if (HostMem->transmittance[TriNodeIndex] > 0 ){
-      if(TriNodeList[TriNodeIndex].N0!=0){
+      if(TriNodeList[TriNodeIndex].N0!=0)
+      {
       
-      fluence = (double) HostMem->transmittance[TriNodeIndex]/(WEIGHT_SCALE);// * TriNodeList[TriNodeIndex].area);
+        TriNodeList[TriNodeIndex].fluence = (double) HostMem->transmittance[TriNodeIndex]/WEIGHT_SCALE/TriNodeList[TriNodeIndex].area;
       
-      fout << TriNodeList[TriNodeIndex].N0 << " \t"
-           << TriNodeList[TriNodeIndex].N1 << " \t"
-           << TriNodeList[TriNodeIndex].N2 << " \t"
-           << TriNodeList[TriNodeIndex].area << " \t"
-           << fluence << endl;
-      }else{
-      //do nothing, not a surface element or just no light coming out of this part of the surface
+        surfaceList.push_back(TriNodeList[TriNodeIndex]);
+      } 
+      else
+      {
+      //do nothing, not a surface element
       }
-
+      
     }
+  }
+  
+  surfaceList.sort();
+  fout << "Surface Fluence" << endl;
+  for(list<TriNode>::iterator it=surfaceList.begin(); it!=surfaceList.end(); ++it)
+  {
+    fout << it->N0 << " \t"
+         << it->N1 << " \t"
+         << it->N2 << " \t"
+         << it->area << " \t"
+         << it->fluence << endl;
   }
   
   // Calculate and write absorption!
   fout << "Internal Fluence" << endl;
   for(int TetraID = 1; TetraID <= sim->nTetras; ++TetraID)
   {
-      fluence = (double) HostMem->absorption[TetraID]/(WEIGHT_SCALE);// * TetraNodeList[TetraID].volume * material_spec[tetra_mesh[TetraID].matID].mu_a);
+      float fluence = (double) HostMem->absorption[TetraID]/(WEIGHT_SCALE);// * TetraNodeList[TetraID].volume * material_spec[tetra_mesh[TetraID].matID].mu_a);
       //fluence = (double) HostMem->absorption[TetraID];
       fout << TetraNodeList[TetraID].N0 << " \t"
            << TetraNodeList[TetraID].N1 << " \t"
@@ -343,13 +351,13 @@ void PopulateTetraFromMeshFile(const char* filename, Tetra **p_tetra_mesh, TriNo
   *p_tetra_mesh = (Tetra*)malloc(sizeof(Tetra)*(*p_Nt+1));
   *p_trinodes = (TriNode*)malloc(sizeof(TriNode)*4*(*p_Nt));
   *p_tetranodes = (TetraNode*)malloc(sizeof(TetraNode)*(*p_Nt+1));
-for(i=0;i<*p_Nt+1;i++)
+for(i=0;i<4*(*p_Nt);i++)
 {
-  (*p_tetranodes)[i].N0 = 0;
-  (*p_tetranodes)[i].N1 = 0;
-  (*p_tetranodes)[i].N2 = 0;
-  (*p_tetranodes)[i].N3 = 0;
-  (*p_tetranodes)[i].volume = 0;
+  (*p_trinodes)[i].N0 = 0;
+  (*p_trinodes)[i].N1 = 0;
+  (*p_trinodes)[i].N2 = 0;
+  (*p_trinodes)[i].area = 0;
+  (*p_trinodes)[i].fluence = 0;
 }
   list<TwoPointIDsToTetraID> *faceToTetraMap = new list<TwoPointIDsToTetraID>[*p_Np+1];
   for(i=1; i<*p_Nt+1; i++)
