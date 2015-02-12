@@ -149,7 +149,7 @@ int Write_Simulation_Results(SimState* HostMem, SimulationStruct* sim, double si
   fout << "Internal Fluence" << endl;
   for(int TetraID = 1; TetraID <= sim->nTetras; ++TetraID)
   {
-      float fluence = (double) HostMem->absorption[TetraID]/(WEIGHT_SCALE);// * TetraNodeList[TetraID].volume * material_spec[tetra_mesh[TetraID].matID].mu_a);
+      float fluence = (float) HostMem->absorption[TetraID]/WEIGHT_SCALE/TetraNodeList[TetraID].volume/material_spec[tetra_mesh[TetraID].matID].mu_a;
       //fluence = (double) HostMem->absorption[TetraID];
       fout << TetraNodeList[TetraID].N0 << " \t"
            << TetraNodeList[TetraID].N1 << " \t"
@@ -480,6 +480,8 @@ void ParseMaterial(const char* filename, Material** p_mats, int *p_Nm)
     Material &mat = (*p_mats)[i];
     float mu_a, mu_s;
     sscanf (linemat, "%f %f %f %f", &mu_a, &mu_s, &(mat.g), &(mat.n));
+    mat.mu_a = mu_a;
+    mat.mu_s = mu_s;
     mat.mu_as = mu_a + mu_s;
     mat.rmu_as = 1.0f/mat.mu_as;
     mat.HGCoeff1 = (1+mat.g * mat.g)/(2*mat.g);
@@ -619,6 +621,7 @@ void ParseSource(const char* filename, Source** sourcepoint, const Tetra *tetra_
       case 1:
         sscanf (linesource, "%d %f %f %f %d", &(sourcepoint[i]->stype), &(sourcepoint[i]->x), &(sourcepoint[i]->y), &(sourcepoint[i]->z), &(sourcepoint[i]->Np) );
         sourcepoint[i]->IDt = GetTetraIDFromCoordinates(tetra_mesh, Nt, sourcepoint[i]->x, sourcepoint[i]->y, sourcepoint[i]->z);
+        printf("TetraID = %d\n",sourcepoint[i]->IDt );
         break;
 
       // IDt position

@@ -87,6 +87,8 @@ __kernel void InitThreadState(__global float *tstates_photon_x, __global float *
   UINT32CL rnd_a=d_state_a[tid];
   // Initialize the photon and copy into photon_<parameter x>
   
+  //point source
+  if (d_simparam.stype == 1){
   float rand, theta, phi, sinp, cosp, sint, cost;  
   rand = rand_MWC_co(&rnd_x, &rnd_a);
   theta = PI_const * rand;
@@ -103,6 +105,22 @@ __kernel void InitThreadState(__global float *tstates_photon_x, __global float *
   tstates_photon_dy[tid] = sinp*sint;
   tstates_photon_dz[tid] = cosp;
   tstates_photon_w[tid] = FP_ONE;
+  }
+
+  //pencil source
+  if (d_simparam.stype == 11){
+
+  tstates_photon_x[tid] = d_simparam.originX;
+  tstates_photon_y[tid] = d_simparam.originY;
+  tstates_photon_z[tid] = d_simparam.originZ;
+  tstates_photon_dx[tid] = d_simparam.UX;
+  tstates_photon_dy[tid] = d_simparam.UY;
+  tstates_photon_dz[tid] = d_simparam.UZ;
+  tstates_photon_w[tid] = FP_ONE;
+  }
+  
+  
+  //all source types
   tstates_photon_tetra_id[tid] = d_simparam.init_tetraID;
 //
   tstates_is_active[tid] = 1;
@@ -279,12 +297,11 @@ __kernel void MCMLKernel(__global const SimParamGPU *d_simparam_addr,
           // This pkt is terminated.
           else if (atomic_sub(d_state_n_photons_left_addr, 1) > 0)
           {
-          
-          
+            //point source
+            if (d_simparam.stype == 1){
             pkt.x = d_simparam.originX;
             pkt.y = d_simparam.originY;
             pkt.z = d_simparam.originZ;
-            pkt.tetraID = d_simparam.init_tetraID;
   
             float rand, theta, phi, sinp, cosp, sint, cost;  
             rand = rand_MWC_co(&rnd_x, &rnd_a);
@@ -298,7 +315,23 @@ __kernel void MCMLKernel(__global const SimParamGPU *d_simparam_addr,
             pkt.dx = sinp * cost; 
             pkt.dy = sinp * sint;
             pkt.dz = cosp;
+            }
+
+            //pencil source
+            if (d_simparam.stype == 11){
+            pkt.x = d_simparam.originX;
+            pkt.y = d_simparam.originY;
+            pkt.z = d_simparam.originZ;
+  
+            pkt.dx = d_simparam.UX;
+	    pkt.dy = d_simparam.UY;
+	    pkt.dz = d_simparam.UZ;
+            }
+
+            //all sources
+            pkt.tetraID = d_simparam.init_tetraID;
             pkt.w = FP_ONE;
+
 
             // vector a = (vector d) cross (positive z axis unit vector) and normalize it 
             float4 d = (float4)(pkt.dx, pkt.dy, pkt.dz, 0);

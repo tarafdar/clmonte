@@ -34,6 +34,11 @@ typedef struct
   float originX;
   float originY;
   float originZ;	//coordinate of the source emitter location
+
+  float UX, UY, UZ;     //initial direction for pencil source
+
+  int stype;            //source type
+
   UINT32 init_tetraID; 
   float terminationThresh;	//weight threshold to start roulette termination
   float proulettewin;	//probability to win the roulette

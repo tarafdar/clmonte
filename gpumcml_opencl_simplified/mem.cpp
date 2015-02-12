@@ -14,11 +14,25 @@ extern float *debug;
 int InitDCMem(SimulationStruct *sim, Source *p_src, Tetra *tetra_mesh, Material *materialspec, cl_context context, cl_command_queue command_queue, cl_mem *simparam_mem_obj, cl_mem *tetra_mesh_mem_obj, cl_mem *materials_mem_obj)
 {
   SimParamGPU h_simparam;
-
-  h_simparam.originX = p_src->x;
-  h_simparam.originY = p_src->y;
-  h_simparam.originZ = p_src->z;
   h_simparam.init_tetraID = p_src->IDt;
+  h_simparam.stype = p_src->stype;
+  
+  //point source
+  if (p_src->stype == 1){
+   h_simparam.originX = p_src->x;
+   h_simparam.originY = p_src->y;
+   h_simparam.originZ = p_src->z;
+  }
+  //pencil source
+  if (p_src->stype == 11){
+   h_simparam.originX = p_src->x;
+   h_simparam.originY = p_src->y;
+   h_simparam.originZ = p_src->z;
+   h_simparam.UX = p_src->dx;
+   h_simparam.UY = p_src->dy;
+   h_simparam.UZ = p_src->dz;
+  
+  }
 
   cl_int ret;
   *simparam_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, sizeof(SimParamGPU), NULL, &ret);

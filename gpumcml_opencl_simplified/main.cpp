@@ -539,9 +539,8 @@ void OutputMaterial(Material *mats, int Nm)
   for(i=1; i<=Nm; i++)
   {
     Material &mat = mats[i];
-    printf("Material%d:\n", i);
-    //printf("  mua %f\n  mus %f\n  muas %f\n  rmuas %f\n", i, mat.mu_a, mat.mu_s, mat.mu_as, mat.rmu_as);
-    printf("  n %f\n  g %f\n  HGCoeff1 %f\n  HGCoeff2 %f\n  absfrac %f\n", mat.n, mat.g, mat.HGCoeff1, mat.HGCoeff2, mat.absfrac);
+    printf("Material %d:  mua %f  mus %f  muas %f  rmuas %f\n",i, mat.mu_a, mat.mu_s, mat.mu_as, mat.rmu_as);
+    //printf("  n %f\n  g %f\n  HGCoeff1 %f\n  HGCoeff2 %f\n  absfrac %f\n", mat.n, mat.g, mat.HGCoeff1, mat.HGCoeff2, mat.absfrac);
   }
   printf("\n");
 }
@@ -574,9 +573,11 @@ int main(int argc, char* argv[])
   Source *sourcepoint;
   ParseSource("cube_5med.source", &sourcepoint, tetra_mesh, Nt);
   //OutputSource(sourcepoint);	//debug code
-  Material *mat;
+
+  //Material *mat;
   ParseMaterial("cube_5med.opt", &materialspec, &Nm);
-  //OutputMaterial(materialspec, Nm);	//debug code
+  OutputMaterial(materialspec, Nm);	//debug code
+  
 
   char* filename = NULL;
   unsigned long long seed = (unsigned long long) time(NULL);
