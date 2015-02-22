@@ -40,7 +40,8 @@ void usage(const char *prog_name)
 int interpret_arg(int argc, char* argv[], SimulationStruct *p_simulation)
 {
   sscanf(argv[1],"%d",&(p_simulation->number_of_photons));
-  strncpy(p_simulation->outp_filename, argv[2], STR_LEN);
+  strncpy(p_simulation->inp_filename, argv[2], STR_LEN);
+  strncpy(p_simulation->outp_filename, argv[3], STR_LEN);
 
   return 0;
 }
@@ -122,7 +123,7 @@ int Write_Simulation_Results(SimState* HostMem, SimulationStruct* sim, double si
       if(TriNodeList[TriNodeIndex].N0!=0)
       {
       
-        TriNodeList[TriNodeIndex].fluence = (double) HostMem->transmittance[TriNodeIndex]/WEIGHT_SCALE/TriNodeList[TriNodeIndex].area;
+        TriNodeList[TriNodeIndex].fluence = (double) HostMem->transmittance[TriNodeIndex]/WEIGHT_SCALE;
       
         surfaceList.push_back(TriNodeList[TriNodeIndex]);
       } 
@@ -149,7 +150,7 @@ int Write_Simulation_Results(SimState* HostMem, SimulationStruct* sim, double si
   fout << "Internal Fluence" << endl;
   for(int TetraID = 1; TetraID <= sim->nTetras; ++TetraID)
   {
-      float fluence = (float) HostMem->absorption[TetraID]/WEIGHT_SCALE/TetraNodeList[TetraID].volume/material_spec[tetra_mesh[TetraID].matID].mu_a;
+      float fluence = (float) HostMem->absorption[TetraID]/WEIGHT_SCALE;
       //fluence = (double) HostMem->absorption[TetraID];
       fout << TetraNodeList[TetraID].N0 << " \t"
            << TetraNodeList[TetraID].N1 << " \t"

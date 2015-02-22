@@ -562,36 +562,41 @@ int main(int argc, char* argv[])
 {
   banner();
 
-  Tetra *tetra_mesh;
-  TriNode *trinodes;
-  TetraNode *tetranodes;
-  int Np, Nt, Nm;	//number of points, number of tetrahedra, number of materials
-  PopulateTetraFromMeshFile("cube_5med.mesh", &tetra_mesh, &trinodes, &tetranodes, &Np, &Nt);
-  Material *materialspec;
-  //OutputTetraMesh(tetra_mesh, Nt);	//debug code
-
-  Source *sourcepoint;
-  ParseSource("cube_5med.source", &sourcepoint, tetra_mesh, Nt);
-  //OutputSource(sourcepoint);	//debug code
-
-  //Material *mat;
-  ParseMaterial("cube_5med.opt", &materialspec, &Nm);
-  OutputMaterial(materialspec, Nm);	//debug code
-  
-
-  char* filename = NULL;
-  unsigned long long seed = (unsigned long long) time(NULL);
-  
   SimulationStruct simulation;
-
-  int i;
-
   // Parse command-line arguments.
   if (interpret_arg(argc, argv, &simulation))
   {
     usage(argv[0]);
     return 1;
   }
+
+  Tetra *tetra_mesh;
+  TriNode *trinodes;
+  TetraNode *tetranodes;
+  int Np, Nt, Nm;	//number of points, number of tetrahedra, number of materials
+  char filename[256];
+  strncpy(filename, simulation.inp_filename, 250);
+  strcat(filename, ".mesh");
+  PopulateTetraFromMeshFile(filename, &tetra_mesh, &trinodes, &tetranodes, &Np, &Nt);
+  Material *materialspec;
+  //OutputTetraMesh(tetra_mesh, Nt);	//debug code
+
+  strncpy(filename, simulation.inp_filename, 248);
+  strcat(filename, ".source");
+  Source *sourcepoint;
+  ParseSource(filename, &sourcepoint, tetra_mesh, Nt);
+  //OutputSource(sourcepoint);	//debug code
+
+  //Material *mat;
+  strncpy(filename, simulation.inp_filename, 251);
+  strcat(filename, ".opt");
+  ParseMaterial(filename, &materialspec, &Nm);
+  OutputMaterial(materialspec, Nm);	//debug code
+  
+  unsigned long long seed = (unsigned long long) time(NULL);
+
+  int i;
+
   // Output the execution configuration.
   printf("\n====================================\n");
   printf("EXECUTION MODE:\n");
