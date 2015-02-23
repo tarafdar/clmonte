@@ -183,8 +183,8 @@ void FreeDeviceSimStates(cl_context context, cl_command_queue command_queue, cl_
         cl_mem photon_dy_mem_obj, cl_mem photon_dz_mem_obj, cl_mem photon_w_mem_obj,
         cl_mem photon_tetra_id_mem_obj, cl_mem photon_mat_id_mem_obj, cl_mem is_active_mem_obj
         );
-void PopulateTetraFromMeshFile(const char* filename, Tetra **p_tetra_mesh, TriNode **p_trinodes, TetraNode **p_tetranodes, int *p_Np, int *p_Nt);
+void PopulateTetraFromMeshFile(const char* filename, Tetra **p_tetra_mesh, Point **p_points, TriNode **p_trinodes, TetraNode **p_tetranodes, int *p_Np, int *p_Nt);
 void PopulateMaterialFromInput(const char*, Material **p_material_spec, int *Nm);
-void ParseSource(const char* filename, Source** sourcepoint, const Tetra *tetra_mesh, const int Nt);
+void ParseSource(const char* filename, Source** sourcepoint, const Tetra *tetra_mesh, const int Nt, const Point *points, const TetraNode *tetranodes);
 void ParseMaterial(const char *fileName, Material **mat, int *p_Nm);
 #endif  // _GPUMCML_H_

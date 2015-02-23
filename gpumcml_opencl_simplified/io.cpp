@@ -324,7 +324,7 @@ void HandleFace(int tetraID, Tetra *tetra_mesh, list<TwoPointIDsToTetraID> *face
 }
 
 
-void PopulateTetraFromMeshFile(const char* filename, Tetra **p_tetra_mesh, TriNode **p_trinodes, TetraNode **p_tetranodes, int *p_Np, int *p_Nt)
+void PopulateTetraFromMeshFile(const char* filename, Tetra **p_tetra_mesh, Point **p_points, TriNode **p_trinodes, TetraNode **p_tetranodes, int *p_Np, int *p_Nt)
 {
   int i;
   int pointIDs[4];	//store the ids of 4 points of each tetrahedron
@@ -341,6 +341,7 @@ void PopulateTetraFromMeshFile(const char* filename, Tetra **p_tetra_mesh, TriNo
   sscanf(line, "%d", p_Np);
   //make size+1 because the point ID refered by each tetrahedron in the input file starts from 1 not 0
   Point *points = (Point*)malloc(sizeof(Point)*(*p_Np+1));
+  *p_points = points;
   fgets(line, 64, pFile);
   sscanf(line, "%d", p_Nt);
   for(i=1; i<*p_Np+1; i++)
@@ -352,14 +353,14 @@ void PopulateTetraFromMeshFile(const char* filename, Tetra **p_tetra_mesh, TriNo
   *p_tetra_mesh = (Tetra*)malloc(sizeof(Tetra)*(*p_Nt+1));
   *p_trinodes = (TriNode*)malloc(sizeof(TriNode)*4*(*p_Nt));
   *p_tetranodes = (TetraNode*)malloc(sizeof(TetraNode)*(*p_Nt+1));
-for(i=0;i<4*(*p_Nt);i++)
-{
-  (*p_trinodes)[i].N0 = 0;
-  (*p_trinodes)[i].N1 = 0;
-  (*p_trinodes)[i].N2 = 0;
-  (*p_trinodes)[i].area = 0;
-  (*p_trinodes)[i].fluence = 0;
-}
+  for(i=0;i<4*(*p_Nt);i++)
+  {
+    (*p_trinodes)[i].N0 = 0;
+    (*p_trinodes)[i].N1 = 0;
+    (*p_trinodes)[i].N2 = 0;
+    (*p_trinodes)[i].area = 0;
+    (*p_trinodes)[i].fluence = 0;
+  }
   list<TwoPointIDsToTetraID> *faceToTetraMap = new list<TwoPointIDsToTetraID>[*p_Np+1];
   for(i=1; i<*p_Nt+1; i++)
   {
@@ -426,7 +427,6 @@ for(i=0;i<4*(*p_Nt);i++)
       (*p_trinodes)[4*(firstNode.TetraID-1)+j].area = ComputeAreaFrom3Points(p1, p2, p3);
     }
   }
-  free(points);
   delete[] faceToTetraMap;
   return;
 }
@@ -565,11 +565,23 @@ int GetTetraIDFromCoordinates(const Tetra *tetra_mesh, const int Nt, const float
   return -1;
 }
 
+void PopulateCoordinatesFromTetraID(const Point *points, const TetraNode *tetranodes, Source *p_src)
+{
+  int IDt = p_src->IDt;
+  Point p0=points[tetranodes[IDt].N0];
+  Point p1=points[tetranodes[IDt].N1];
+  Point p2=points[tetranodes[IDt].N2];
+  Point p3=points[tetranodes[IDt].N3];
+  p_src->x=(p0.x+p1.x+p2.x+p3.x)/4.0;
+  p_src->y=(p0.y+p1.y+p2.y+p3.y)/4.0;
+  p_src->z=(p0.z+p1.z+p2.z+p3.z)/4.0;
+}
+
 //////////////////////////////////////////////////////////////////////////////
 // Parse Source (.Source File)
 //////////////////////////////////////////////////////////////////////////////
 
-void ParseSource(const char* filename, Source** sourcepoint, const Tetra *tetra_mesh, const int Nt) 
+void ParseSource(const char* filename, Source** sourcepoint, const Tetra *tetra_mesh, const int Nt, const Point *points, const TetraNode *tetranodes)
 {
   FILE *sourcefile;
 
@@ -611,6 +623,7 @@ void ParseSource(const char* filename, Source** sourcepoint, const Tetra *tetra_
     if ( fgets (linesource, 100, sourcefile) == NULL ) 
     {
       printf ("Error Reading Line %d Of Source File.\n", i);
+      exit(-1);
       fclose (sourcefile);
       return;
     }
@@ -628,11 +641,18 @@ void ParseSource(const char* filename, Source** sourcepoint, const Tetra *tetra_
       // IDt position
       case 2:
         sscanf (linesource, "%d %d %d", &(sourcepoint[i]->stype), &(sourcepoint[i]->IDt), &(sourcepoint[i]->Np) );
+        PopulateCoordinatesFromTetraID(points, tetranodes, sourcepoint[i]);
         break;
 
       // IDt position
       case 11:
         sscanf (linesource, "%d %d %f %f %f %f %f %f %d", &(sourcepoint[i]->stype), &(sourcepoint[i]->IDt), &(sourcepoint[i]->x), &(sourcepoint[i]->y), &(sourcepoint[i]->z), &(sourcepoint[i]->dx), &(sourcepoint[i]->dy), &(sourcepoint[i]->dz), &(sourcepoint[i]->Np) );
+        if (sourcepoint[i]->IDt != GetTetraIDFromCoordinates(tetra_mesh, Nt, sourcepoint[i]->x, sourcepoint[i]->y, sourcepoint[i]->z))
+        {
+          printf("Error: the source coordinate is outside the tetra ID in the input file.\n");
+          fclose(sourcefile);
+          exit(-1);
+        }
         break;
 
       default:

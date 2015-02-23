@@ -88,7 +88,7 @@ __kernel void InitThreadState(__global float *tstates_photon_x, __global float *
   // Initialize the photon and copy into photon_<parameter x>
   
   //point source
-  if (d_simparam.stype == 1){
+  if (d_simparam.stype == 1 || d_simparam.stype == 2){
   float rand, theta, phi, sinp, cosp, sint, cost;  
   rand = rand_MWC_co(&rnd_x, &rnd_a);
   theta = PI_const * rand;
@@ -298,7 +298,7 @@ __kernel void MCMLKernel(__global const SimParamGPU *d_simparam_addr,
           else if (atomic_sub(d_state_n_photons_left_addr, 1) > 0)
           {
             //point source
-            if (d_simparam.stype == 1){
+            if (d_simparam.stype == 1 || d_simparam.stype == 2){
             pkt.x = d_simparam.originX;
             pkt.y = d_simparam.originY;
             pkt.z = d_simparam.originZ;

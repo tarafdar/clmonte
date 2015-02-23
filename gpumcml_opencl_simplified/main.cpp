@@ -571,27 +571,28 @@ int main(int argc, char* argv[])
   }
 
   Tetra *tetra_mesh;
+  Point *points;
   TriNode *trinodes;
   TetraNode *tetranodes;
   int Np, Nt, Nm;	//number of points, number of tetrahedra, number of materials
   char filename[256];
   strncpy(filename, simulation.inp_filename, 250);
   strcat(filename, ".mesh");
-  PopulateTetraFromMeshFile(filename, &tetra_mesh, &trinodes, &tetranodes, &Np, &Nt);
+  PopulateTetraFromMeshFile(filename, &tetra_mesh, &points, &trinodes, &tetranodes, &Np, &Nt);
   Material *materialspec;
   //OutputTetraMesh(tetra_mesh, Nt);	//debug code
 
   strncpy(filename, simulation.inp_filename, 248);
   strcat(filename, ".source");
   Source *sourcepoint;
-  ParseSource(filename, &sourcepoint, tetra_mesh, Nt);
+  ParseSource(filename, &sourcepoint, tetra_mesh, Nt, points, tetranodes);
   //OutputSource(sourcepoint);	//debug code
 
   //Material *mat;
   strncpy(filename, simulation.inp_filename, 251);
   strcat(filename, ".opt");
   ParseMaterial(filename, &materialspec, &Nm);
-  OutputMaterial(materialspec, Nm);	//debug code
+  //OutputMaterial(materialspec, Nm);	//debug code
   
   unsigned long long seed = (unsigned long long) time(NULL);
 
@@ -629,7 +630,7 @@ int main(int argc, char* argv[])
   free(trinodes);
   free(tetranodes);
   free(x); free(a);
-
+  free(points);
   return 0; 
 }
 

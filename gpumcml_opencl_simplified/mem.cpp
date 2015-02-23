@@ -18,7 +18,7 @@ int InitDCMem(SimulationStruct *sim, Source *p_src, Tetra *tetra_mesh, Material 
   h_simparam.stype = p_src->stype;
   
   //point source
-  if (p_src->stype == 1){
+  if (p_src->stype == 1 || p_src->stype == 2){
    h_simparam.originX = p_src->x;
    h_simparam.originY = p_src->y;
    h_simparam.originZ = p_src->z;
