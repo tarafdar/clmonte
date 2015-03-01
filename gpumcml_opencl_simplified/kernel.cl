@@ -48,24 +48,12 @@ typedef struct
 typedef struct
 {
   // cartesian coordinates of the packet [cm]
-  float x;
-  float y;
-  float z;
-
+  float4 p;
   // azimuthal auxiliary vectors a and b
-  float ax;
-  float ay;
-  float az;
-  
-  float bx;
-  float by;
-  float bz;
-
+  float4 a;
+  float4 b;
   // direction of the packet
-  float dx;
-  float dy;
-  float dz;
-
+  float4 d;
   float w;            // packet weight
 
   float s;            // step size [cm] to be consumed in next Hop
@@ -214,12 +202,12 @@ void SaveThreadState(__global UINT64CL *d_state_x, __global UINT32CL *d_state_a,
   d_state_x[tid] = rnd_x;
   d_state_a[tid] = rnd_a;
   
-  tstates_photon_x[tid] = pkt->x;
-  tstates_photon_y[tid] = pkt->y;
-  tstates_photon_z[tid] = pkt->z;
-  tstates_photon_dx[tid] = pkt->dx;
-  tstates_photon_dy[tid] = pkt->dy;
-  tstates_photon_dz[tid] = pkt->dz;
+  tstates_photon_x[tid] = pkt->p.x;
+  tstates_photon_y[tid] = pkt->p.y;
+  tstates_photon_z[tid] = pkt->p.z;
+  tstates_photon_dx[tid] = pkt->d.x;
+  tstates_photon_dy[tid] = pkt->d.y;
+  tstates_photon_dz[tid] = pkt->d.z;
   tstates_photon_w[tid] = pkt->w;
   tstates_photon_tetra_id[tid] = pkt->tetraID;
 
@@ -243,32 +231,25 @@ void RestoreThreadState(__global UINT64CL *d_state_x, __global UINT32CL *d_state
   *rnd_x = d_state_x[tid];
   *rnd_a = d_state_a[tid];
   
-  pkt->x = tstates_photon_x[tid];
-  pkt->y = tstates_photon_y[tid];
-  pkt->z = tstates_photon_z[tid];
-  pkt->dx = tstates_photon_dx[tid];
-  pkt->dy = tstates_photon_dy[tid];
-  pkt->dz = tstates_photon_dz[tid];
+  pkt->p.x = tstates_photon_x[tid];
+  pkt->p.y = tstates_photon_y[tid];
+  pkt->p.z = tstates_photon_z[tid];
+  pkt->d.x = tstates_photon_dx[tid];
+  pkt->d.y = tstates_photon_dy[tid];
+  pkt->d.z = tstates_photon_dz[tid];
   pkt->w = tstates_photon_w[tid];
   pkt->tetraID = tstates_photon_tetra_id[tid];
 
   // vector a = (vector d) cross (positive z axis unit vector) and normalize it 
-  float4 d = (float4)(pkt->dx, pkt->dy, pkt->dz, 0);
   float4 crossProduct;
-  if(d.x==0 && d.y==0)
-    crossProduct = cross(d, (float4)(1,0,0,0));
+  if(pkt->d.x==0 && pkt->d.y==0)
+    crossProduct = cross(pkt->d, (float4)(1,0,0,0));
   else
-    crossProduct = cross(d, (float4)(0,0,1,0));
-  float4 a = normalize(crossProduct);
-  pkt->ax = a.x;
-  pkt->ay = a.y;
-  pkt->az = a.z;
+    crossProduct = cross(pkt->d, (float4)(0,0,1,0));
+  pkt->a = normalize(crossProduct);
 
   // vector b = (vector d) cross (vector a)
-  float4 b = cross(d,a);
-  pkt->bx = b.x;
-  pkt->by = b.y;
-  pkt->bz = b.z;
+  pkt->b = cross(pkt->d,pkt->a);
 
   *is_active = tstates_is_active[tid];
 }
@@ -322,15 +303,15 @@ __kernel void MCMLKernel(__global const SimParamGPU *d_simparam_addr,
       Tetra tetra = d_tetra_mesh[pkt.tetraID];
       Material mat = d_materialspecs[tetra.matID];
       
-      cosdn[0] = dot_product(pkt.dx, pkt.dy, pkt.dz, tetra.face[0][0], tetra.face[0][1], tetra.face[0][2]);
-      cosdn[1] = dot_product(pkt.dx, pkt.dy, pkt.dz, tetra.face[1][0], tetra.face[1][1], tetra.face[1][2]);
-      cosdn[2] = dot_product(pkt.dx, pkt.dy, pkt.dz, tetra.face[2][0], tetra.face[2][1], tetra.face[2][2]);
-      cosdn[3] = dot_product(pkt.dx, pkt.dy, pkt.dz, tetra.face[3][0], tetra.face[3][1], tetra.face[3][2]);
+      cosdn[0] = dot_product(pkt.d.x, pkt.d.y, pkt.d.z, tetra.face[0][0], tetra.face[0][1], tetra.face[0][2]);
+      cosdn[1] = dot_product(pkt.d.x, pkt.d.y, pkt.d.z, tetra.face[1][0], tetra.face[1][1], tetra.face[1][2]);
+      cosdn[2] = dot_product(pkt.d.x, pkt.d.y, pkt.d.z, tetra.face[2][0], tetra.face[2][1], tetra.face[2][2]);
+      cosdn[3] = dot_product(pkt.d.x, pkt.d.y, pkt.d.z, tetra.face[3][0], tetra.face[3][1], tetra.face[3][2]);
 
-      dis[0] = dot_product(pkt.x,pkt.y,pkt.z,tetra.face[0][0],tetra.face[0][1],tetra.face[0][2])-tetra.face[0][3];
-      dis[1] = dot_product(pkt.x,pkt.y,pkt.z,tetra.face[1][0],tetra.face[1][1],tetra.face[1][2])-tetra.face[1][3];
-      dis[2] = dot_product(pkt.x,pkt.y,pkt.z,tetra.face[2][0],tetra.face[2][1],tetra.face[2][2])-tetra.face[2][3];
-      dis[3] = dot_product(pkt.x,pkt.y,pkt.z,tetra.face[3][0],tetra.face[3][1],tetra.face[3][2])-tetra.face[3][3];
+      dis[0] = dot_product(pkt.p.x,pkt.p.y,pkt.p.z,tetra.face[0][0],tetra.face[0][1],tetra.face[0][2])-tetra.face[0][3];
+      dis[1] = dot_product(pkt.p.x,pkt.p.y,pkt.p.z,tetra.face[1][0],tetra.face[1][1],tetra.face[1][2])-tetra.face[1][3];
+      dis[2] = dot_product(pkt.p.x,pkt.p.y,pkt.p.z,tetra.face[2][0],tetra.face[2][1],tetra.face[2][2])-tetra.face[2][3];
+      dis[3] = dot_product(pkt.p.x,pkt.p.y,pkt.p.z,tetra.face[3][0],tetra.face[3][1],tetra.face[3][2])-tetra.face[3][3];
 
       //if the packet is moving away from a face, its distance to that face's intersection is infinity.
       dis[0] = cosdn[0]>=0 ? FLT_MAX : -native_divide(dis[0], cosdn[0]);
@@ -347,12 +328,11 @@ __kernel void MCMLKernel(__global const SimParamGPU *d_simparam_addr,
       UINT32CL nextTetraID = tetra.adjTetras[minIndex];
   
       float canmove = pkt.s * mat.rmu_as;
+      rand = rand_MWC_co(&rnd_x, &rnd_a);
       if(dis[minIndex] > canmove)
       {
         pkt.s = MCML_FP_ZERO;
-        pkt.x += canmove *pkt.dx;
-        pkt.y += canmove *pkt.dy;
-        pkt.z += canmove *pkt.dz;
+        pkt.p += canmove * pkt.d;
         
         float dw = pkt.w*mat.absfrac;
         pkt.w = pkt.w - dw;
@@ -360,8 +340,6 @@ __kernel void MCMLKernel(__global const SimParamGPU *d_simparam_addr,
         
         if (pkt.w < WEIGHT)
         {
-          rand = rand_MWC_co(&rnd_x, &rnd_a);
-
           // This pkt survives the roulette.
           if (pkt.w != MCML_FP_ZERO && rand < CHANCE)
             pkt.w *= (FP_ONE / CHANCE);
@@ -370,11 +348,11 @@ __kernel void MCMLKernel(__global const SimParamGPU *d_simparam_addr,
           {
             //point source
             if (d_simparam.stype == 1 || d_simparam.stype == 2){
-            pkt.x = d_simparam.originX;
-            pkt.y = d_simparam.originY;
-            pkt.z = d_simparam.originZ;
+            pkt.p.x = d_simparam.originX;
+            pkt.p.y = d_simparam.originY;
+            pkt.p.z = d_simparam.originZ;
   
-            float rand, theta, phi, sinp, cosp, sint, cost;  
+            float theta, phi, sinp, cosp, sint, cost;  
             rand = rand_MWC_co(&rnd_x, &rnd_a);
             theta = PI_const * rand;
             rand = rand_MWC_co(&rnd_x, &rnd_a);
@@ -383,20 +361,20 @@ __kernel void MCMLKernel(__global const SimParamGPU *d_simparam_addr,
             sint = sincos(theta, &cost);
             sinp = sincos(phi, &cosp);
 
-            pkt.dx = sinp * cost; 
-            pkt.dy = sinp * sint;
-            pkt.dz = cosp;
+            pkt.d.x = sinp * cost; 
+            pkt.d.y = sinp * sint;
+            pkt.d.z = cosp;
             }
 
             //pencil source
             if (d_simparam.stype == 11){
-            pkt.x = d_simparam.originX;
-            pkt.y = d_simparam.originY;
-            pkt.z = d_simparam.originZ;
+            pkt.p.x = d_simparam.originX;
+            pkt.p.y = d_simparam.originY;
+            pkt.p.z = d_simparam.originZ;
   
-            pkt.dx = d_simparam.UX;
-	    pkt.dy = d_simparam.UY;
-	    pkt.dz = d_simparam.UZ;
+            pkt.d.x = d_simparam.UX;
+	    pkt.d.y = d_simparam.UY;
+	    pkt.d.z = d_simparam.UZ;
             }
 
             //all sources
@@ -405,24 +383,16 @@ __kernel void MCMLKernel(__global const SimParamGPU *d_simparam_addr,
 
 
             // vector a = (vector d) cross (positive z axis unit vector) and normalize it 
-            float4 d = (float4)(pkt.dx, pkt.dy, pkt.dz, 0);
             float4 crossProduct;
-            if(d.x==0 && d.y==0)
-              crossProduct = cross(d, (float4)(1,0,0,0));
+            if(pkt.d.x==0 && pkt.d.y==0)
+              crossProduct = (float4)(1,0,0,0);
             else
-              crossProduct = cross(d, (float4)(0,0,1,0));
-            float4 a = normalize(crossProduct);
-            pkt.ax = a.x;
-            pkt.ay = a.y;
-            pkt.az = a.z;
+              crossProduct = (float4)(0,0,1,0);
+            crossProduct = cross(pkt.d, crossProduct);
+            pkt.a = normalize(crossProduct);
 
             // vector b = (vector d) cross (vector a)
-            float4 b = cross(d,a);
-            pkt.bx = b.x;
-            pkt.by = b.y;
-            pkt.bz = b.z;
-          
-          
+            pkt.b = cross(pkt.d,pkt.a);
           }
           else
             is_active = 0;
@@ -430,8 +400,9 @@ __kernel void MCMLKernel(__global const SimParamGPU *d_simparam_addr,
         else
         {
           float cost, sint, cosp, sinp;
-          float last_dx, last_dy, last_dz, last_ax, last_ay, last_az, last_bx, last_by, last_bz;
-          rand = FP_TWO * rand_MWC_co(&rnd_x, &rnd_a) - FP_ONE;
+          float4 last_d, last_a, last_b;
+          //rand = FP_TWO * rand_MWC_co(&rnd_x, &rnd_a) - FP_ONE;
+          rand = FP_TWO * rand - FP_ONE;
           cost = mat.HGCoeff1 - native_divide(mat.HGCoeff2, (1-mat.g*rand)*(1-mat.g*rand));
           sint = sqrt(FP_ONE - cost * cost);
 
@@ -444,33 +415,18 @@ __kernel void MCMLKernel(__global const SimParamGPU *d_simparam_addr,
           float ctcp = cost * cosp;
           float ctsp = cost * sinp;
 
-          last_dx = pkt.dx;
-          last_dy = pkt.dy;
-          last_dz = pkt.dz;
-          last_ax = pkt.ax;
-          last_ay = pkt.ay;
-          last_az = pkt.az;
-          last_bx = pkt.bx;
-          last_by = pkt.by;
-          last_bz = pkt.bz;
-          pkt.dx = cost*last_dx - stcp*last_ax + stsp*last_bx;
-          pkt.dy = cost*last_dy - stcp*last_ay + stsp*last_by;
-          pkt.dz = cost*last_dz - stcp*last_az + stsp*last_bz;
-          pkt.ax = sint*last_dx +ctcp*last_ax - ctsp*last_bx;
-          pkt.ay = sint*last_dy +ctcp*last_ay - ctsp*last_by;
-          pkt.az = sint*last_dz +ctcp*last_az - ctsp*last_bz;
-          pkt.bx = sinp*last_ax + cosp*last_bx;
-          pkt.by = sinp*last_ay + cosp*last_by;
-          pkt.bz = sinp*last_az + cosp*last_bz;
+          last_d = pkt.d;
+          last_a = pkt.a;
+          last_b = pkt.b;
+          pkt.d = cost*last_d - stcp*last_a + stsp*last_b;
+          pkt.a = sint*last_d + ctcp*last_a - ctsp*last_b;
+          pkt.b = sinp*last_a + cosp*last_b;
         }
       }
       else
       {
         pkt.s = pkt.s - dis[minIndex] * mat.mu_as;
-        pkt.x += dis[minIndex] * pkt.dx;
-        pkt.y += dis[minIndex] * pkt.dy;
-        pkt.z += dis[minIndex] * pkt.dz;
-        
+        pkt.p += dis[minIndex] * pkt.d;        
         
         Tetra nextTetra = d_tetra_mesh[nextTetraID];
         float ni, nt; //refractive indices
@@ -491,16 +447,14 @@ __kernel void MCMLKernel(__global const SimParamGPU *d_simparam_addr,
         float crit_cos=nt<ni ? 0 : GetCosCrit(ni,nt);
   
         float *normal = tetra.face[pkt.faceIndexToHit];
-        float ca1 = -dot_product(pkt.dx,pkt.dy,pkt.dz,normal[0],normal[1],normal[2]); //ca1 is cos(theta incidence) 
+        float ca1 = -dot_product(pkt.d.x,pkt.d.y,pkt.d.z,normal[0],normal[1],normal[2]); //ca1 is cos(theta incidence) 
         float sa1 = sqrt(FP_ONE-ca1*ca1); //sa1 is sin(theta incidence)
         if (ca1 > COSZERO) sa1 = MCML_FP_ZERO; 
   
         if (ca1 <= crit_cos)	//total internal reflection occurs
         {
           //reflected direction = original_direction - 2(original_direction dot normal)*normal
-          pkt.dx = pkt.dx + 2*ca1*normal[0]; 
-          pkt.dy = pkt.dy + 2*ca1*normal[1];
-          pkt.dz = pkt.dz + 2*ca1*normal[2];
+          pkt.d = pkt.d + 2*ca1*(float4)(normal[0],normal[1],normal[2],0);
         }
         else
         {    
@@ -517,14 +471,10 @@ __kernel void MCMLKernel(__global const SimParamGPU *d_simparam_addr,
 
           if (ca1 < COSNINETYDEG || sa2 == FP_ONE) rFresnel = FP_ONE;
 
-          rand = rand_MWC_co(&rnd_x, &rnd_a);
-
           if (rFresnel < rand) //refract
           {
             // refracted direction = n1/n2*original_direction - [n1/n2*cos(theta incidence) + sqrt(1-sin^2(theta transmitt))]*normal
-            pkt.dx = ni_nt*(pkt.dx) - (ni_nt*(-ca1)+ca2)*normal[0]; 
-            pkt.dy = ni_nt*(pkt.dy) - (ni_nt*(-ca1)+ca2)*normal[1]; 
-            pkt.dz = ni_nt*(pkt.dz) - (ni_nt*(-ca1)+ca2)*normal[2]; 
+            pkt.d = ni_nt*(pkt.d)-fma(ni_nt,-ca1,ca2)*(float4)(normal[0],normal[1],normal[2],0);
       
             if (nextTetraID == 0) {
       
@@ -538,29 +488,21 @@ __kernel void MCMLKernel(__global const SimParamGPU *d_simparam_addr,
           else //reflect
           {
             //reflected direction = original_direction - 2(original_direction dot normal)*normal
-            pkt.dx = pkt.dx + 2*ca1*normal[0]; 
-            pkt.dy = pkt.dy + 2*ca1*normal[1];
-            pkt.dz = pkt.dz + 2*ca1*normal[2];
+            pkt.d = pkt.d + 2*ca1*(float4)(normal[0],normal[1],normal[2],0);
           }
         }
                   // auxilary updating function
           // vector a = (vector d) cross (positive z axis unit vector) and normalize it 
-          float4 d = (float4)(pkt.dx, pkt.dy, pkt.dz, 0);
           float4 crossProduct;
-          if(d.x==0 && d.y==0)
-            crossProduct = cross(d, (float4)(1,0,0,0));
+          if(pkt.d.x==0 && pkt.d.y==0)
+            crossProduct = (float4)(1,0,0,0);
           else
-            crossProduct = cross(d, (float4)(0,0,1,0));
-          float4 a = normalize(crossProduct);
-          pkt.ax = a.x;
-          pkt.ay = a.y;
-          pkt.az = a.z;
+            crossProduct = (float4)(0,0,1,0);
+          crossProduct = cross(pkt.d,crossProduct);
+          pkt.a = normalize(crossProduct);
 
           // vector b = (vector d) cross (vector a)
-          float4 b = cross(d,a);
-          pkt.bx = b.x;
-          pkt.by = b.y;
-          pkt.bz = b.z;
+          pkt.b = cross(pkt.d,pkt.a);
         }
       }
     }
