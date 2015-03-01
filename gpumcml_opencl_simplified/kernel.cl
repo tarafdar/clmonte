@@ -501,24 +501,6 @@ __kernel void MCMLKernel(__global const SimParamGPU *d_simparam_addr,
           pkt.dx = pkt.dx + 2*ca1*normal[0]; 
           pkt.dy = pkt.dy + 2*ca1*normal[1];
           pkt.dz = pkt.dz + 2*ca1*normal[2];
-          // auxilary updating function
-          // vector a = (vector d) cross (positive z axis unit vector) and normalize it 
-          float4 d = (float4)(pkt.dx, pkt.dy, pkt.dz, 0);
-          float4 crossProduct;
-          if(d.x==0 && d.y==0)
-            crossProduct = cross(d, (float4)(1,0,0,0));
-          else
-            crossProduct = cross(d, (float4)(0,0,1,0));
-          float4 a = normalize(crossProduct);
-          pkt.ax = a.x;
-          pkt.ay = a.y;
-          pkt.az = a.z;
-
-          // vector b = (vector d) cross (vector a)
-          float4 b = cross(d,a);
-          pkt.bx = b.x;
-          pkt.by = b.y;
-          pkt.bz = b.z;
         }
         else
         {    
@@ -543,25 +525,6 @@ __kernel void MCMLKernel(__global const SimParamGPU *d_simparam_addr,
             pkt.dx = ni_nt*(pkt.dx) - (ni_nt*(-ca1)+ca2)*normal[0]; 
             pkt.dy = ni_nt*(pkt.dy) - (ni_nt*(-ca1)+ca2)*normal[1]; 
             pkt.dz = ni_nt*(pkt.dz) - (ni_nt*(-ca1)+ca2)*normal[2]; 
-            
-            // auxilary updating function
-            // vector a = (vector d) cross (positive z axis unit vector) and normalize it 
-            float4 d = (float4)(pkt.dx, pkt.dy, pkt.dz, 0);
-            float4 crossProduct;
-            if(d.x==0 && d.y==0)
-              crossProduct = cross(d, (float4)(1,0,0,0));
-            else
-              crossProduct = cross(d, (float4)(0,0,1,0));
-            float4 a = normalize(crossProduct);
-            pkt.ax = a.x;
-            pkt.ay = a.y;
-            pkt.az = a.z;
-
-	        // vector b = (vector d) cross (vector a)
-	        float4 b = cross(d,a);
-	        pkt.bx = b.x;
-	        pkt.by = b.y;
-	        pkt.bz = b.z;
       
             if (nextTetraID == 0) {
       
@@ -578,27 +541,26 @@ __kernel void MCMLKernel(__global const SimParamGPU *d_simparam_addr,
             pkt.dx = pkt.dx + 2*ca1*normal[0]; 
             pkt.dy = pkt.dy + 2*ca1*normal[1];
             pkt.dz = pkt.dz + 2*ca1*normal[2];
-      
-            // auxilary updating function
-            // vector a = (vector d) cross (positive z axis unit vector) and normalize it 
-            float4 d = (float4)(pkt.dx, pkt.dy, pkt.dz, 0);
-            float4 crossProduct;
-            if(d.x==0 && d.y==0)
-              crossProduct = cross(d, (float4)(1,0,0,0));
-            else
-              crossProduct = cross(d, (float4)(0,0,1,0));
-            float4 a = normalize(crossProduct);
-            pkt.ax = a.x;
-            pkt.ay = a.y;
-            pkt.az = a.z;
-
-            // vector b = (vector d) cross (vector a)
-            float4 b = cross(d,a);
-            pkt.bx = b.x;
-            pkt.by = b.y;
-            pkt.bz = b.z; 
           }
         }
+                  // auxilary updating function
+          // vector a = (vector d) cross (positive z axis unit vector) and normalize it 
+          float4 d = (float4)(pkt.dx, pkt.dy, pkt.dz, 0);
+          float4 crossProduct;
+          if(d.x==0 && d.y==0)
+            crossProduct = cross(d, (float4)(1,0,0,0));
+          else
+            crossProduct = cross(d, (float4)(0,0,1,0));
+          float4 a = normalize(crossProduct);
+          pkt.ax = a.x;
+          pkt.ay = a.y;
+          pkt.az = a.z;
+
+          // vector b = (vector d) cross (vector a)
+          float4 b = cross(d,a);
+          pkt.bx = b.x;
+          pkt.by = b.y;
+          pkt.bz = b.z;
         }
       }
     }
