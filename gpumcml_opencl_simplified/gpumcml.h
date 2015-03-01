@@ -33,7 +33,7 @@
 #define WEIGHT 1E-4F        
 
 // scaling factor for photon weight, which is then converted to integer
-#define WEIGHT_SCALE 8388608//12000000
+#define WEIGHT_SCALE 65536//12000000
 
 #define PI_const 3.1415926F
 #define RPI 0.318309886F
@@ -82,8 +82,8 @@ typedef struct
   UINT32 *a;
 
   // output data
-  UINT64* absorption; // Array of nTetras + 1
-  UINT64* transmittance; // Array of nTetras * 4
+  UINT32* absorption; // Array of nTetras + 1
+  UINT32* transmittance; // Array of nTetras * 4
 } SimState;
 
 // Everything a host thread needs to know in order to run simulation on

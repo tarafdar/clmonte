@@ -2,7 +2,7 @@ typedef ulong UINT64CL;
 typedef uint UINT32CL;
 // Critical weight for roulette
 #define WEIGHT 1E-4F        
-#define WEIGHT_SCALE 8388608//12000000
+#define WEIGHT_SCALE 65536//12000000
 
 #define PI_const 3.1415926F
 #define RPI 0.318309886F
@@ -20,7 +20,7 @@ typedef uint UINT32CL;
 
 
 #include "kernel.h"
-#pragma OPENCL EXTENSION cl_khr_int64_base_atomics : enable
+//#pragma OPENCL EXTENSION cl_khr_int64_base_atomics : enable
 
 float dot_product (float x1, float y1, float z1, float x2, float y2, float z2) {
     return  x1*x2 + y1*y2 + z1*z2;
@@ -209,7 +209,7 @@ void RestoreThreadState(__global UINT64CL *d_state_x, __global UINT32CL *d_state
 __kernel void MCMLKernel(__global const SimParamGPU *d_simparam_addr,
                                   __global int *d_state_n_photons_left_addr, __global UINT64CL *d_state_x, 
                                   __global UINT32CL *d_state_a, __global const Tetra *d_tetra_mesh,
-                                  __global const Material *d_materialspecs, __global UINT64CL *absorption,__global UINT64CL *transmittance, __global float *debug,
+                                  __global const Material *d_materialspecs, __global UINT32CL *absorption,__global UINT32CL *transmittance, __global float *debug,
                                    //__global GPUThreadStates tstates
                                  __global float *tstates_photon_x, __global float *tstates_photon_y, __global float *tstates_photon_z,
                                  __global float *tstates_photon_dx, __global float *tstates_photon_dy, __global float *tstates_photon_dz,
@@ -285,7 +285,7 @@ __kernel void MCMLKernel(__global const SimParamGPU *d_simparam_addr,
         
         float dw = pkt.w*mat.absfrac;
         pkt.w = pkt.w - dw;
-        atomic_add(&(absorption[pkt.tetraID]), (UINT64CL)(dw*WEIGHT_SCALE));
+        atomic_add(&(absorption[pkt.tetraID]), (UINT32CL)(dw*WEIGHT_SCALE));
         
         if (pkt.w < WEIGHT)
         {
@@ -411,7 +411,7 @@ __kernel void MCMLKernel(__global const SimParamGPU *d_simparam_addr,
           pkt.tetraID = nextTetraID;
           if (nextTetraID == 0)
           {
-            atomic_add(&(transmittance[(pkt.tetraID - 1) * 4 + pkt.faceIndexToHit]), (UINT64CL)(pkt.w * WEIGHT_SCALE));
+            atomic_add(&(transmittance[(pkt.tetraID - 1) * 4 + pkt.faceIndexToHit]), (UINT32CL)(pkt.w * WEIGHT_SCALE));
             pkt.w = MCML_FP_ZERO;
           }
         }
@@ -495,7 +495,7 @@ __kernel void MCMLKernel(__global const SimParamGPU *d_simparam_addr,
             if (nextTetraID == 0) {
       
           	  //store surface fluence TODO: find more efficient way of doing this!
-          	  atomic_add(&(transmittance[(pkt.tetraID - 1) * 4 + pkt.faceIndexToHit]), (UINT64CL)(pkt.w * WEIGHT_SCALE));
+          	  atomic_add(&(transmittance[(pkt.tetraID - 1) * 4 + pkt.faceIndexToHit]), (UINT32CL)(pkt.w * WEIGHT_SCALE));
               // Kill the packet.
           	  pkt.w = MCML_FP_ZERO;
             }
