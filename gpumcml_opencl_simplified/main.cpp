@@ -5,7 +5,6 @@
 #include <string.h>
 #include <math.h>
 #include <CL/cl.h>
-#include "kernel.h"
 #include "gpumcml.h"
 #include <iostream>
 using namespace std;

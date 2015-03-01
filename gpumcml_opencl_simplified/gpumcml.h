@@ -49,6 +49,16 @@
 
 #define STR_LEN 200
 
+
+#define NUM_STEPS 500000  //Use 5000 for faster response time
+
+#define NUM_BLOCKS 30
+#define NUM_THREADS_PER_BLOCK 512
+#define NUM_THREADS (NUM_BLOCKS * NUM_THREADS_PER_BLOCK)
+
+typedef unsigned long long UINT64;
+typedef unsigned int UINT32;
+
 //////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////
 
@@ -148,6 +158,62 @@ typedef struct
   int N3;
   float volume;
 } TetraNode;
+
+typedef struct
+{
+  // The face i's plane is defined by equation (face[i][0]) * x + (face[i][1]) * y + (face[i][2]) * z = face[i][3]
+  // The face normal vectors (face[i][0],face[i][1],face[i][2]) always point into the tetrahedron. They are always unit vector.
+  float face[4][4];
+  
+  UINT32 adjTetras[4];
+  UINT32 matID;    
+} Tetra ;
+
+typedef struct
+{
+  float mu_a;	//absorption coefficient
+  float mu_s;	//scatter coefficient
+  float mu_as;	//attenuation coefficient: result of mu_a + mu_s
+  float rmu_as;	//reciprocal of mu_as, store this to get rid of slow division arithmetic 
+  float n;	//index of refraction
+  float g;	//anisotropy constant
+  float HGCoeff1;	// HGCoeff1 = (1+g^2)/(2g)
+  float HGCoeff2;	// HGCoeff2 = (1-g^2)^2 /(2g). So cos(theta) = HGCoeff1 - HGCoeff2 / (1-g * rand(-1,1))
+  float absfrac;	//absorb fraction = 1- albedo = 1 - mus / (mus+mua)
+  int setMatched;
+} Material;
+
+typedef struct
+{
+
+  float originX;
+  float originY;
+  float originZ;	//coordinate of the source emitter location
+
+  float UX, UY, UZ;     //initial direction for pencil source
+
+  int stype;            //source type
+
+  UINT32 init_tetraID; 
+} SimParamGPU;
+
+typedef struct {
+  int stype;
+  int Np;	//means weight (in terms of number of photons in this packet)
+
+  // Source Position -> IFF stype = 1 or 11
+  float x;
+  float y;
+  float z;
+
+  // Source Direction -> IFF stype = 11
+  float dx;
+  float dy;
+  float dz;
+
+  // Source Location -> IFF stype = 2
+  int IDt;
+} Source;
 
 //////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////

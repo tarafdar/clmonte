@@ -18,9 +18,80 @@ typedef uint UINT32CL;
 
 #define STR_LEN 200
 
-
-#include "kernel.h"
 //#pragma OPENCL EXTENSION cl_khr_int64_base_atomics : enable
+
+
+typedef struct
+{
+  // The face i's plane is defined by equation (face[i][0]) * x + (face[i][1]) * y + (face[i][2]) * z = face[i][3]
+  // The face normal vectors (face[i][0],face[i][1],face[i][2]) always point into the tetrahedron. They are always unit vector.
+  float face[4][4];
+  
+  UINT32CL adjTetras[4];
+  UINT32CL matID;    
+} Tetra ;
+
+typedef struct
+{
+  float mu_a;	//absorption coefficient
+  float mu_s;	//scatter coefficient
+  float mu_as;	//attenuation coefficient: result of mu_a + mu_s
+  float rmu_as;	//reciprocal of mu_as, store this to get rid of slow division arithmetic 
+  float n;	//index of refraction
+  float g;	//anisotropy constant
+  float HGCoeff1;	// HGCoeff1 = (1+g^2)/(2g)
+  float HGCoeff2;	// HGCoeff2 = (1-g^2)^2 /(2g). So cos(theta) = HGCoeff1 - HGCoeff2 / (1-g * rand(-1,1))
+  float absfrac;	//absorb fraction = 1- albedo = 1 - mus / (mus+mua)
+  int setMatched;
+} Material;
+
+typedef struct
+{
+  // cartesian coordinates of the packet [cm]
+  float x;
+  float y;
+  float z;
+
+  // azimuthal auxiliary vectors a and b
+  float ax;
+  float ay;
+  float az;
+  
+  float bx;
+  float by;
+  float bz;
+
+  // direction of the packet
+  float dx;
+  float dy;
+  float dz;
+
+  float w;            // packet weight
+
+  float s;            // step size [cm] to be consumed in next Hop
+
+  // id of the tetrahedron where the packet is currently in
+  UINT32CL tetraID;
+  // index (0,1,2,3) of the current tetra's face to hit
+  UINT32CL faceIndexToHit;
+  // id of the tetrahedron which the packet may refract into
+  UINT32CL nextTetraID;
+} Packet;
+
+typedef struct
+{
+
+  float originX;
+  float originY;
+  float originZ;	//coordinate of the source emitter location
+
+  float UX, UY, UZ;     //initial direction for pencil source
+
+  int stype;            //source type
+
+  UINT32CL init_tetraID; 
+} SimParamGPU;
+
 
 float dot_product (float x1, float y1, float z1, float x2, float y2, float z2) {
     return  x1*x2 + y1*y2 + z1*z2;
