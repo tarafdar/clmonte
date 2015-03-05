@@ -430,7 +430,7 @@ int RunGPUi(HostThreadState *hstate, Tetra *tetra_mesh, Material *materialspec, 
   printf("num photons left %d after initthreadstate\n", *HostMem->n_photons_left);
 
   int i=0;
-  for (i=0; *HostMem->n_photons_left > 0; ++i)
+  for (i=0; i<11; ++i)//*HostMem->n_photons_left > 0; ++i)
   {
     // Run the kernel.
     ret = clEnqueueNDRangeKernel(command_queue, kernel, 1, NULL, &global_size, &local_size, 0, NULL, NULL);

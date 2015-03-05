@@ -290,7 +290,6 @@ __kernel void MCMLKernel(__global const SimParamGPU *d_simparam_addr,
   for (int iIndex = 0; iIndex < 32768; ++iIndex)
   {
     // Only process packet if the thread is active.
-    if (is_active)
     {
       //ComputeStepSize(&pkt,&d_state_x[tid], &d_state_a[tid], d_tetra_mesh, d_materialspecs);
       if (pkt.s == MCML_FP_ZERO)
@@ -368,13 +367,13 @@ __kernel void MCMLKernel(__global const SimParamGPU *d_simparam_addr,
 
             //pencil source
             if (d_simparam.stype == 11){
-            pkt.p.x = d_simparam.originX;
-            pkt.p.y = d_simparam.originY;
-            pkt.p.z = d_simparam.originZ;
+              pkt.p.x = d_simparam.originX;
+              pkt.p.y = d_simparam.originY;
+              pkt.p.z = d_simparam.originZ;
   
-            pkt.d.x = d_simparam.UX;
-	    pkt.d.y = d_simparam.UY;
-	    pkt.d.z = d_simparam.UZ;
+              pkt.d.x = d_simparam.UX;
+              pkt.d.y = d_simparam.UY;
+              pkt.d.z = d_simparam.UZ;
             }
 
             //all sources
@@ -444,53 +443,53 @@ __kernel void MCMLKernel(__global const SimParamGPU *d_simparam_addr,
         }
         else
         {
-        float crit_cos=nt<ni ? 0 : GetCosCrit(ni,nt);
+          float crit_cos=nt<ni ? 0 : GetCosCrit(ni,nt);
   
-        float *normal = tetra.face[pkt.faceIndexToHit];
-        float ca1 = -dot_product(pkt.d.x,pkt.d.y,pkt.d.z,normal[0],normal[1],normal[2]); //ca1 is cos(theta incidence) 
-        float sa1 = sqrt(FP_ONE-ca1*ca1); //sa1 is sin(theta incidence)
-        if (ca1 > COSZERO) sa1 = MCML_FP_ZERO; 
+          float *normal = tetra.face[pkt.faceIndexToHit];
+          float ca1 = -dot_product(pkt.d.x,pkt.d.y,pkt.d.z,normal[0],normal[1],normal[2]); //ca1 is cos(theta incidence) 
+          float sa1 = sqrt(FP_ONE-ca1*ca1); //sa1 is sin(theta incidence)
+          if (ca1 > COSZERO) sa1 = MCML_FP_ZERO; 
   
-        if (ca1 <= crit_cos)	//total internal reflection occurs
-        {
-          //reflected direction = original_direction - 2(original_direction dot normal)*normal
-          pkt.d = pkt.d + 2*ca1*(float4)(normal[0],normal[1],normal[2],0);
-        }
-        else
-        {    
-          // Rs = [(n1 cos(theta_i) - n2 cos(theta_t))/((n1 cos(theta_i) + n2 cos(theta_t)))] ^ 2
-          // Rp = [(n1 cos(theta_t) - n2 cos(theta_i))/((n1 cos(theta_t) + n2 cos(theta_i)))] ^ 2
-          float ni_nt = native_divide(ni, nt);
-          float sa2 = min(ni_nt * sa1, FP_ONE); //sa2 is sin(theta transmit)
-          float ca2 = sqrt(FP_ONE-sa2*sa2); //ca2 is cos(theta transmit)
-          float Rs = native_divide(ni*ca1 - nt*ca2, ni*ca1 + nt*ca2);
-          Rs *= Rs;
-          float Rp = native_divide(ni*ca2 - nt*ca1, ni*ca2 + nt*ca1);
-          Rp *= Rp;
-          float rFresnel = (Rs+Rp)/2;
-
-          if (ca1 < COSNINETYDEG || sa2 == FP_ONE) rFresnel = FP_ONE;
-
-          if (rFresnel < rand) //refract
-          {
-            // refracted direction = n1/n2*original_direction - [n1/n2*cos(theta incidence) + sqrt(1-sin^2(theta transmitt))]*normal
-            pkt.d = ni_nt*(pkt.d)-fma(ni_nt,-ca1,ca2)*(float4)(normal[0],normal[1],normal[2],0);
-      
-            if (nextTetraID == 0) {
-      
-          	  //store surface fluence TODO: find more efficient way of doing this!
-          	  atomic_add(&(transmittance[(pkt.tetraID - 1) * 4 + pkt.faceIndexToHit]), (UINT64CL)(pkt.w * WEIGHT_SCALE));
-              // Kill the packet.
-          	  pkt.w = MCML_FP_ZERO;
-            }
-            pkt.tetraID = nextTetraID;
-          }
-          else //reflect
+          if (ca1 <= crit_cos)	//total internal reflection occurs
           {
             //reflected direction = original_direction - 2(original_direction dot normal)*normal
             pkt.d = pkt.d + 2*ca1*(float4)(normal[0],normal[1],normal[2],0);
           }
-        }
+          else
+          {    
+            // Rs = [(n1 cos(theta_i) - n2 cos(theta_t))/((n1 cos(theta_i) + n2 cos(theta_t)))] ^ 2
+            // Rp = [(n1 cos(theta_t) - n2 cos(theta_i))/((n1 cos(theta_t) + n2 cos(theta_i)))] ^ 2
+            float ni_nt = native_divide(ni, nt);
+            float sa2 = min(ni_nt * sa1, FP_ONE); //sa2 is sin(theta transmit)
+            float ca2 = sqrt(FP_ONE-sa2*sa2); //ca2 is cos(theta transmit)
+            float Rs = native_divide(ni*ca1 - nt*ca2, ni*ca1 + nt*ca2);
+            Rs *= Rs;
+            float Rp = native_divide(ni*ca2 - nt*ca1, ni*ca2 + nt*ca1);
+            Rp *= Rp;
+            float rFresnel = (Rs+Rp)/2;
+
+            if (ca1 < COSNINETYDEG || sa2 == FP_ONE) rFresnel = FP_ONE;
+
+            if (rFresnel < rand) //refract
+            {
+              // refracted direction = n1/n2*original_direction - [n1/n2*cos(theta incidence) + sqrt(1-sin^2(theta transmitt))]*normal
+              pkt.d = ni_nt*(pkt.d)-fma(ni_nt,-ca1,ca2)*(float4)(normal[0],normal[1],normal[2],0);
+      
+              if (nextTetraID == 0) 
+              {
+                //store surface fluence TODO: find more efficient way of doing this!
+                atomic_add(&(transmittance[(pkt.tetraID - 1) * 4 + pkt.faceIndexToHit]), (UINT64CL)(pkt.w * WEIGHT_SCALE));
+                // Kill the packet.
+                pkt.w = MCML_FP_ZERO;
+              }
+              pkt.tetraID = nextTetraID;
+            }
+            else //reflect
+            {
+              //reflected direction = original_direction - 2(original_direction dot normal)*normal
+              pkt.d = pkt.d + 2*ca1*(float4)(normal[0],normal[1],normal[2],0);
+            }
+          }
                   // auxilary updating function
           // vector a = (vector d) cross (positive z axis unit vector) and normalize it 
           float4 crossProduct;
