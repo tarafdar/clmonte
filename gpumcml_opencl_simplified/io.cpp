@@ -35,11 +35,18 @@ void usage(const char *prog_name)
 //////////////////////////////////////////////////////////////////////////////
 //   Parse command line arguments
 //////////////////////////////////////////////////////////////////////////////
-int interpret_arg(int argc, char* argv[], SimulationStruct *p_simulation)
+int interpret_arg(int argc, char* argv[], SimulationStruct *p_simulation, int *global_size, int *local_size)
 {
   sscanf(argv[1],"%d",&(p_simulation->number_of_photons));
   strncpy(p_simulation->inp_filename, argv[2], STR_LEN);
   strncpy(p_simulation->outp_filename, argv[3], STR_LEN);
+  *global_size=0;
+  *local_size=0;
+  if(argc>4)
+  {
+    sscanf(argv[4],"%d",global_size);
+    sscanf(argv[5],"%d",local_size);
+  }
 
   return 0;
 }

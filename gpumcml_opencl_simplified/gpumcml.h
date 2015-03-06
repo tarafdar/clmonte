@@ -223,7 +223,7 @@ extern void usage(const char *prog_name);
 
 // Parse the command-line arguments.
 // Return 0 if successfull or a +ive error code.
-extern int interpret_arg(int argc, char* argv[], SimulationStruct *p_simulation);
+extern int interpret_arg(int argc, char* argv[], SimulationStruct *p_simulation, int *global_size, int *local_size);
 
 extern int Write_Simulation_Results(SimState* HostMem, SimulationStruct* sim, double simulation_time, TriNode* TriNodeList, TetraNode* TetraNodeList, Material* material_spec, Tetra* tetra_mesh, char* output_filename);
 

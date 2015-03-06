@@ -123,7 +123,7 @@ int init_RNG(UINT64 *x, UINT32 *a,
 //   Supports 1 GPU only
 //   Calls RunGPU with HostThreadState parameters
 //////////////////////////////////////////////////////////////////////////////
-int RunGPUi(HostThreadState *hstate, Tetra *tetra_mesh, Material *materialspec, Source *p_src)
+int RunGPUi(HostThreadState *hstate, Tetra *tetra_mesh, Material *materialspec, Source *p_src, size_t global_size, size_t local_size)
 {
   SimState *HostMem = &(hstate->host_sim_state);
 
@@ -410,9 +410,12 @@ int RunGPUi(HostThreadState *hstate, Tetra *tetra_mesh, Material *materialspec, 
     exit(-1);
   }
 
-  size_t global_size = NUM_BLOCKS*NUM_THREADS_PER_BLOCK;
-  size_t local_size = NUM_THREADS_PER_BLOCK;
-
+  //size_t global_size = 15360;//NUM_BLOCKS*NUM_THREADS_PER_BLOCK;
+  //size_t local_size = 64;//512;//NUM_THREADS_PER_BLOCK;
+  if(global_size==0) 
+    global_size=NUM_BLOCKS*NUM_THREADS_PER_BLOCK;
+  if(local_size==0)
+    local_size=NUM_THREADS_PER_BLOCK;
   ret = clEnqueueNDRangeKernel(command_queue, initkernel, 1, NULL, &global_size, &local_size, 0, NULL, NULL);
   if(ret != CL_SUCCESS){
     printf("Error enqueundrange of initkernel, exiting\n");
@@ -469,7 +472,7 @@ int RunGPUi(HostThreadState *hstate, Tetra *tetra_mesh, Material *materialspec, 
 //////////////////////////////////////////////////////////////////////////////
 static void DoOneSimulation(int sim_id, SimulationStruct* simulation,
                             unsigned long long *x, unsigned int *a, Tetra *tetra_mesh, Material *materialspec,
-                            TriNode *trinodes, TetraNode *tetranodes, Source *p_src)
+                            TriNode *trinodes, TetraNode *tetranodes, Source *p_src, int global_size, int local_size)
 {
   // Start simulation kernel exec timer
   double wall0 = get_wall_time();
@@ -490,7 +493,7 @@ static void DoOneSimulation(int sim_id, SimulationStruct* simulation,
 
   printf("simulation number of photons %d\n", *(hss->n_photons_left));
   // Launch simulation
-  int number_of_iterations = RunGPUi (hstates, tetra_mesh, materialspec, p_src);
+  int number_of_iterations = RunGPUi (hstates, tetra_mesh, materialspec, p_src, global_size, local_size);
 
   // End the timer.
   double wall1 = get_wall_time();
@@ -562,8 +565,9 @@ int main(int argc, char* argv[])
   banner();
 
   SimulationStruct simulation;
+  int global_size, local_size;
   // Parse command-line arguments.
-  if (interpret_arg(argc, argv, &simulation))
+  if (interpret_arg(argc, argv, &simulation, &global_size, &local_size))
   {
     usage(argv[0]);
     return 1;
@@ -621,7 +625,7 @@ int main(int argc, char* argv[])
   simulation.nMaterials = Nm;
   // Run a simulation
   DoOneSimulation(i, &simulation, x, a, tetra_mesh, materialspec, trinodes,
-  tetranodes, sourcepoint);
+  tetranodes, sourcepoint, global_size, local_size);
 
   // Free the random number seed arrays.
   free(materialspec);
