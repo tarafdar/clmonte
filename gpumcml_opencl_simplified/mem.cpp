@@ -268,7 +268,7 @@ int CopyDeviceToHostMem(SimState* HostMem, SimulationStruct* sim, cl_command_que
     printf("Error reading debug buffer, exiting\n");
     exit(-1);
   }
-  printf("bad d: %d\n", (int)debug[0]);
+
   //Also copy the state of the RNG's
   ret = clEnqueueReadBuffer(command_queue, x_mem_obj, CL_TRUE, 0, NUM_THREADS * sizeof(UINT64), HostMem->x, 0, NULL, NULL);
   if(ret != CL_SUCCESS){

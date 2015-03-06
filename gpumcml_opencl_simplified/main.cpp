@@ -127,7 +127,7 @@ int RunGPUi(HostThreadState *hstate, Tetra *tetra_mesh, Material *materialspec, 
 {
   SimState *HostMem = &(hstate->host_sim_state);
 
-  printf("HostMem num photons %d\n", *HostMem->n_photons_left); 
+///  printf("HostMem num photons %d\n", *HostMem->n_photons_left); 
   FILE *fp;
   FILE *build_file;
   build_file = fopen("build.txt", "w");
@@ -430,7 +430,7 @@ int RunGPUi(HostThreadState *hstate, Tetra *tetra_mesh, Material *materialspec, 
     printf("test read failed %d\n", ret);
     exit(-1);
   }
-  printf("num photons left %d after initthreadstate\n", *HostMem->n_photons_left);
+///  printf("num photons left %d after initthreadstate\n", *HostMem->n_photons_left);
 
   int i=0;
   for (i=0; *HostMem->n_photons_left > 0; ++i)
@@ -451,10 +451,11 @@ int RunGPUi(HostThreadState *hstate, Tetra *tetra_mesh, Material *materialspec, 
     }
     ////////////////////////////////////////////////////////////
 
-    printf("[GPU] batch %d, number of photons left %d\n",i, *HostMem->n_photons_left);
+///    printf("[GPU] batch %d, number of photons left %d\n",i, *HostMem->n_photons_left);
+///    printf("%d ", *HostMem->n_photons_left);
   }
   
-  printf("[GPU] simulation done!\n");
+///  printf("[GPU] simulation done!\n");
 
   CopyDeviceToHostMem(HostMem, hstate->sim, command_queue, x_mem_obj, absorption_mem_obj, transmittance_mem_obj,  debug_mem_obj);
   FreeDeviceSimStates(context, command_queue, initkernel,kernel, program, simparam_mem_obj, num_photons_left_mem_obj, a_mem_obj, x_mem_obj, 
@@ -491,7 +492,7 @@ static void DoOneSimulation(int sim_id, SimulationStruct* simulation,
   // random number seeds
   hss->x = &x[0]; hss->a = &a[0];
 
-  printf("simulation number of photons %d\n", *(hss->n_photons_left));
+///  printf("simulation number of photons %d\n", *(hss->n_photons_left));
   // Launch simulation
   int number_of_iterations = RunGPUi (hstates, tetra_mesh, materialspec, p_src, global_size, local_size);
 
@@ -500,10 +501,10 @@ static void DoOneSimulation(int sim_id, SimulationStruct* simulation,
   double elapsed = wall1 - wall0;
   float total_steps = (float)number_of_iterations*NUM_STEPS*NUM_THREADS;
   cout << "Wall Time = " << elapsed << " seconds\n";
-  printf("total num of iterations = %d\n", number_of_iterations);
-  printf("NUM_STEPS = %d\n", NUM_STEPS);
-  printf("NUM_THREADS = %d\n", NUM_THREADS);
-  printf( ">>>>>>Simulation Speed: %e photon events per second\n", total_steps/elapsed);
+///  printf("total num of iterations = %d\n", number_of_iterations);
+///  printf("NUM_STEPS = %d\n", NUM_STEPS);
+///  printf("NUM_THREADS = %d\n", NUM_THREADS);
+///  printf( ">>>>>>Simulation Speed: %e photon events per second\n", total_steps/elapsed);
   
   Write_Simulation_Results(hss, simulation, elapsed, trinodes, tetranodes, materialspec, tetra_mesh, simulation->outp_filename);
 
@@ -562,7 +563,7 @@ void OutputSource(Source *p_src)
 //////////////////////////////////////////////////////////////////////////////
 int main(int argc, char* argv[])
 {
-  banner();
+///  banner();
 
   SimulationStruct simulation;
   int global_size, local_size;
@@ -602,13 +603,13 @@ int main(int argc, char* argv[])
   int i;
 
   // Output the execution configuration.
-  printf("\n====================================\n");
-  printf("EXECUTION MODE:\n");
-  printf("  seed:                    %llu\n", seed);
-  printf("====================================\n\n");
+///  printf("\n====================================\n");
+///  printf("EXECUTION MODE:\n");
+///  printf("  seed:                    %llu\n", seed);
+///  printf("====================================\n\n");
 
   // Read the simulation inputs.
-  printf("Number of photons: %d\n", simulation.number_of_photons);
+///  printf("Number of photons: %d\n", simulation.number_of_photons);
 
   // Allocate and initialize RNG seeds.
   unsigned int len = NUM_THREADS;
@@ -618,7 +619,7 @@ int main(int argc, char* argv[])
 
   if (init_RNG(x, a, len, "executable/safeprimes_base32.txt", seed)) return 1;
   
-  printf("Using the MWC random number generator ...\n");
+///  printf("Using the MWC random number generator ...\n");
 
   //perform the simulation
   simulation.nTetras = Nt;
