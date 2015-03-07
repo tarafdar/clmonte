@@ -399,7 +399,7 @@ __kernel void MCMLKernel(__global const SimParamGPU *d_simparam_addr,
           else
             is_active = 0;
         }
-        //else
+        else
         {
           float cost, sint, cosp, sinp;
           float4 last_d, last_a, last_b;
