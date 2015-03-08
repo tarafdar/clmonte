@@ -413,9 +413,9 @@ int RunGPUi(HostThreadState *hstate, Tetra *tetra_mesh, Material *materialspec, 
   //size_t global_size = 15360;//NUM_BLOCKS*NUM_THREADS_PER_BLOCK;
   //size_t local_size = 64;//512;//NUM_THREADS_PER_BLOCK;
   if(global_size==0) 
-    global_size=NUM_BLOCKS*NUM_THREADS_PER_BLOCK;
+    global_size=7680;//NUM_BLOCKS*NUM_THREADS_PER_BLOCK;
   if(local_size==0)
-    local_size=NUM_THREADS_PER_BLOCK;
+    local_size=128;//NUM_THREADS_PER_BLOCK;
   ret = clEnqueueNDRangeKernel(command_queue, initkernel, 1, NULL, &global_size, &local_size, 0, NULL, NULL);
   if(ret != CL_SUCCESS){
     printf("Error enqueundrange of initkernel, exiting\n");
