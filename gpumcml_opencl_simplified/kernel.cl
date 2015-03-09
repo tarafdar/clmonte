@@ -18,6 +18,26 @@ typedef uint UINT32CL;
 
 #define STR_LEN 200
 
+#define DW canmove
+#define COST cosdn[0]
+#define SINT cosdn[1]
+#define COSP cosdn[2]
+#define SINP cosdn[3]
+
+#define NI cosdn[0]
+#define NT cosdn[1]
+#define NI_NT cosdn[2]
+#define CRIT_COS cosdn[3]
+#define CA1 dis[0]
+#define SA1 dis[1]
+#define SA2 cosdn[3]
+#define CA2 cosdn[3]
+#define RS dis[1]
+#define RP cosdn[0]
+#define RFRESNEL cosdn[0]
+#define CROSSPRODUCT pkt.a
+#define THETA cosdn[0]
+#define PHI cosdn[2]
 #pragma OPENCL EXTENSION cl_khr_int64_base_atomics : enable
 
 
@@ -33,8 +53,8 @@ typedef struct
 
 typedef struct
 {
-  float mu_a;	//absorption coefficient
-  float mu_s;	//scatter coefficient
+//  float mu_a;	//absorption coefficient
+//  float mu_s;	//scatter coefficient
   float mu_as;	//attenuation coefficient: result of mu_a + mu_s
   float rmu_as;	//reciprocal of mu_as, store this to get rid of slow division arithmetic 
   float n;	//index of refraction
@@ -42,7 +62,6 @@ typedef struct
   float HGCoeff1;	// HGCoeff1 = (1+g^2)/(2g)
   float HGCoeff2;	// HGCoeff2 = (1-g^2)^2 /(2g). So cos(theta) = HGCoeff1 - HGCoeff2 / (1-g * rand(-1,1))
   float absfrac;	//absorb fraction = 1- albedo = 1 - mus / (mus+mua)
-  int setMatched;
 } Material;
 
 typedef struct
@@ -272,7 +291,6 @@ __kernel void MCMLKernel(__constant const SimParamGPU *d_simparam_addr,
   // packet structure stored in registers
   Packet pkt; 
   SimParamGPU d_simparam = *d_simparam_addr;
-  UINT32CL tid = get_global_id(0);
   UINT64CL rnd_x;
   UINT32CL rnd_a;
   
@@ -333,33 +351,27 @@ __kernel void MCMLKernel(__constant const SimParamGPU *d_simparam_addr,
         pkt.s = MCML_FP_ZERO;
         pkt.p += canmove * pkt.d;
         
-        float dw = pkt.w*mat.absfrac;
-        pkt.w = pkt.w - dw;
-        atomic_add(&(absorption[pkt.tetraID]), (UINT64CL)(dw*WEIGHT_SCALE));
+        DW = pkt.w*mat.absfrac;
+        pkt.w = pkt.w - DW;
+        atomic_add(&(absorption[pkt.tetraID]), (UINT64CL)(DW*WEIGHT_SCALE));
         
         //if (pkt.w >= WEIGHT)
         //{
-          float cost, sint, cosp, sinp;
           float4 last_d, last_a;
           //rand = FP_TWO * rand_MWC_co(&rnd_x, &rnd_a) - FP_ONE;
           rand = (FP_TWO * rand - FP_ONE)*mat.g;
-          cost = mat.HGCoeff1 - native_divide(mat.HGCoeff2, (1-rand)*(1-rand));
-          sint = sqrt(FP_ONE - cost * cost);
+          COST = mat.HGCoeff1 - native_divide(mat.HGCoeff2, (1-rand)*(1-rand));
+          SINT = sqrt(FP_ONE - COST * COST);
 
           /* spin psi 0-2pi. */
           rand = rand_MWC_co(&rnd_x, &rnd_a);
-          sinp = sincos(FP_TWO * PI_const * rand, &cosp);
-
-          float stcp = sint * cosp;
-          float stsp = sint * sinp;
-          float ctcp = cost * cosp;
-          float ctsp = cost * sinp;
+          SINP = sincos(FP_TWO * PI_const * rand, &COSP);
 
           last_d = pkt.d;
           last_a = pkt.a;
-          pkt.d = cost*last_d - stcp*last_a + stsp*pkt.b;
-          pkt.a = sint*last_d + ctcp*last_a - ctsp*pkt.b;
-          pkt.b = sinp*last_a + cosp*pkt.b;
+          pkt.d = COST*last_d - SINT*COSP*last_a + SINT*SINP*pkt.b;
+          pkt.a = SINT*last_d + COST*COSP*last_a - COST*SINP*pkt.b;
+          pkt.b = SINP*last_a + COSP*pkt.b;
         //}
         
       }
@@ -369,11 +381,10 @@ __kernel void MCMLKernel(__constant const SimParamGPU *d_simparam_addr,
         pkt.p += dis[minIndex] * pkt.d;        
         
         Tetra nextTetra = d_tetra_mesh[nextTetraID];
-        float ni, nt; //refractive indices
-        ni = mat.n;  
-        nt = d_materialspecs[nextTetra.matID].n;  
+        NI = mat.n;  
+        NT = d_materialspecs[nextTetra.matID].n;  
   
-        if (ni==nt)
+        if (NI==NT)
         {
           pkt.tetraID = nextTetraID;
           if (nextTetraID == 0)
@@ -384,35 +395,35 @@ __kernel void MCMLKernel(__constant const SimParamGPU *d_simparam_addr,
         }
         else
         {
-          float crit_cos=nt<ni ? 0 : GetCosCrit(ni,nt);
+          CRIT_COS=NT<NI ? 0 : GetCosCrit(NI,NT);
   
           float *normal = tetra.face[pkt.faceIndexToHit];
-          float ca1 = -dot_product(pkt.d.x,pkt.d.y,pkt.d.z,normal[0],normal[1],normal[2]); //ca1 is cos(theta incidence) 
-          float sa1 = sqrt(FP_ONE-ca1*ca1); //sa1 is sin(theta incidence)
+          CA1 = -dot_product(pkt.d.x,pkt.d.y,pkt.d.z,normal[0],normal[1],normal[2]); //ca1 is cos(theta incidence) 
+          SA1 = sqrt(FP_ONE-CA1*CA1); //SA1 is sin(theta incidence)
 
   
-          if (ca1 <= crit_cos)	//total internal reflection occurs
+          if (CA1 <= CRIT_COS)	//total internal reflection occurs
           {
             //reflected direction = original_direction - 2(original_direction dot normal)*normal
-            pkt.d = pkt.d + 2*ca1*(float4)(normal[0],normal[1],normal[2],0);
+            pkt.d = pkt.d + 2*CA1*(float4)(normal[0],normal[1],normal[2],0);
           }
           else
           {    
             // Rs = [(n1 cos(theta_i) - n2 cos(theta_t))/((n1 cos(theta_i) + n2 cos(theta_t)))] ^ 2
             // Rp = [(n1 cos(theta_t) - n2 cos(theta_i))/((n1 cos(theta_t) + n2 cos(theta_i)))] ^ 2
-            float ni_nt = native_divide(ni, nt);
-            float sa2 = min(ni_nt * sa1, FP_ONE); //sa2 is sin(theta transmit)
-            float ca2 = sqrt(FP_ONE-sa2*sa2); //ca2 is cos(theta transmit)
-            float Rs = native_divide(ni*ca1 - nt*ca2, ni*ca1 + nt*ca2);
-            Rs *= Rs;
-            float Rp = native_divide(ni*ca2 - nt*ca1, ni*ca2 + nt*ca1);
-            Rp *= Rp;
-            float rFresnel = (Rs+Rp)/2;
+            NI_NT = native_divide(NI, NT);
+            SA2 = min(NI_NT * SA1, FP_ONE); //SA2 is sin(theta transmit)
+            CA2 = sqrt(FP_ONE-SA2*SA2); //CA2 is cos(theta transmit)
+            RS = native_divide(NI*CA1 - NT*CA2, NI*CA1 + NT*CA2);
+            RS *= RS;
+            RP = native_divide(NI*CA2 - NT*CA1, NI*CA2 + NT*CA1);
+            RP *= RP;
+            RFRESNEL = (RS+RP)/2;
 
-            if (rFresnel < rand) //refract
+            if (RFRESNEL < rand) //refract
             {
               // refracted direction = n1/n2*original_direction - [n1/n2*cos(theta incidence) + sqrt(1-sin^2(theta transmitt))]*normal
-              pkt.d = ni_nt*(pkt.d)-fma(ni_nt,-ca1,ca2)*(float4)(normal[0],normal[1],normal[2],0);
+              pkt.d = NI_NT*(pkt.d)-fma(NI_NT,-CA1,CA2)*(float4)(normal[0],normal[1],normal[2],0);
       
               if (nextTetraID == 0) 
               {
@@ -426,15 +437,14 @@ __kernel void MCMLKernel(__constant const SimParamGPU *d_simparam_addr,
             else //reflect
             {
               //reflected direction = original_direction - 2(original_direction dot normal)*normal
-              pkt.d = pkt.d + 2*ca1*(float4)(normal[0],normal[1],normal[2],0);
+              pkt.d = pkt.d + 2*CA1*(float4)(normal[0],normal[1],normal[2],0);
             }
           }
           // auxilary updating function
           // vector a = (vector d) cross (positive z axis unit vector) and normalize it 
-          float4 crossProduct;
 
-          crossProduct = cross(pkt.d,(float4)(1,0,0,0));
-          pkt.a = normalize(crossProduct);
+          CROSSPRODUCT = cross(pkt.d,(float4)(1,0,0,0));
+          pkt.a = normalize(CROSSPRODUCT);
 
           // vector b = (vector d) cross (vector a)
           pkt.b = cross(pkt.d,pkt.a);
@@ -459,21 +469,20 @@ __kernel void MCMLKernel(__constant const SimParamGPU *d_simparam_addr,
                 pkt.p.y = d_simparam.originY;
                 pkt.p.z = d_simparam.originZ;
   
-                float theta, phi, sinp, cosp, sint, cost;  
                 
                 int int_theta = left&(0x000000ff);	//so 2^8=256 possible values
-                int int_phi = left&(0x0001ff00);  //so 2^9=512 possible values
+                left = left&(0x0001ff00);  //so 2^9=512 possible values
                 //rand = rand_MWC_co(&rnd_x, &rnd_a);
-                theta = PI_const * (float)int_theta/256.0;
+                THETA = PI_const * (float)int_theta/256.0;
                 //rand = rand_MWC_co(&rnd_x, &rnd_a);
-                phi = FP_TWO * PI_const * (float)int_phi/131072.0;
+                PHI = FP_TWO * PI_const * (float)left/131072.0;
 
-                sint = sincos(theta, &cost);
-                sinp = sincos(phi, &cosp);
+                SINT = sincos(THETA, &COST);
+                SINP = sincos(PHI, &COSP);
 
-                pkt.d.x = sinp * cost; 
-                pkt.d.y = sinp * sint;
-                pkt.d.z = cosp;
+                pkt.d.x = SINP * COST; 
+                pkt.d.y = SINP * SINT;
+                pkt.d.z = COSP;
               //}
 
               //all sources
@@ -482,9 +491,8 @@ __kernel void MCMLKernel(__constant const SimParamGPU *d_simparam_addr,
 
 
               // vector a = (vector d) cross (positive z axis unit vector) and normalize it 
-              float4 crossProduct;
-              crossProduct = cross(pkt.d, (float4)(1,0,0,0));
-              pkt.a = normalize(crossProduct);
+              CROSSPRODUCT = cross(pkt.d, (float4)(1,0,0,0));
+              pkt.a = normalize(CROSSPRODUCT);
 
               // vector b = (vector d) cross (vector a)
               pkt.b = cross(pkt.d,pkt.a);

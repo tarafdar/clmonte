@@ -486,8 +486,6 @@ void ParseMaterial(const char* filename, Material** p_mats, int *p_Nm)
     Material &mat = (*p_mats)[i];
     float mu_a, mu_s;
     sscanf (linemat, "%f %f %f %f", &mu_a, &mu_s, &(mat.g), &(mat.n));
-    mat.mu_a = mu_a;
-    mat.mu_s = mu_s;
     mat.mu_as = mu_a + mu_s;
     mat.rmu_as = 1.0f/mat.mu_as;
     mat.HGCoeff1 = (1+mat.g * mat.g)/(2*mat.g);
@@ -519,7 +517,7 @@ void ParseMaterial(const char* filename, Material** p_mats, int *p_Nm)
   else if (etype == 2) 
   {
     // Set Matched
-    (*p_mats)[0].setMatched = 1;
+    //(*p_mats)[0].setMatched = 1;
 
     // Get n_e
     if ( fgets (linemat, 100, pFile) == NULL ) 

@@ -529,7 +529,7 @@ void OutputMaterial(Material *mats, int Nm)
   for(i=1; i<=Nm; i++)
   {
     Material &mat = mats[i];
-    printf("Material %d:  mua %f  mus %f  muas %f  rmuas %f\n",i, mat.mu_a, mat.mu_s, mat.mu_as, mat.rmu_as);
+    printf("Material %d:  mua %f  mus %f  muas %f  rmuas %f\n",i, mat.mu_as, mat.rmu_as);
     //printf("  n %f\n  g %f\n  HGCoeff1 %f\n  HGCoeff2 %f\n  absfrac %f\n", mat.n, mat.g, mat.HGCoeff1, mat.HGCoeff2, mat.absfrac);
   }
   printf("\n");
