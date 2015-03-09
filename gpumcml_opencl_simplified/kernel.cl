@@ -337,69 +337,13 @@ __kernel void MCMLKernel(__constant const SimParamGPU *d_simparam_addr,
         pkt.w = pkt.w - dw;
         atomic_add(&(absorption[pkt.tetraID]), (UINT64CL)(dw*WEIGHT_SCALE));
         
-        if (pkt.w < WEIGHT)
-        {
-          // This pkt survives the roulette.
-          if (pkt.w != MCML_FP_ZERO && rand < CHANCE)
-            pkt.w *= (FP_ONE / CHANCE);
-          // This pkt is terminated.
-          else 
-          {
-            int left = atomic_sub(d_state_n_photons_left_addr, 1);
-            if (left > 0)
-            {
-              //point source
-              //if (d_simparam.stype == 1 || d_simparam.stype == 2)
-              //{
-                pkt.p.x = d_simparam.originX;
-                pkt.p.y = d_simparam.originY;
-                pkt.p.z = d_simparam.originZ;
-  
-                float theta, phi, sinp, cosp, sint, cost;  
-                
-                int int_theta = left&(0x000000ff);	//so 2^8=256 possible values
-                int int_phi = left&(0x0001ff00);  //so 2^9=512 possible values
-                //rand = rand_MWC_co(&rnd_x, &rnd_a);
-                theta = PI_const * (float)int_theta/256.0;
-                //rand = rand_MWC_co(&rnd_x, &rnd_a);
-                phi = FP_TWO * PI_const * (float)int_phi/131072.0;
-
-                sint = sincos(theta, &cost);
-                sinp = sincos(phi, &cosp);
-
-                pkt.d.x = sinp * cost; 
-                pkt.d.y = sinp * sint;
-                pkt.d.z = cosp;
-              //}
-
-              //all sources
-              pkt.tetraID = d_simparam.init_tetraID;
-              pkt.w = FP_ONE;
-
-
-              // vector a = (vector d) cross (positive z axis unit vector) and normalize it 
-              float4 crossProduct;
-              if(pkt.d.x==0 && pkt.d.y==0)
-                crossProduct = (float4)(1,0,0,0);
-              else
-                crossProduct = (float4)(0,0,1,0);
-              crossProduct = cross(pkt.d, crossProduct);
-              pkt.a = normalize(crossProduct);
-
-              // vector b = (vector d) cross (vector a)
-              pkt.b = cross(pkt.d,pkt.a);
-            }
-            else
-              is_active = 0;
-          }
-        }
-        else
-        {
+        //if (pkt.w >= WEIGHT)
+        //{
           float cost, sint, cosp, sinp;
-          float4 last_d, last_a, last_b;
+          float4 last_d, last_a;
           //rand = FP_TWO * rand_MWC_co(&rnd_x, &rnd_a) - FP_ONE;
-          rand = FP_TWO * rand - FP_ONE;
-          cost = mat.HGCoeff1 - native_divide(mat.HGCoeff2, (1-mat.g*rand)*(1-mat.g*rand));
+          rand = (FP_TWO * rand - FP_ONE)*mat.g;
+          cost = mat.HGCoeff1 - native_divide(mat.HGCoeff2, (1-rand)*(1-rand));
           sint = sqrt(FP_ONE - cost * cost);
 
           /* spin psi 0-2pi. */
@@ -413,11 +357,11 @@ __kernel void MCMLKernel(__constant const SimParamGPU *d_simparam_addr,
 
           last_d = pkt.d;
           last_a = pkt.a;
-          last_b = pkt.b;
-          pkt.d = cost*last_d - stcp*last_a + stsp*last_b;
-          pkt.a = sint*last_d + ctcp*last_a - ctsp*last_b;
-          pkt.b = sinp*last_a + cosp*last_b;
-        }
+          pkt.d = cost*last_d - stcp*last_a + stsp*pkt.b;
+          pkt.a = sint*last_d + ctcp*last_a - ctsp*pkt.b;
+          pkt.b = sinp*last_a + cosp*pkt.b;
+        //}
+        
       }
       else
       {
@@ -488,17 +432,67 @@ __kernel void MCMLKernel(__constant const SimParamGPU *d_simparam_addr,
           // auxilary updating function
           // vector a = (vector d) cross (positive z axis unit vector) and normalize it 
           float4 crossProduct;
-          if(pkt.d.x==0 && pkt.d.y==0)
-            crossProduct = (float4)(1,0,0,0);
-          else
-            crossProduct = (float4)(0,0,1,0);
-          crossProduct = cross(pkt.d,crossProduct);
+
+          crossProduct = cross(pkt.d,(float4)(1,0,0,0));
           pkt.a = normalize(crossProduct);
 
           // vector b = (vector d) cross (vector a)
           pkt.b = cross(pkt.d,pkt.a);
         }  //end ni!=nt
       }  //end reflection/refractiopn
+      
+      if(pkt.w<WEIGHT)
+        {
+          // This pkt survives the roulette.
+          if (pkt.w != MCML_FP_ZERO && rand < CHANCE)
+            pkt.w *= (FP_ONE / CHANCE);
+          // This pkt is terminated.
+          else 
+          {
+            int left = atomic_sub(d_state_n_photons_left_addr, 1);
+            if (left > 0)
+            {
+              //point source
+              //if (d_simparam.stype == 1 || d_simparam.stype == 2)
+              //{
+                pkt.p.x = d_simparam.originX;
+                pkt.p.y = d_simparam.originY;
+                pkt.p.z = d_simparam.originZ;
+  
+                float theta, phi, sinp, cosp, sint, cost;  
+                
+                int int_theta = left&(0x000000ff);	//so 2^8=256 possible values
+                int int_phi = left&(0x0001ff00);  //so 2^9=512 possible values
+                //rand = rand_MWC_co(&rnd_x, &rnd_a);
+                theta = PI_const * (float)int_theta/256.0;
+                //rand = rand_MWC_co(&rnd_x, &rnd_a);
+                phi = FP_TWO * PI_const * (float)int_phi/131072.0;
+
+                sint = sincos(theta, &cost);
+                sinp = sincos(phi, &cosp);
+
+                pkt.d.x = sinp * cost; 
+                pkt.d.y = sinp * sint;
+                pkt.d.z = cosp;
+              //}
+
+              //all sources
+              pkt.tetraID = d_simparam.init_tetraID;
+              pkt.w = FP_ONE;
+
+
+              // vector a = (vector d) cross (positive z axis unit vector) and normalize it 
+              float4 crossProduct;
+              crossProduct = cross(pkt.d, (float4)(1,0,0,0));
+              pkt.a = normalize(crossProduct);
+
+              // vector b = (vector d) cross (vector a)
+              pkt.b = cross(pkt.d,pkt.a);
+            }
+            else
+              is_active = 0;
+          }
+        }
     }  //end is active
   }  //end for
   

@@ -86,7 +86,7 @@ int Conservation_Of_Energy(SimState* HostMem, SimulationStruct* sim, TriNode* Tr
     }
   }
 
-///  printf ("Total Output Energy:	%f\n", output_energy);
+  printf ("Total Output Energy:	%f\n", output_energy);
   printf ("transmittance ratio: %f\n", transmittance/output_energy);
 ///  printf ("absorption ratio: %f\n", absorption/output_energy);
   return 0;
