@@ -124,7 +124,6 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="gpumcml.h" />
-    <ClInclude Include="kernel.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="io.cpp" />
