@@ -398,7 +398,7 @@ __kernel void MCMLKernel(__constant const SimParamGPU *d_simparam_addr,
             atomic_add(&(transmittance[(pkt.tetraID - 1) * 4 + pkt.faceIndexToHit]), (UINT32CL)(pkt.w * WEIGHT_SCALE));
             pkt.w = MCML_FP_ZERO;
           }
-          getNextTetra=1;
+          tetra=nextTetra;
         }
         else
         {
@@ -440,7 +440,7 @@ __kernel void MCMLKernel(__constant const SimParamGPU *d_simparam_addr,
                 pkt.w = MCML_FP_ZERO;
               }
               pkt.tetraID = nextTetraID;
-              getNextTetra=1;
+              tetra=nextTetra;
             }
             else //reflect
             {
