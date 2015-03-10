@@ -303,7 +303,7 @@ __kernel void MCMLKernel(__constant const SimParamGPU *d_simparam_addr,
      tstates_photon_tetra_id, tstates_is_active,
      &pkt, &rnd_x, &rnd_a, &is_active);
   float rand;
-  
+  int getNextTetra=1;
   for (int iIndex = 0; iIndex < 32768; ++iIndex)
   {
     // Only process packet if the thread is active.
@@ -317,8 +317,14 @@ __kernel void MCMLKernel(__constant const SimParamGPU *d_simparam_addr,
       }
       
       float cosdn[4], dis[4];
-      Tetra tetra = d_tetra_mesh[pkt.tetraID];
-      Material mat = d_materialspecs[tetra.matID];
+      Tetra tetra;
+      Material mat;
+      if(getNextTetra)
+      {
+        tetra = d_tetra_mesh[pkt.tetraID];
+        mat = d_materialspecs[tetra.matID];
+        getNextTetra=0;
+      }
       
       cosdn[0] = dot_product(pkt.d.x, pkt.d.y, pkt.d.z, tetra.face[0][0], tetra.face[0][1], tetra.face[0][2]);
       cosdn[1] = dot_product(pkt.d.x, pkt.d.y, pkt.d.z, tetra.face[1][0], tetra.face[1][1], tetra.face[1][2]);
@@ -392,6 +398,7 @@ __kernel void MCMLKernel(__constant const SimParamGPU *d_simparam_addr,
             atomic_add(&(transmittance[(pkt.tetraID - 1) * 4 + pkt.faceIndexToHit]), (UINT32CL)(pkt.w * WEIGHT_SCALE));
             pkt.w = MCML_FP_ZERO;
           }
+          getNextTetra=1;
         }
         else
         {
@@ -433,6 +440,7 @@ __kernel void MCMLKernel(__constant const SimParamGPU *d_simparam_addr,
                 pkt.w = MCML_FP_ZERO;
               }
               pkt.tetraID = nextTetraID;
+              getNextTetra=1;
             }
             else //reflect
             {
@@ -496,6 +504,7 @@ __kernel void MCMLKernel(__constant const SimParamGPU *d_simparam_addr,
 
               // vector b = (vector d) cross (vector a)
               pkt.b = cross(pkt.d,pkt.a);
+              getNextTetra=1;
             }
             else
               is_active = 0;
