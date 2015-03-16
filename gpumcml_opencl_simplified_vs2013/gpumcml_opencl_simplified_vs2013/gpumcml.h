@@ -236,7 +236,7 @@ int InitSimStates(SimState* HostMem, SimulationStruct* sim, cl_context context, 
 	cl_mem *photon_dy_mem_obj, cl_mem *photon_dz_mem_obj, cl_mem *photon_w_mem_obj,
 	cl_mem *photon_tetra_id_mem_obj, cl_mem *is_active_mem_obj);
 
-int CopyDeviceToHostMem(SimState* HostMem, SimulationStruct* sim, cl_command_queue command_queue, cl_mem x_mem_obj, cl_mem absorption_mem_obj, cl_mem transmittance_mem_obj, cl_mem debug_mem_obj);
+int CopyDeviceToHostMem(SimState* HostMem, SimulationStruct* sim, cl_command_queue command_queue, cl_mem x_mem_obj, cl_mem absorption_mem_obj, cl_mem transmittance_mem_obj, cl_mem debug_mem_obj, UINT32 *absorption_buf, UINT32 *transmittance_buf);
 
 void FreeHostSimState(SimState *hstate);
 

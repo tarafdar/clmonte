@@ -243,21 +243,29 @@ int InitSimStates(SimState* HostMem, SimulationStruct* sim, cl_context context, 
 //////////////////////////////////////////////////////////////////////////////
 //   Transfer data from Device to Host memory after simulation
 //////////////////////////////////////////////////////////////////////////////
-int CopyDeviceToHostMem(SimState* HostMem, SimulationStruct* sim, cl_command_queue command_queue, cl_mem x_mem_obj, cl_mem absorption_mem_obj, cl_mem transmittance_mem_obj, cl_mem debug_mem_obj)
+int CopyDeviceToHostMem(SimState* HostMem, SimulationStruct* sim, cl_command_queue command_queue, cl_mem x_mem_obj, cl_mem absorption_mem_obj, cl_mem transmittance_mem_obj, cl_mem debug_mem_obj, UINT32 *absorption_buf, UINT32 *transmittance_buf)
 {
 	cl_int ret;
-	ret = clEnqueueReadBuffer(command_queue, absorption_mem_obj, CL_TRUE, 0, (sim->nTetras + 1)*sizeof(UINT32), HostMem->absorption, 0, NULL, NULL);
+	ret = clEnqueueReadBuffer(command_queue, absorption_mem_obj, CL_TRUE, 0, (sim->nTetras+1)*sizeof(UINT32), absorption_buf, 0, NULL, NULL);
 	if (ret != CL_SUCCESS){
 		printf("Error reading absorption buffer, exiting\n");
 		exit(-1);
 	}
+	for(int i = 0; i < (sim->nTetras+1); i++)
+	{
+	  HostMem->absorption[i]+=absorption_buf[i];
+	}
 
-	ret = clEnqueueReadBuffer(command_queue, transmittance_mem_obj, CL_TRUE, 0, (sim->nTetras) * 4 * sizeof(UINT32), HostMem->transmittance, 0, NULL, NULL);
+	ret = clEnqueueReadBuffer(command_queue, transmittance_mem_obj, CL_TRUE, 0, (sim->nTetras)*4*sizeof(UINT32), transmittance_buf, 0, NULL, NULL);
 	if (ret != CL_SUCCESS){
 		printf("Error reading transmittance buffer, exiting\n");
 		exit(-1);
 	}
-
+	for(int i = 0; i < (sim->nTetras)*4; i++)
+	{
+	  HostMem->transmittance[i]+=transmittance_buf[i];
+	}
+	
 	ret = clEnqueueReadBuffer(command_queue, debug_mem_obj, CL_TRUE, 0, 80 * sizeof(float), debug, 0, NULL, NULL);
 	if (ret != CL_SUCCESS){
 		printf("Error reading debug buffer, exiting\n");

@@ -195,73 +195,74 @@ int RunGPUi(HostThreadState *hstate, Tetra *tetra_mesh, Material *materialspec, 
 		exit(-1);
 	}
 
-	ret = clSetKernelArg(initkernel, 0, sizeof(cl_mem), (void *)&photon_x_mem_obj);
+	int argnum = 0;
+	ret = clSetKernelArg(initkernel, argnum++, sizeof(cl_mem), (void *)&photon_x_mem_obj);
 	if (ret != CL_SUCCESS){
 		printf("Error setting photon x init kernel argument, exiting\n");
 		exit(-1);
 	}
 
-	ret = clSetKernelArg(initkernel, 1, sizeof(cl_mem), (void *)&photon_y_mem_obj);
+	ret = clSetKernelArg(initkernel, argnum++, sizeof(cl_mem), (void *)&photon_y_mem_obj);
 	if (ret != CL_SUCCESS){
 		printf("Error setting photon y init kernel argument, exiting\n");
 		exit(-1);
 	}
 
-	ret = clSetKernelArg(initkernel, 2, sizeof(cl_mem), (void *)&photon_z_mem_obj);
+	ret = clSetKernelArg(initkernel, argnum++, sizeof(cl_mem), (void *)&photon_z_mem_obj);
 	if (ret != CL_SUCCESS){
 		printf("Error setting photon z init kernel argument, exiting\n");
 		exit(-1);
 	}
 
-	ret = clSetKernelArg(initkernel, 3, sizeof(cl_mem), (void *)&photon_dx_mem_obj);
+	ret = clSetKernelArg(initkernel, argnum++, sizeof(cl_mem), (void *)&photon_dx_mem_obj);
 	if (ret != CL_SUCCESS){
 		printf("Error setting photon dx init kernel argument, exiting\n");
 		exit(-1);
 	}
 
-	ret = clSetKernelArg(initkernel, 4, sizeof(cl_mem), (void *)&photon_dy_mem_obj);
+	ret = clSetKernelArg(initkernel, argnum++, sizeof(cl_mem), (void *)&photon_dy_mem_obj);
 	if (ret != CL_SUCCESS){
 		printf("Error setting photon dy init kernel argument, exiting\n");
 		exit(-1);
 	}
 
-	ret = clSetKernelArg(initkernel, 5, sizeof(cl_mem), (void *)&photon_dz_mem_obj);
+	ret = clSetKernelArg(initkernel, argnum++, sizeof(cl_mem), (void *)&photon_dz_mem_obj);
 	if (ret != CL_SUCCESS){
 		printf("Error setting photon dz init kernel argument, exiting\n");
 		exit(-1);
 	}
 
-	ret = clSetKernelArg(initkernel, 6, sizeof(cl_mem), (void *)&photon_w_mem_obj);
+	ret = clSetKernelArg(initkernel, argnum++, sizeof(cl_mem), (void *)&photon_w_mem_obj);
 	if (ret != CL_SUCCESS){
 		printf("Error setting photon w init kernel argument, exiting\n");
 		exit(-1);
 	}
 
-	ret = clSetKernelArg(initkernel, 7, sizeof(cl_mem), (void *)&photon_tetra_id_mem_obj);
+	ret = clSetKernelArg(initkernel, argnum++, sizeof(cl_mem), (void *)&photon_tetra_id_mem_obj);
 	if (ret != CL_SUCCESS){
 		printf("Error setting photon tetra id init kernel argument, exiting\n");
 		exit(-1);
 	}
 
-	ret = clSetKernelArg(initkernel, 8, sizeof(cl_mem), (void *)&is_active_mem_obj);
+	ret = clSetKernelArg(initkernel, argnum++, sizeof(cl_mem), (void *)&is_active_mem_obj);
 	if (ret != CL_SUCCESS){
 		printf("Error setting is active init kernel argument, exiting\n");
 		exit(-1);
 	}
 
-	ret = clSetKernelArg(initkernel, 9, sizeof(cl_mem), (void *)&simparam_mem_obj);
+	ret = clSetKernelArg(initkernel, argnum++, sizeof(cl_mem), (void *)&simparam_mem_obj);
 	if (ret != CL_SUCCESS){
 		printf("Error setting simparam init kernel argument, exiting\n");
 		exit(-1);
 	}
 
-	ret = clSetKernelArg(initkernel, 10, sizeof(cl_mem), (void *)&x_mem_obj);
+	ret = clSetKernelArg(initkernel, argnum++, sizeof(cl_mem), (void *)&x_mem_obj);
 	if (ret != CL_SUCCESS){
 		printf("Error setting x init kernel argument, exiting\n");
 		exit(-1);
 	}
 
-	ret = clSetKernelArg(initkernel, 11, sizeof(cl_mem), (void *)&a_mem_obj);
+	ret = clSetKernelArg(initkernel, argnum++, sizeof(cl_mem), (void *)&a_mem_obj);
 	if (ret != CL_SUCCESS){
 		printf("Error setting a init kernel argument, exiting\n");
 		exit(-1);
@@ -274,7 +275,7 @@ int RunGPUi(HostThreadState *hstate, Tetra *tetra_mesh, Material *materialspec, 
 		exit(-1);
 	}
 
-	int argnum = 0;
+	argnum = 0;
 	ret = clSetKernelArg(kernel, argnum++, sizeof(cl_mem), (void *)&simparam_mem_obj);
 	if (ret != CL_SUCCESS){
 		printf("Error setting simparam kernel argument, exiting\n");
@@ -403,6 +404,12 @@ int RunGPUi(HostThreadState *hstate, Tetra *tetra_mesh, Material *materialspec, 
 	printf("num photons left %d after initthreadstate\n", *HostMem->n_photons_left);
 
 	int i = 0;
+	int size = (hstate->sim->nTetras + 1) * sizeof(UINT32);
+	UINT32 *absorption_buf = (UINT32*)malloc(size);
+	memset(absorption_buf, 0, size);
+	size = (hstate->sim->nTetras) * 4 * sizeof(UINT32);
+	UINT32 *transmittance_buf = (UINT32*)malloc(size);
+	memset(transmittance_buf, 0, size);
 	for (i = 0; *HostMem->n_photons_left > 0; ++i)
 	{
 		// Run the kernel.
@@ -422,17 +429,56 @@ int RunGPUi(HostThreadState *hstate, Tetra *tetra_mesh, Material *materialspec, 
 		////////////////////////////////////////////////////////////
 
 		printf("[GPU] batch %d, number of photons left %d\n",i, *HostMem->n_photons_left);
+		
+		if(i%5==4)
+		{
+			ret = clEnqueueReadBuffer(command_queue, absorption_mem_obj, CL_TRUE, 0, (hstate->sim->nTetras + 1)*sizeof(UINT32), absorption_buf, 0, NULL, NULL);
+			if (ret != CL_SUCCESS)
+			{
+				printf("Error reading absorption buffer, exiting\n");
+				exit(-1);
+			}
+			for(int i = 0; i < hstate->sim->nTetras+1; i++)
+			{
+				HostMem->absorption[i]+=absorption_buf[i];
+			}
+			ret = clEnqueueReadBuffer(command_queue, transmittance_mem_obj, CL_TRUE, 0, (hstate->sim->nTetras)*4*sizeof(UINT32), transmittance_buf, 0, NULL, NULL);
+			if (ret != CL_SUCCESS)
+			{
+				printf("Error reading transmittance buffer, exiting\n");
+				exit(-1);
+			}
+			for(int i = 0; i < (hstate->sim->nTetras)*4; i++)
+			{
+				HostMem->transmittance[i]+=transmittance_buf[i];
+			}
+			memset(absorption_buf, 0, (hstate->sim->nTetras+1)*sizeof(UINT32));
+			memset(transmittance_buf, 0, (hstate->sim->nTetras)*4*sizeof(UINT32));
+			ret = clEnqueueWriteBuffer(command_queue, absorption_mem_obj, CL_TRUE, 0, size, absorption_buf, 0, NULL, NULL);
+			if (ret != CL_SUCCESS)
+			{
+				printf("Error writing to absorption mem buffer, exiting\n");
+				exit(-1);
+			}
+			ret = clEnqueueWriteBuffer(command_queue, transmittance_mem_obj, CL_TRUE, 0, size, transmittance_buf, 0, NULL, NULL);
+			if (ret != CL_SUCCESS)
+			{
+				printf("Error writing to absorption mem buffer, exiting\n");
+				exit(-1);
+			}
+		}
 	}
 
 	printf("[GPU] simulation done!\n");
 
-	CopyDeviceToHostMem(HostMem, hstate->sim, command_queue, x_mem_obj, absorption_mem_obj, transmittance_mem_obj, debug_mem_obj);
+	CopyDeviceToHostMem(HostMem, hstate->sim, command_queue, x_mem_obj, absorption_mem_obj, transmittance_mem_obj, debug_mem_obj, absorption_buf, transmittance_buf);
 	FreeDeviceSimStates(context, command_queue, initkernel, kernel, program, simparam_mem_obj, num_photons_left_mem_obj, a_mem_obj, x_mem_obj,
 		tetra_mesh_mem_obj, materials_mem_obj, absorption_mem_obj, transmittance_mem_obj, debug_mem_obj, photon_x_mem_obj, photon_y_mem_obj,
 		photon_z_mem_obj, photon_dx_mem_obj, photon_dy_mem_obj, photon_dz_mem_obj, photon_w_mem_obj,
 		photon_tetra_id_mem_obj, is_active_mem_obj);
 
-
+	free(absorption_buf);
+	free(transmittance_buf);
 
 	return i;
 }
