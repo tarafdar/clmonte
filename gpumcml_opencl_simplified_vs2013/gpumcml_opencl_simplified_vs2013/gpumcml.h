@@ -92,8 +92,8 @@ typedef struct
 	UINT32 *a;
 
 	// output data
-	UINT32* absorption; // Array of nTetras + 1
-	UINT32* transmittance; // Array of nTetras * 4
+	UINT64* absorption; // Array of nTetras + 1
+	UINT64* transmittance; // Array of nTetras * 4
 } SimState;
 
 // Everything a host thread needs to know in order to run simulation on

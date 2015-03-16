@@ -123,13 +123,13 @@ int InitSimStates(SimState* HostMem, SimulationStruct* sim, cl_context context, 
 	}
 
 	// output arrays absorption and transmittance
-	size = (sim->nTetras + 1) * sizeof(UINT32);
+	size = (sim->nTetras + 1) * sizeof(UINT64);
 	*absorption_mem_obj = clCreateBuffer(context, CL_MEM_READ_WRITE, size, NULL, &ret);
 	if (ret != CL_SUCCESS){
 		printf("Error creating absorption mem buffer, exiting\n");
 		exit(-1);
 	}
-	HostMem->absorption = (UINT32*)malloc(size);
+	HostMem->absorption = (UINT64*)malloc(size);
 	for (int i = 1; i < sim->nTetras + 1; i++)
 	{
 		HostMem->absorption[i] = 0;
@@ -140,13 +140,13 @@ int InitSimStates(SimState* HostMem, SimulationStruct* sim, cl_context context, 
 		exit(-1);
 	}
 
-	size = (sim->nTetras) * 4 * sizeof(UINT32);
+	size = (sim->nTetras) * 4 * sizeof(UINT64);
 	*transmittance_mem_obj = clCreateBuffer(context, CL_MEM_READ_WRITE, size, NULL, &ret);
 	if (ret != CL_SUCCESS){
 		printf("Error creating transmittance mem buffer, exiting\n");
 		exit(-1);
 	}
-	HostMem->transmittance = (UINT32*)malloc(size);
+	HostMem->transmittance = (UINT64*)malloc(size);
 	for (int i = 0; i < (sim->nTetras) * 4; i++)
 	{
 		HostMem->transmittance[i] = 0;

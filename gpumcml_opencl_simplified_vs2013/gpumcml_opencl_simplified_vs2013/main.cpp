@@ -454,13 +454,13 @@ int RunGPUi(HostThreadState *hstate, Tetra *tetra_mesh, Material *materialspec, 
 			}
 			memset(absorption_buf, 0, (hstate->sim->nTetras+1)*sizeof(UINT32));
 			memset(transmittance_buf, 0, (hstate->sim->nTetras)*4*sizeof(UINT32));
-			ret = clEnqueueWriteBuffer(command_queue, absorption_mem_obj, CL_TRUE, 0, size, absorption_buf, 0, NULL, NULL);
+			ret = clEnqueueWriteBuffer(command_queue, absorption_mem_obj, CL_TRUE, 0, (hstate->sim->nTetras + 1)*sizeof(UINT32), absorption_buf, 0, NULL, NULL);
 			if (ret != CL_SUCCESS)
 			{
 				printf("Error writing to absorption mem buffer, exiting\n");
 				exit(-1);
 			}
-			ret = clEnqueueWriteBuffer(command_queue, transmittance_mem_obj, CL_TRUE, 0, size, transmittance_buf, 0, NULL, NULL);
+			ret = clEnqueueWriteBuffer(command_queue, transmittance_mem_obj, CL_TRUE, 0, (hstate->sim->nTetras) * 4 * sizeof(UINT32), transmittance_buf, 0, NULL, NULL);
 			if (ret != CL_SUCCESS)
 			{
 				printf("Error writing to absorption mem buffer, exiting\n");
