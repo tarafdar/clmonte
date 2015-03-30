@@ -33,7 +33,7 @@
 #define WEIGHT 1E-4F        
 
 // scaling factor for photon weight, which is then converted to integer
-#define WEIGHT_SCALE 131072//12000000
+#define WEIGHT_SCALE 32768//12000000
 
 #define PI_const 3.1415926F
 #define RPI 0.318309886F
@@ -148,6 +148,7 @@ public:
 			|| (this->N0 == value.N0 && this->N1<value.N1)
 			|| (this->N0 == value.N0 && this->N1 == value.N1 && this->N2<value.N2);
 	}
+	int TetraID;
 };
 
 typedef struct
@@ -157,6 +158,7 @@ typedef struct
 	int N2;
 	int N3;
 	float volume;
+	float allSurfaceFluence;
 } TetraNode;
 
 typedef struct

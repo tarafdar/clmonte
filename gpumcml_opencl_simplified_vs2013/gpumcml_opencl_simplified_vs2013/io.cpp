@@ -102,17 +102,6 @@ int Write_Simulation_Results(SimState* HostMem, SimulationStruct* sim, double si
 	ofstream fout;
 
 	fout.open(output_filename, ofstream::out);
-	if (!fout.good()){
-		cerr << "Could not write to output_filename." << endl;
-		cerr << "Please check the write permission in this folder" << endl;
-		fout.open("timos_tmp_result.dat", ofstream::out);
-		if (fout.good()){
-			cerr << "Current result will be write to: /tmp/timos_tmp_result.dat" << endl;
-		}
-		else{
-			return 1;
-		}
-	}
 
 	// Write simulation time
 	fout << "Wall clock simulation time: " << simulation_time << " seconds\n";
@@ -130,7 +119,9 @@ int Write_Simulation_Results(SimState* HostMem, SimulationStruct* sim, double si
 			if (TriNodeList[TriNodeIndex].N0 != 0)
 			{
 
-				TriNodeList[TriNodeIndex].fluence = (double)HostMem->transmittance[TriNodeIndex] / WEIGHT_SCALE;
+				TriNodeList[TriNodeIndex].fluence = (double)HostMem->transmittance[TriNodeIndex] / WEIGHT_SCALE / TriNodeList[TriNodeIndex].area;
+				TriNodeList[TriNodeIndex].TetraID = TetraID;
+				TetraNodeList[TetraID].allSurfaceFluence += TriNodeList[TriNodeIndex].fluence;
 
 				surfaceList.push_back(TriNodeList[TriNodeIndex]);
 			}
@@ -141,7 +132,6 @@ int Write_Simulation_Results(SimState* HostMem, SimulationStruct* sim, double si
 
 		}
 	}
-
 	surfaceList.sort();
 	fout << "Surface Fluence" << endl;
 	for (list<TriNode>::iterator it = surfaceList.begin(); it != surfaceList.end(); ++it)
@@ -155,6 +145,9 @@ int Write_Simulation_Results(SimState* HostMem, SimulationStruct* sim, double si
 
 	// Calculate and write absorption!
 	fout << "Internal Fluence" << endl;
+	ofstream fout2;
+	fout2.open("tetra2surfaceFluence.dat", ofstream::out);
+	fout2 << sim->nTetras << endl;
 	for (int TetraID = 1; TetraID <= sim->nTetras; ++TetraID)
 	{
 		float fluence = (float)HostMem->absorption[TetraID] / WEIGHT_SCALE;
@@ -165,8 +158,8 @@ int Write_Simulation_Results(SimState* HostMem, SimulationStruct* sim, double si
 			<< TetraNodeList[TetraID].N3 << " \t"
 			<< TetraNodeList[TetraID].volume << " \t"
 			<< fluence << endl;
+		fout2 << (int)(TetraNodeList[TetraID].allSurfaceFluence) << endl;
 	}
-
 	fout.close();
 	return 0;
 }

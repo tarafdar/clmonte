@@ -2,7 +2,7 @@ typedef ulong UINT64CL;
 typedef uint UINT32CL;
 // Critical weight for roulette
 #define WEIGHT 1E-4F        
-#define WEIGHT_SCALE 131072//12000000
+#define WEIGHT_SCALE 32768//12000000
 
 #define PI_const 3.1415926F
 #define RPI 0.318309886F
@@ -304,7 +304,7 @@ __kernel void MCMLKernel(__constant const SimParamGPU *d_simparam_addr,
      &pkt, &rnd_x, &rnd_a, &is_active);
   float rand;
   int getNextTetra=1;
-  for (int iIndex = 0; iIndex < 32768; ++iIndex)
+  for (int iIndex = 0; iIndex < 4096; ++iIndex)
   {
     // Only process packet if the thread is active.
     if (is_active)
