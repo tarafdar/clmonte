@@ -166,7 +166,6 @@ __kernel void InitThreadState(__global float *tstates_photon_x, __global float *
   // Initialize the photon and copy into photon_<parameter x>
   
   //point source
-  if (d_simparam.stype == 1 || d_simparam.stype == 2){
   float rand, theta, phi, sinp, cosp, sint, cost;  
   rand = rand_MWC_co(&rnd_x, &rnd_a);
   theta = PI_const * rand;
@@ -183,21 +182,7 @@ __kernel void InitThreadState(__global float *tstates_photon_x, __global float *
   tstates_photon_dy[tid] = sinp*sint;
   tstates_photon_dz[tid] = cosp;
   tstates_photon_w[tid] = FP_ONE;
-  }
 
-  //pencil source
-  if (d_simparam.stype == 11){
-
-  tstates_photon_x[tid] = d_simparam.originX;
-  tstates_photon_y[tid] = d_simparam.originY;
-  tstates_photon_z[tid] = d_simparam.originZ;
-  tstates_photon_dx[tid] = d_simparam.UX;
-  tstates_photon_dy[tid] = d_simparam.UY;
-  tstates_photon_dz[tid] = d_simparam.UZ;
-  tstates_photon_w[tid] = FP_ONE;
-  }
-  
-  
   //all source types
   tstates_photon_tetra_id[tid] = d_simparam.init_tetraID;
 //
@@ -471,27 +456,24 @@ __kernel void MCMLKernel(__constant const SimParamGPU *d_simparam_addr,
             if (left > 0)
             {
               //point source
-              //if (d_simparam.stype == 1 || d_simparam.stype == 2)
-              //{
-                pkt.p.x = d_simparam.originX;
-                pkt.p.y = d_simparam.originY;
-                pkt.p.z = d_simparam.originZ;
+              pkt.p.x = d_simparam.originX;
+              pkt.p.y = d_simparam.originY;
+              pkt.p.z = d_simparam.originZ;
   
                 
-                int int_theta = left&(0x000000ff);	//so 2^8=256 possible values
-                left = left&(0x0001ff00);  //so 2^9=512 possible values
-                //rand = rand_MWC_co(&rnd_x, &rnd_a);
-                THETA = PI_const * (float)int_theta/256.0;
-                //rand = rand_MWC_co(&rnd_x, &rnd_a);
-                PHI = FP_TWO * PI_const * (float)left/131072.0;
+              int int_theta = left&(0x000000ff);	//so 2^8=256 possible values
+              left = left&(0x0001ff00);  //so 2^9=512 possible values
+              //rand = rand_MWC_co(&rnd_x, &rnd_a);
+              THETA = PI_const * (float)int_theta/256.0;
+              //rand = rand_MWC_co(&rnd_x, &rnd_a);
+              PHI = FP_TWO * PI_const * (float)left/131072.0;
 
-                SINT = sincos(THETA, &COST);
-                SINP = sincos(PHI, &COSP);
+              SINT = sincos(THETA, &COST);
+              SINP = sincos(PHI, &COSP);
 
-                pkt.d.x = SINP * COST; 
-                pkt.d.y = SINP * SINT;
-                pkt.d.z = COSP;
-              //}
+              pkt.d.x = SINP * COST; 
+              pkt.d.y = SINP * SINT;
+              pkt.d.z = COSP;
 
               //all sources
               pkt.tetraID = d_simparam.init_tetraID;

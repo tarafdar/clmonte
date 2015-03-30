@@ -35,17 +35,19 @@ void usage(const char *prog_name)
 //////////////////////////////////////////////////////////////////////////////
 //   Parse command line arguments
 //////////////////////////////////////////////////////////////////////////////
-int interpret_arg(int argc, char* argv[], SimulationStruct *p_simulation, int *global_size, int *local_size)
+int interpret_arg(int argc, char* argv[], SimulationStruct *p_simulation, Source **p_sourcepoints)
 {
   sscanf(argv[1],"%d",&(p_simulation->number_of_photons));
   strncpy(p_simulation->inp_filename, argv[2], STR_LEN);
   strncpy(p_simulation->outp_filename, argv[3], STR_LEN);
-  *global_size=0;
-  *local_size=0;
+  *p_sourcepoints=NULL;
   if(argc>4)
   {
-    sscanf(argv[4],"%d",global_size);
-    sscanf(argv[5],"%d",local_size);
+    *p_sourcepoints=(Source*)malloc(sizeof(Source));
+    sscanf(argv[4],"%f",&((*p_sourcepoints)[0].x));
+    sscanf(argv[5],"%f",&((*p_sourcepoints)[0].y));
+    sscanf(argv[6],"%f",&((*p_sourcepoints)[0].z));
+    (*p_sourcepoints)[0].stype = 1;
   }
 
   return 0;
@@ -592,85 +594,88 @@ void PopulateCoordinatesFromTetraID(const Point *points, const TetraNode *tetran
 
 void ParseSource(const char* filename, Source** sourcepoint, const Tetra *tetra_mesh, const int Nt, const Point *points, const TetraNode *tetranodes)
 {
-  FILE *sourcefile;
-
-  // Line 1 and 2 of the material (.opt) file
-  // Line 1 -> Material Parameter Style -> Must be 1
-  // Line 2 -> Number of materials present in the mesh
-  char line1[100], linesource[100];
-  int numsources, sourcetype;
-
-  sourcefile = fopen(filename, "r");
-
-  if (sourcefile == NULL) 
+  if(*sourcepoint!=NULL)
   {
-    printf ("Error Opening Source file.\n");
-    fclose (sourcefile);
-    return;
-  }
-  // Collect The Number Of Sources
-  if ( fgets (line1, 100, sourcefile) == NULL ) 
+    (*sourcepoint)[0].IDt = GetTetraIDFromCoordinates(tetra_mesh, Nt, (*sourcepoint)[0].x, (*sourcepoint)[0].y, (*sourcepoint)[0].z);
+  } 
+  else
   {
-    printf ("Error Reading Line 1 Of Source File.\n");
-    fclose (sourcefile);
-    return;
-  }
-  
-  sscanf (line1, "%d", &numsources);
+    FILE *sourcefile;
+    // Line 1 and 2 of the material (.opt) file
+    // Line 1 -> Material Parameter Style -> Must be 1
+    // Line 2 -> Number of materials present in the mesh
+    char line1[100], linesource[100];
+    int numsources, sourcetype;
 
-  if (numsources == 0) 
-  {
-    printf("Error - Zero Sources Specified\n");
-    return;
-  }
+    sourcefile = fopen(filename, "r");
 
-  *sourcepoint = (Source*)malloc((numsources)*sizeof(Source));
-
-
-  for (int i = 0; i < numsources; i++) 
-  {
-    if ( fgets (linesource, 100, sourcefile) == NULL ) 
+    if (sourcefile == NULL) 
     {
-      printf ("Error Reading Line %d Of Source File.\n", i);
-      exit(-1);
+      printf ("Error Opening Source file.\n");
       fclose (sourcefile);
       return;
     }
-
-    sscanf (linesource, "%d ", &(sourcepoint[i]->stype) );
-    switch(sourcepoint[i]->stype)
+    // Collect The Number Of Sources
+    if ( fgets (line1, 100, sourcefile) == NULL ) 
     {
-      // Point Position -> Cartesian Coordinates
-      case 1:
-        sscanf (linesource, "%d %f %f %f %d", &(sourcepoint[i]->stype), &(sourcepoint[i]->x), &(sourcepoint[i]->y), &(sourcepoint[i]->z), &(sourcepoint[i]->Np) );
-        sourcepoint[i]->IDt = GetTetraIDFromCoordinates(tetra_mesh, Nt, sourcepoint[i]->x, sourcepoint[i]->y, sourcepoint[i]->z);
-        break;
-
-      // IDt position
-      case 2:
-        sscanf (linesource, "%d %d %d", &(sourcepoint[i]->stype), &(sourcepoint[i]->IDt), &(sourcepoint[i]->Np) );
-        PopulateCoordinatesFromTetraID(points, tetranodes, sourcepoint[i]);
-        break;
-
-      // IDt position
-      case 11:
-        sscanf (linesource, "%d %d %f %f %f %f %f %f %d", &(sourcepoint[i]->stype), &(sourcepoint[i]->IDt), &(sourcepoint[i]->x), &(sourcepoint[i]->y), &(sourcepoint[i]->z), &(sourcepoint[i]->dx), &(sourcepoint[i]->dy), &(sourcepoint[i]->dz), &(sourcepoint[i]->Np) );
-        if (sourcepoint[i]->IDt != GetTetraIDFromCoordinates(tetra_mesh, Nt, sourcepoint[i]->x, sourcepoint[i]->y, sourcepoint[i]->z))
-        {
-          printf("Error: the source coordinate is outside the tetra ID in the input file.\n");
-          fclose(sourcefile);
-          exit(-1);
-        }
-        break;
-
-      default:
-        printf ("Unrecognized Source Type.\n");
-        break;
+      printf ("Error Reading Line 1 Of Source File.\n");
+      fclose (sourcefile);
+      return;
     }
-  }
-  // free(sourcepoint);
+  
+    sscanf (line1, "%d", &numsources);
 
-  fclose (sourcefile);
+    if (numsources == 0) 
+    {
+      printf("Error - Zero Sources Specified\n");
+      return;
+    }  
+  
+    *sourcepoint = (Source*)malloc((numsources)*sizeof(Source));
+
+    for (int i = 0; i < numsources; i++) 
+    {
+      if ( fgets (linesource, 100, sourcefile) == NULL ) 
+      {
+        printf ("Error Reading Line %d Of Source File.\n", i);
+        exit(-1);
+        fclose (sourcefile);
+        return;
+      }
+
+      sscanf (linesource, "%d ", &((*sourcepoint)[i].stype) );
+      switch((*sourcepoint)[i].stype)
+      {
+        // Point Position -> Cartesian Coordinates
+        case 1:
+          sscanf (linesource, "%d %f %f %f %d", &((*sourcepoint)[i].stype), &((*sourcepoint)[i].x), &((*sourcepoint)[i].y), &((*sourcepoint)[i].z), &((*sourcepoint)[i].Np) );
+          (*sourcepoint)[i].IDt = GetTetraIDFromCoordinates(tetra_mesh, Nt, (*sourcepoint)[i].x, (*sourcepoint)[i].y, (*sourcepoint)[i].z);
+          break;
+
+        // IDt position
+        case 2:
+          sscanf (linesource, "%d %d %d", &((*sourcepoint)[i].stype), &((*sourcepoint)[i].IDt), &((*sourcepoint)[i].Np) );
+          PopulateCoordinatesFromTetraID(points, tetranodes, sourcepoint[i]);
+          break;
+
+        // IDt position
+        case 11:
+          sscanf (linesource, "%d %d %f %f %f %f %f %f %d", &((*sourcepoint)[i].stype), &((*sourcepoint)[i].IDt), &((*sourcepoint)[i].x), &((*sourcepoint)[i].y), &((*sourcepoint)[i].z), &((*sourcepoint)[i].dx), &((*sourcepoint)[i].dy), &((*sourcepoint)[i].dz), &((*sourcepoint)[i].Np) );
+          if ((*sourcepoint)[i].IDt != GetTetraIDFromCoordinates(tetra_mesh, Nt, (*sourcepoint)[i].x, (*sourcepoint)[i].y, (*sourcepoint)[i].z))
+          {
+            printf("Error: the source coordinate is outside the tetra ID in the input file.\n");
+            fclose(sourcefile);
+            exit(-1);
+          }
+          break;
+
+        default:
+          printf ("Unrecognized Source Type.\n");
+          break;
+      }
+    }
+    fclose (sourcefile);
+  }
 }
 
 //////////////////////////////////////////////////////////////////////////////

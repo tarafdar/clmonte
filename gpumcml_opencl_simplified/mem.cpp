@@ -17,21 +17,9 @@ int InitDCMem(SimulationStruct *sim, Source *p_src, Tetra *tetra_mesh, Material 
   h_simparam.stype = p_src->stype;
   
   //point source
-  if (p_src->stype == 1 || p_src->stype == 2){
-   h_simparam.originX = p_src->x;
-   h_simparam.originY = p_src->y;
-   h_simparam.originZ = p_src->z;
-  }
-  //pencil source
-  if (p_src->stype == 11){
-   h_simparam.originX = p_src->x;
-   h_simparam.originY = p_src->y;
-   h_simparam.originZ = p_src->z;
-   h_simparam.UX = p_src->dx;
-   h_simparam.UY = p_src->dy;
-   h_simparam.UZ = p_src->dz;
-  
-  }
+  h_simparam.originX = p_src->x;
+  h_simparam.originY = p_src->y;
+  h_simparam.originZ = p_src->z;
 
   cl_int ret;
   *simparam_mem_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, sizeof(SimParamGPU), NULL, &ret);
