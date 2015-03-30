@@ -128,7 +128,9 @@ int Write_Simulation_Results(SimState* HostMem, SimulationStruct* sim, double si
       if(TriNodeList[TriNodeIndex].N0!=0)
       {
       
-        TriNodeList[TriNodeIndex].fluence = (double) HostMem->transmittance[TriNodeIndex]/WEIGHT_SCALE;
+        TriNodeList[TriNodeIndex].fluence = (double) HostMem->transmittance[TriNodeIndex]/WEIGHT_SCALE/TriNodeList[TriNodeIndex].area;
+        TriNodeList[TriNodeIndex].TetraID = TetraID;
+        TetraNodeList[TetraID].allSurfaceFluence += TriNodeList[TriNodeIndex].fluence;
       
         surfaceList.push_back(TriNodeList[TriNodeIndex]);
       } 
@@ -153,6 +155,9 @@ int Write_Simulation_Results(SimState* HostMem, SimulationStruct* sim, double si
   
   // Calculate and write absorption!
   fout << "Internal Fluence" << endl;
+  ofstream fout2;
+  fout2.open("tetra2surfaceFluence.dat", ofstream::out);
+  fout2 << sim->nTetras << endl;
   for(int TetraID = 1; TetraID <= sim->nTetras; ++TetraID)
   {
       float fluence = (float) HostMem->absorption[TetraID]/WEIGHT_SCALE;
@@ -163,6 +168,7 @@ int Write_Simulation_Results(SimState* HostMem, SimulationStruct* sim, double si
            << TetraNodeList[TetraID].N3 << " \t"
            << TetraNodeList[TetraID].volume << " \t"
            << fluence << endl;
+      fout2 << (int)(TetraNodeList[TetraID].allSurfaceFluence) << endl;
   }
 
   fout.close();

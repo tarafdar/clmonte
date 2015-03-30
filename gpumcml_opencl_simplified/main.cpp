@@ -438,11 +438,10 @@ int RunGPUi(HostThreadState *hstate, Tetra *tetra_mesh, Material *materialspec, 
     }
     ////////////////////////////////////////////////////////////
 
-///    printf("[GPU] batch %d, number of photons left %d\n",i, *HostMem->n_photons_left);
-///    printf("%d ", *HostMem->n_photons_left);
+    printf("[GPU] batch %d, number of photons left %d\n",i, *HostMem->n_photons_left);
   }
   
-///  printf("[GPU] simulation done!\n");
+  printf("[GPU] simulation done!\n");
 
   CopyDeviceToHostMem(HostMem, hstate->sim, command_queue, x_mem_obj, absorption_mem_obj, transmittance_mem_obj,  debug_mem_obj);
   FreeDeviceSimStates(context, command_queue, initkernel,kernel, program, simparam_mem_obj, num_photons_left_mem_obj, a_mem_obj, x_mem_obj, 
