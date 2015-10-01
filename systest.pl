@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 system("./CLMonte");
 system("./CLMonte_newSpin");
-#test 123
+
 my $file = 'outp.txt';
 open my $info, $file or die "error no $file";
 
