@@ -1,0 +1,96 @@
+Script started on Wed 21 Oct 2015 12:06:47 PM EDT
+]0;matyjewi@glados: ~/ece496/sandbox/hello_worldmatyjewi@glados:~/ece496/sandbox/hello_world$ cd ![K~/ecd[K[K[Kaltera/15.0/hld/
+]0;matyjewi@glados: ~/altera/15.0/hldmatyjewi@glados:~/altera/15.0/hld$ source init_opencl.sh 
+AOCL_BOARD_PACKAGE_ROOT path is not set in environment.
+Setting to default s5_ref board.
+If you want to target another board, do 
+   export AOCL_BOARD_PACKAGE_ROOT=<board_pkg_dir>
+and re-run this script
+Adding /home/matyjewi/altera/15.0/hld/bin to PATH
+Adding /home/matyjewi/altera/15.0/hld/host/linux64/lib to LD_LIBRARY_PATH
+Adding /home/matyjewi/altera/15.0/hld/board/s5_ref/linux64/lib to LD_LIBRARY_PATH
+]0;matyjewi@glados: ~/altera/15.0/hldmatyjewi@glados:~/altera/15.0/hld$ cd -
+/home/matyjewi/ece496/sandbox/hello_world
+]0;matyjewi@glados: ~/ece496/sandbox/hello_worldmatyjewi@glados:~/ece496/sandbox/hello_world$ ls[K[Kexport LM_LICENSE_FILE=1802@localhost:27007@localhost
+]0;matyjewi@glados: ~/ece496/sandbox/hello_worldmatyjewi@glados:~/ece496/sandbox/hello_world$ export LM_LICENSE_FILE=1802@localhost:27007@localhost[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[Ccd -[Kexport LM_LICENSE_FILE=1802@localhost:27007@localhost[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[Ccd -[Ksource init_opencl.sh [1Pcd ~/altera/15.0/hld/source init_opencl.sh cd -[Kexport LM_LICENSE_FILE=1802@localhost:27007@localhost[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[Kaoc device/helo[Klo_world.cl -o helo[Klo_world.aocs[Kx
+Error: aoc: Can't find a valid license for the Altera SDK for OpenCL
+
+]0;matyjewi@glados: ~/ece496/sandbox/hello_worldmatyjewi@glados:~/ece496/sandbox/hello_world$ exi[K[K[Kenv
+VNCDESKTOP=X
+XDG_SESSION_ID=16
+XKL_XMODMAP_DISABLE=1
+TERM=xterm
+SHELL=/bin/bash
+VTE_VERSION=3409
+XDG_SESSION_COOKIE=ff1d0f4731221084df0c0348554ba8fc-1445380258.184277-1173515775
+ALTERAOCLSDKROOT=/home/matyjewi/altera/15.0/hld
+SSH_CLIENT=128.100.13.65 59832 22
+WINDOWID=12582926
+QSYS_ROOTDIR=/home/matyjewi/altera/15.0/quartus/sopc_builder/bin
+OLDPWD=/home/matyjewi/altera/15.0/hld
+SSH_TTY=/dev/pts/9
+USER=matyjewi
+LD_LIBRARY_PATH=/home/matyjewi/altera/15.0/hld/board/s5_ref/linux64/lib:/home/matyjewi/altera/15.0/hld/host/linux64/lib:
+LS_COLORS=rs=0:di=01;34:ln=01;36:mh=00:pi=40;33:so=01;35:do=01;35:bd=40;33;01:cd=40;33;01:or=40;31;01:su=37;41:sg=30;43:ca=30;41:tw=30;42:ow=34;42:st=37;44:ex=01;32:*.tar=01;31:*.tgz=01;31:*.arj=01;31:*.taz=01;31:*.lzh=01;31:*.lzma=01;31:*.tlz=01;31:*.txz=01;31:*.zip=01;31:*.z=01;31:*.Z=01;31:*.dz=01;31:*.gz=01;31:*.lz=01;31:*.xz=01;31:*.bz2=01;31:*.bz=01;31:*.tbz=01;31:*.tbz2=01;31:*.tz=01;31:*.deb=01;31:*.rpm=01;31:*.jar=01;31:*.war=01;31:*.ear=01;31:*.sar=01;31:*.rar=01;31:*.ace=01;31:*.zoo=01;31:*.cpio=01;31:*.7z=01;31:*.rz=01;31:*.jpg=01;35:*.jpeg=01;35:*.gif=01;35:*.bmp=01;35:*.pbm=01;35:*.pgm=01;35:*.ppm=01;35:*.tga=01;35:*.xbm=01;35:*.xpm=01;35:*.tif=01;35:*.tiff=01;35:*.png=01;35:*.svg=01;35:*.svgz=01;35:*.mng=01;35:*.pcx=01;35:*.mov=01;35:*.mpg=01;35:*.mpeg=01;35:*.m2v=01;35:*.mkv=01;35:*.webm=01;35:*.ogm=01;35:*.mp4=01;35:*.m4v=01;35:*.mp4v=01;35:*.vob=01;35:*.qt=01;35:*.nuv=01;35:*.wmv=01;35:*.asf=01;35:*.rm=01;35:*.rmvb=01;35:*.flc=01;35:*.avi=01;35:*.fli=01;35:*.flv=01;35:*.gl=01;35:*.dl=01;35:*.xcf=01;35:*.xwd=01;35:*.yuv=01;35:*.cgm=01;35:*.emf=01;35:*.axv=01;35:*.anx=01;35:*.ogv=01;35:*.ogx=01;35:*.aac=00;36:*.au=00;36:*.flac=00;36:*.mid=00;36:*.midi=00;36:*.mka=00;36:*.mp3=00;36:*.mpc=00;36:*.ogg=00;36:*.ra=00;36:*.wav=00;36:*.axa=00;36:*.oga=00;36:*.spx=00;36:*.xspf=00;36:
+PATH=/home/matyjewi/altera/15.0/hld/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games
+MAIL=/var/mail/matyjewi
+QT_QPA_PLATFORMTHEME=appmenu-qt5
+PWD=/home/matyjewi/ece496/sandbox/hello_world
+LANG=en_CA.UTF-8
+LM_LICENSE_FILE=1802@localhost:27007@localhost
+HOME=/home/matyjewi
+SHLVL=4
+LANGUAGE=en_CA:en
+LOGNAME=matyjewi
+SSH_CONNECTION=128.100.13.65 59832 128.100.241.18 22
+LESSOPEN=| /usr/bin/lesspipe %s
+AOCL_BOARD_PACKAGE_ROOT=/home/matyjewi/altera/15.0/hld/board/s5_ref
+XDG_RUNTIME_DIR=/run/user/1005
+DISPLAY=:2
+LESSCLOSE=/usr/bin/lesspipe %s %s
+COLORTERM=gnome-terminal
+_=/usr/bin/env
+]0;matyjewi@glados: ~/ece496/sandbox/hello_worldmatyjewi@glados:~/ece496/sandbox/hello_world$ AL[K[Kexport ALTERAD_LICENSE_FILE=1802@localhost:27007@localhost
+]0;matyjewi@glados: ~/ece496/sandbox/hello_worldmatyjewi@glados:~/ece496/sandbox/hello_world$ export ALTERAD_LICENSE_FILE=1802@localhost:27007@localhost[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[Cnv[Kaoc device/hello_world.cl -o hello_world.aocxenv[K
+VNCDESKTOP=X
+XDG_SESSION_ID=16
+XKL_XMODMAP_DISABLE=1
+TERM=xterm
+SHELL=/bin/bash
+VTE_VERSION=3409
+XDG_SESSION_COOKIE=ff1d0f4731221084df0c0348554ba8fc-1445380258.184277-1173515775
+ALTERAOCLSDKROOT=/home/matyjewi/altera/15.0/hld
+SSH_CLIENT=128.100.13.65 59832 22
+WINDOWID=12582926
+QSYS_ROOTDIR=/home/matyjewi/altera/15.0/quartus/sopc_builder/bin
+OLDPWD=/home/matyjewi/altera/15.0/hld
+SSH_TTY=/dev/pts/9
+USER=matyjewi
+LD_LIBRARY_PATH=/home/matyjewi/altera/15.0/hld/board/s5_ref/linux64/lib:/home/matyjewi/altera/15.0/hld/host/linux64/lib:
+LS_COLORS=rs=0:di=01;34:ln=01;36:mh=00:pi=40;33:so=01;35:do=01;35:bd=40;33;01:cd=40;33;01:or=40;31;01:su=37;41:sg=30;43:ca=30;41:tw=30;42:ow=34;42:st=37;44:ex=01;32:*.tar=01;31:*.tgz=01;31:*.arj=01;31:*.taz=01;31:*.lzh=01;31:*.lzma=01;31:*.tlz=01;31:*.txz=01;31:*.zip=01;31:*.z=01;31:*.Z=01;31:*.dz=01;31:*.gz=01;31:*.lz=01;31:*.xz=01;31:*.bz2=01;31:*.bz=01;31:*.tbz=01;31:*.tbz2=01;31:*.tz=01;31:*.deb=01;31:*.rpm=01;31:*.jar=01;31:*.war=01;31:*.ear=01;31:*.sar=01;31:*.rar=01;31:*.ace=01;31:*.zoo=01;31:*.cpio=01;31:*.7z=01;31:*.rz=01;31:*.jpg=01;35:*.jpeg=01;35:*.gif=01;35:*.bmp=01;35:*.pbm=01;35:*.pgm=01;35:*.ppm=01;35:*.tga=01;35:*.xbm=01;35:*.xpm=01;35:*.tif=01;35:*.tiff=01;35:*.png=01;35:*.svg=01;35:*.svgz=01;35:*.mng=01;35:*.pcx=01;35:*.mov=01;35:*.mpg=01;35:*.mpeg=01;35:*.m2v=01;35:*.mkv=01;35:*.webm=01;35:*.ogm=01;35:*.mp4=01;35:*.m4v=01;35:*.mp4v=01;35:*.vob=01;35:*.qt=01;35:*.nuv=01;35:*.wmv=01;35:*.asf=01;35:*.rm=01;35:*.rmvb=01;35:*.flc=01;35:*.avi=01;35:*.fli=01;35:*.flv=01;35:*.gl=01;35:*.dl=01;35:*.xcf=01;35:*.xwd=01;35:*.yuv=01;35:*.cgm=01;35:*.emf=01;35:*.axv=01;35:*.anx=01;35:*.ogv=01;35:*.ogx=01;35:*.aac=00;36:*.au=00;36:*.flac=00;36:*.mid=00;36:*.midi=00;36:*.mka=00;36:*.mp3=00;36:*.mpc=00;36:*.ogg=00;36:*.ra=00;36:*.wav=00;36:*.axa=00;36:*.oga=00;36:*.spx=00;36:*.xspf=00;36:
+PATH=/home/matyjewi/altera/15.0/hld/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games
+MAIL=/var/mail/matyjewi
+QT_QPA_PLATFORMTHEME=appmenu-qt5
+PWD=/home/matyjewi/ece496/sandbox/hello_world
+LANG=en_CA.UTF-8
+LM_LICENSE_FILE=1802@localhost:27007@localhost
+ALTERAD_LICENSE_FILE=1802@localhost:27007@localhost
+HOME=/home/matyjewi
+SHLVL=4
+LANGUAGE=en_CA:en
+LOGNAME=matyjewi
+SSH_CONNECTION=128.100.13.65 59832 128.100.241.18 22
+LESSOPEN=| /usr/bin/lesspipe %s
+AOCL_BOARD_PACKAGE_ROOT=/home/matyjewi/altera/15.0/hld/board/s5_ref
+XDG_RUNTIME_DIR=/run/user/1005
+DISPLAY=:2
+LESSCLOSE=/usr/bin/lesspipe %s %s
+COLORTERM=gnome-terminal
+_=/usr/bin/env
+]0;matyjewi@glados: ~/ece496/sandbox/hello_worldmatyjewi@glados:~/ece496/sandbox/hello_world$ envxport ALTERAD_LICENSE_FILE=1802@localhost:27007@localhost[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[Cnv[Kaoc device/hello_world.cl -o hello_world.aocx
+Error: aoc: Can't find a valid license for the Altera SDK for OpenCL
+
+]0;matyjewi@glados: ~/ece496/sandbox/hello_worldmatyjewi@glados:~/ece496/sandbox/hello_world$ exit
+exit
+
+Script done on Wed 21 Oct 2015 12:10:25 PM EDT
