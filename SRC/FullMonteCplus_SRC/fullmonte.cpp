@@ -61,7 +61,7 @@ using namespace std;
 void banner()
 {
     cout << "FullMonte v0.1" << endl;
-    cout << "$Id: fullmonte.cpp 302 2013-03-03 05:40:12Z jcassidy $ (tree " << SVNVERSION << ')' << endl;
+    cout << "$Id: fullmonte.cpp 302 2013-03-03 05:40:12Z jcassidy $ (tree " << 0 << ')' << endl;
     cout << "(c) Jeffrey Cassidy, 2013" << endl;
     cout << endl;
 }

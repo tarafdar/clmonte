@@ -1,8 +1,9 @@
 # base options only
-GCC_OPTS=-Wall -mfpmath=sse -Wstrict-aliasing=2 -g -msse4 -DSVNVERSION=\"$(VERSION)\" -DSSE -mtune=core2 -march=core2 -fpermissive -std=gnu++0x -Wno-narrowing -fpermissive
-LIBS=-lboost_program_options -lboost_timer -lcrypto -lboost_system
+
+GCC_OPTS=-Wall -mfpmath=sse -Wstrict-aliasing=2 -g -msse4 -DSSE -mtune=core2 -march=core2 -fpermissive -std=gnu++0x -Wno-narrowing -fpermissive #-DSVNVERSION=\"$(VERSION)\"
+LIBS=-lboost_program_options -lboost_timer -lboost_system -lrt -lpthread#-lcrypto
 LIBDIRS=-L/usr/local/lib -L/usr/local/lib/boost
-INCLDIRS=-I/usr/local/boost -I/usr/local/include -I. -I/usr/local/include/boost -I/usr/local/include/pgsql
+INCLDIRS=-I/usr/local/include -I. -I/usr/local/include/boost -I/usr/local/include/pgsql -I/usr/local/boost
 
 # Switch debug on/off
 #GCC_OPTS += -O0
