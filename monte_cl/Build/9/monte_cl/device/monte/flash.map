@@ -1,0 +1,13 @@
+BLOCK		START ADDRESS		END ADDRESS
+
+Page_1		0x00040000		0x019D1D5B
+Page_2		0x02140000		0x03AD1D5B
+OPTION BITS	0x00000000		0x00000080
+
+
+
+Notes:
+
+- Data checksum for this conversion is 0xDD8E050E
+
+- All the addresses in this file are byte addresses

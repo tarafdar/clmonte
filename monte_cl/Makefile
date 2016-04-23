@@ -39,6 +39,18 @@ ifeq ($(wildcard $(ALTERAOCLSDKROOT)/host/include/CL/opencl.h),)
 $(error Set ALTERAOCLSDKROOT to the root directory of the Altera SDK for OpenCL software installation.)
 endif
 
+ifeq ($(MONTE_ROOT),)
+$(error ARC Environment is not set)
+endif
+
+ifeq ($(MONTE_BIN),)
+$(error ARC Environment is not set)
+endif
+
+ifeq ($(MONTE_SRC),)
+$error ARC Environment is not set)
+endif
+
 # OpenCL compile and link flags.
 AOCL_COMPILE_CONFIG := $(shell aocl compile-config )
 AOCL_LINK_CONFIG := $(shell aocl link-config )
@@ -54,32 +66,125 @@ endif
 CXX := g++
 
 # Target
-TARGET := kernel
-TARGET_DIR := bin
+TARGET := montecl
+TARGET_KERNEL_L0 := monte.aoco
+TARGET_KERNEL_L1 := monte_emulated.aocx
+TARGET_KERNEL_L2 := monte_profiled.aocx
+TARGET_KERNEL_L3 := monte_deployed.aocx
+TARGET_HOST_DIR := $(MONTE_BIN)/host
+TARGET_DEVICE_DIR := $(MONTE_BIN)/device
 
 # Directories
-INC_DIRS := common/inc host/h
+KERNEL_INC_DIRS := $(MONTE_SRC)/h
+INC_DIRS := $(MONTE_SRC) $(MONTE_SRC)/host/common/inc # $(MONTE_SRC)/host/h $(MONTE_SRC)/h
 LIB_DIRS := 
 
 # Files
-INCS := $(wildcard )
-SRCS := $(wildcard host/src/*.cpp common/src/AOCLUtils/*.cpp)
+INCS := $(wildcard $(MONTE_SRC)/h/*.h $(MONTE_SRC)/host/h/*.h)
+SRCS := $(wildcard $(MONTE_SRC)/host/src/*.cpp $(MONTE_SRC)/host/common/src/AOCLUtils/*.cpp)
+KERNEL_SRCS := $(MONTE_SRC)/device/monte.cl
+AOCO := $(TARGET_DEVICE_DIR)/monte.aoco
 LIBS := 
 
+BOARD := p385_hpc_d5
+
+DEBUG := 0
+SELF_TEST := 0
+
+# Set from command line
+ifeq ($(DEBUG),1)
+DEFINE_DEBUG := -D DEBUG=1
+else
+DEFINE_DEBUG :=
+endif
+
+ifeq ($(SELF_TEST),1)
+DEFINE_SELF_TEST := -D SELF_TEST=1
+else
+DEFINE_SELF_TEST :=
+endif
+
+ifdef LAPS
+DEFINE_LAPS := -D LAPS=$(LAPS)
+else
+DEFINE_LAPS :=
+endif
+
+ifeq ($(CACHE_TEST),1)
+DEFINE_CACHE_TEST := -D CACHE_TEST=1
+else
+DEFINE_CACHE_TEST :=
+endif
+
+ifeq ($(USE_CACHE),1)
+DEFINE_USE_CACHE := -D USE_CACHE=1
+else
+DEFINE_USE_CACHE :=
+endif
+
+DEFINES := $(DEFINE_SELF_TEST) $(DEFINE_DEBUG) $(DEFINE_LAPS) $(DEFINE_CACHE_TEST) $(DEFINE_USE_CACHE)
+
 # Make it all!
-all : $(TARGET_DIR)/$(TARGET)
+all : host kernel
 
 # Host executable target.
-$(TARGET_DIR)/$(TARGET) : Makefile $(SRCS) $(INCS)
-	@[ -d $(TARGET_DIR) ] || mkdir $(TARGET_DIR)
-	$(ECHO)$(CXX) $(CPPFLAGS) $(CXXFLAGS) -fPIC $(foreach D,$(INC_DIRS),-I$D) \
+host : $(TARGET_HOST_DIR)/$(TARGET)
+
+$(TARGET_HOST_DIR)/$(TARGET) : Makefile $(SRCS) $(INCS)
+	echo "Building Host"
+	@[ -d $(TARGET_HOST_DIR) ] || mkdir $(TARGET_HOST_DIR)
+	$(ECHO)$(CXX) -DHOST $(CPPFLAGS) $(CXXFLAGS) -fPIC $(foreach D,$(INC_DIRS),-I$D) \
 			$(AOCL_COMPILE_CONFIG) $(SRCS) $(AOCL_LINK_CONFIG) \
 			$(foreach D,$(LIB_DIRS),-L$D) \
 			$(foreach L,$(LIBS),-l$L) \
-			-o $(TARGET_DIR)/$(TARGET)
+			-o $(TARGET_HOST_DIR)/$(TARGET)
+	
+kernel_l0 : $(TARGET_DEVICE_DIR)/$(TARGET_KERNEL_L0)
+kernel_l1 : $(TARGET_DEVICE_DIR)/$(TARGET_KERNEL_L1)
+kernel_l2 : $(TARGET_DEVICE_DIR)/$(TARGET_KERNEL_L2)
+kernel_l3 : $(TARGET_DEVICE_DIR)/$(TARGET_KERNEL_L3)
+
+$(TARGET_DEVICE_DIR)/$(TARGET_KERNEL_L0) : $(KERNEL_SRCS)
+	echo "Building kernel L0"
+	aoc -v -c -g --report $(DEFINES) --const-cache-bytes 1024 --board $(BOARD) -I $(KERNEL_INC_DIRS) $(KERNEL_SRCS) -o $(TARGET_DEVICE_DIR)/$(TARGET_KERNEL_L0)
+
+$(TARGET_DEVICE_DIR)/$(TARGET_KERNEL_L1) : $(KERNEL_SRCS)
+	echo "Building kernel for Emulator"
+	aoc -march=emulator -v -g $(DEFINES) --const-cache-bytes 1024 --board $(BOARD) -I $(KERNEL_INC_DIRS) $(KERNEL_SRCS) -o $(TARGET_DEVICE_DIR)/$(TARGET_KERNEL_L1)
+
+$(TARGET_DEVICE_DIR)/$(TARGET_KERNEL_L2) : $(KERNEL_SRCS)
+	echo "Building kernel for Profiler"
+	aoc -v --profile $(DEFINES) --const-cache-bytes 1024 --board $(BOARD) -I $(KERNEL_INC_DIRS) $(KERNEL_SRCS) -o $(TARGET_DEVICE_DIR)/$(TARGET_KERNEL_L2)
+
+$(TARGET_DEVICE_DIR)/$(TARGET_KERNEL_L3) : $(KERNEL_SRCS)
+	echo "Building Full Deployment"
+	#aoc -v --fp-relaxed --fpc $(DEFINES) --board $(BOARD) -I $(KERNEL_INC_DIRS) $(KERNEL_SRCS) -o $(TARGET_DEVICE_DIR)/$(TARGET_KERNEL_L3)
+	aoc -v --seed 5 $(DEFINES) --const-cache-bytes 1024 --board $(BOARD) -I $(KERNEL_INC_DIRS) $(KERNEL_SRCS) -o $(TARGET_DEVICE_DIR)/$(TARGET_KERNEL_L3)
 
 # Standard make targets
 clean :
-	$(ECHO)rm -f $(TARGET_DIR)/$(TARGET)
+	echo "Clean All"
+	rm -rf $(MONTE_BIN)
+	mkdir $(MONTE_BIN)
+	mkdir $(TARGET_HOST_DIR)
+	mkdir $(TARGET_DEVICE_DIR)
+
+clean_host :
+	echo "Clean Host"
+	rm -rf $(TARGET_HOST_DIR)
+	mkdir $(TARGET_HOST_DIR)
+
+clean_kernel_l0 :
+	echo "Clean kernel_l0"
+	rm -rf $(TARGET_DEVICE_DIR)/$(TARGET_KERNEL_L0)
+
+clean_kernel_l1 :
+	echo "Clean kernel_l1"
+	rm -rf $(TARGET_DEVICE_DIR)/$(TARGET_KERNEL_L1)
+
+clean_kernel_l3 :
+	echo "Clean kernel_l3"
+	rm -rf $(TARGET_DEVICE_DIR)/$(TARGET_KERNEL_L3)
+
 
 .PHONY : all clean

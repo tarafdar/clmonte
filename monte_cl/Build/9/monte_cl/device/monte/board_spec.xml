@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<board version="0.9" name="p385_hpc_d5">
+  <device device_model="5sgsmd5h2h35c2_dm.xml">
+    <used_resources>
+      <alms num="19939"/> <!-- ALMs used in final placement - ALMs used for registers -->
+      <ffs num="50598"/>
+      <dsps num="0"/>
+      <rams num="288"/>
+    </used_resources>
+  </device>
+  <!-- Two DDR3-1600 DIMMs, 64-bit data -->
+  <global_mem max_bandwidth="25600" interleaved_bytes="1024">
+    <interface name="board" port="kernel_mem0" type="slave" width="512" maxburst="16" address="0x000000000" size="0x100000000" latency="240"/>
+    <interface name="board" port="kernel_mem1" type="slave" width="512" maxburst="16" address="0x100000000" size="0x100000000" latency="240"/>
+  </global_mem>
+  <host>
+    <kernel_config start="0x00000000" size="0x0100000"/>
+  </host>
+  <interfaces>
+    <interface name="board" port="kernel_cra" type="master" width="64" misc="0"/>
+    <interface name="board" port="kernel_irq" type="irq" width="1"/>
+    <interface name="board" port="acl_internal_snoop" type="streamsource" enable="SNOOPENABLE" width="33" clock="board.kernel_clk"/>
+    <kernel_clk_reset clk="board.kernel_clk" clk2x="board.kernel_clk2x" reset="board.kernel_reset"/>
+  </interfaces>
+</board>

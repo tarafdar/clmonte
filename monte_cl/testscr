@@ -1,5 +1,0 @@
-Script started on Fri 16 Oct 2015 01:54:38 PM EDT
-]0;matyjewi@glados: ~/ece496/sandbox/hello_worldmatyjewi@glados:~/ece496/sandbox/hello_world$ cat "hello"
-cat: hello: No such file or directory
-]0;matyjewi@glados: ~/ece496/sandbox/hello_worldmatyjewi@glados:~/ece496/sandbox/hello_world$ exit
-Script done on Fri 16 Oct 2015 01:54:45 PM EDT

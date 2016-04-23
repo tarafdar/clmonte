@@ -1,0 +1,1756 @@
+#============================================================
+# Files and basic settings
+#============================================================
+set_global_assignment -name FAMILY "Stratix V"
+set_global_assignment -name DEVICE 5SGSMD5H2F35C2
+set_global_assignment -name DEVICE_FILTER_PACKAGE FBGA
+set_global_assignment -name DEVICE_FILTER_SPEED_GRADE 2_H2
+set_global_assignment -name TOP_LEVEL_ENTITY top
+set_global_assignment -name SDC_FILE top.sdc
+set_global_assignment -name VERILOG_FILE top.v
+set_global_assignment -name VERILOG_INPUT_VERSION SYSTEMVERILOG_2005
+
+# Execute the post CAD flow
+set_global_assignment -name POST_FLOW_SCRIPT_FILE "quartus_cdb:scripts/post_flow.tcl"
+set_global_assignment -name PRE_FLOW_SCRIPT_FILE "quartus_sh:scripts/pre_flow.tcl"
+
+# Top-level Qsys system in which OpenCL kernels get added to
+set_global_assignment -name QIP_FILE system/synthesis/system.qip
+
+set_global_assignment -name SEARCH_PATH iface
+
+# Post IP SDC constraints
+set_global_assignment -name SDC_FILE top_post.sdc
+
+
+#============================================================
+# Partitions
+#============================================================
+# Top partition
+set_global_assignment -name PARTITION_NETLIST_TYPE SOURCE -section_id Top
+set_global_assignment -name PARTITION_FITTER_PRESERVATION_LEVEL NETLIST_ONLY -section_id Top
+set_global_assignment -name PARTITION_COLOR 16764057 -section_id Top
+
+# Kernel partition
+set_global_assignment -name PARTITION_NETLIST_TYPE SOURCE -section_id acl_kernel_partition
+set_global_assignment -name PARTITION_FITTER_PRESERVATION_LEVEL PLACEMENT_AND_ROUTING -section_id acl_kernel_partition
+set_global_assignment -name PARTITION_COLOR 52377 -section_id acl_kernel_partition
+set_global_assignment -name ALLOW_MULTIPLE_PERSONAS ON -section_id acl_kernel_partition
+
+# CvP update partition
+set_global_assignment -name PARTITION_NETLIST_TYPE SOURCE -section_id cvp_update_reset_partition
+set_global_assignment -name PARTITION_FITTER_PRESERVATION_LEVEL PLACEMENT_AND_ROUTING -section_id cvp_update_reset_partition
+set_global_assignment -name PARTITION_COLOR 52377 -section_id cvp_update_reset_partition
+set_global_assignment -name ALLOW_MULTIPLE_PERSONAS ON -section_id cvp_update_reset_partition
+
+# CvP specific settings
+set_global_assignment -name ENABLE_AUTONOMOUS_PCIE_HIP ON
+set_global_assignment -name ENABLE_CONFIGURATION_PINS OFF
+set_global_assignment -name ENABLE_NCE_PIN OFF
+set_global_assignment -name ENABLE_BOOT_SEL_PIN OFF
+set_global_assignment -name ENABLE_CVP_CONFDONE ON
+set_global_assignment -name CVP_MODE "SUBSEQUENT CORE RECONFIGURATION"
+
+
+#============================================================
+# Revision Specific Settings
+#============================================================
+set_global_assignment -name VERILOG_FILE system/synthesis/submodules/cvp_update_reset_zero.v
+set_global_assignment -name REVISION_TYPE CVP
+set_global_assignment -name BASE_REVISION base
+set_global_assignment -name INPUT_PERSONA persona/base.root_partition.personax -section_id Top
+
+
+#============================================================
+# Synthesis and Fitter Fine-Tuning
+#============================================================
+set_global_assignment -name AUTO_PARALLEL_SYNTHESIS OFF
+set_global_assignment -name FITTER_EFFORT "STANDARD FIT"
+set_global_assignment -name FIT_ONLY_ONE_ATTEMPT ON
+set_global_assignment -name PLACEMENT_EFFORT_MULTIPLIER 4.0
+set_global_assignment -name ROUTER_TIMING_OPTIMIZATION_LEVEL MAXIMUM
+set_global_assignment -name OPTIMIZE_HOLD_TIMING "ALL PATHS"
+set_global_assignment -name FITTER_AGGRESSIVE_ROUTABILITY_OPTIMIZATION ALWAYS
+set_global_assignment -name OPTIMIZATION_TECHNIQUE SPEED
+set_global_assignment -name ALLOW_SHIFT_REGISTER_MERGING_ACROSS_HIERARCHIES OFF
+set_global_assignment -name DISABLE_REGISTER_MERGING_ACROSS_HIERARCHIES ON
+
+set_global_assignment -name LAST_QUARTUS_VERSION 14.0
+
+set_global_assignment -name OUTPUT_IO_TIMING_NEAR_END_VMEAS "HALF VCCIO" -rise
+set_global_assignment -name OUTPUT_IO_TIMING_NEAR_END_VMEAS "HALF VCCIO" -fall
+set_global_assignment -name OUTPUT_IO_TIMING_FAR_END_VMEAS "HALF SIGNAL SWING" -rise
+set_global_assignment -name OUTPUT_IO_TIMING_FAR_END_VMEAS "HALF SIGNAL SWING" -fall
+set_global_assignment -name ACTIVE_SERIAL_CLOCK FREQ_100MHZ
+set_global_assignment -name STRATIX_DEVICE_IO_STANDARD "2.5 V"
+set_global_assignment -name POWER_PRESET_COOLING_SOLUTION "23 MM HEAT SINK WITH 200 LFPM AIRFLOW"
+set_global_assignment -name POWER_BOARD_THERMAL_MODEL TYPICAL
+set_global_assignment -name USE_CHECKSUM_AS_USERCODE OFF
+set_global_assignment -name MIN_CORE_JUNCTION_TEMP 0
+set_global_assignment -name MAX_CORE_JUNCTION_TEMP 85
+set_global_assignment -name USE_CONFIGURATION_DEVICE ON
+set_global_assignment -name CRC_ERROR_OPEN_DRAIN ON
+#set_global_assignment -name AUTO_GLOBAL_CLOCK OFF
+#set_global_assignment -name AUTO_GLOBAL_REGISTER_CONTROLS OFF
+
+
+#############################################################
+# Misc
+#############################################################
+# Programming file generation
+set_global_assignment -name GENERATE_RBF_FILE ON
+set_global_assignment -name ON_CHIP_BITSTREAM_DECOMPRESSION OFF
+
+
+#============================================================
+# End of original settings
+#============================================================
+set_location_assignment PIN_N23 -to USER_1P35V_EN
+set_location_assignment PIN_AM30 -to termination_blk0~_rzq_pad
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to termination_blk0~_rzq_pad
+set_location_assignment PIN_B29 -to config_clk
+set_location_assignment PIN_H19 -to Mem0_RefClk
+set_location_assignment PIN_AF18 -to Mem1_RefClk
+set_instance_assignment -name IO_STANDARD "DIFFERENTIAL LVPECL" -to Mem0_RefClk
+set_instance_assignment -name IO_STANDARD "DIFFERENTIAL LVPECL" -to Mem1_RefClk
+set_location_assignment PIN_W26 -to perstl0_n
+set_location_assignment PIN_W30 -to "pcie_refclk(n)"
+set_location_assignment PIN_W29 -to pcie_refclk
+set_location_assignment PIN_AL34 -to "hip_serial_rx_in0(n)"
+set_location_assignment PIN_AL33 -to hip_serial_rx_in0
+set_location_assignment PIN_AJ34 -to "hip_serial_rx_in1(n)"
+set_location_assignment PIN_AJ33 -to hip_serial_rx_in1
+set_location_assignment PIN_AG34 -to "hip_serial_rx_in2(n)"
+set_location_assignment PIN_AG33 -to hip_serial_rx_in2
+set_location_assignment PIN_AE34 -to "hip_serial_rx_in3(n)"
+set_location_assignment PIN_AE33 -to hip_serial_rx_in3
+set_location_assignment PIN_AK32 -to "hip_serial_tx_out0(n)"
+set_location_assignment PIN_AK31 -to hip_serial_tx_out0
+set_location_assignment PIN_AH32 -to "hip_serial_tx_out1(n)"
+set_location_assignment PIN_AH31 -to hip_serial_tx_out1
+set_location_assignment PIN_AF32 -to "hip_serial_tx_out2(n)"
+set_location_assignment PIN_AF31 -to hip_serial_tx_out2
+set_location_assignment PIN_AD32 -to "hip_serial_tx_out3(n)"
+set_location_assignment PIN_AD31 -to hip_serial_tx_out3
+set_location_assignment PIN_AK17 -to leds[7]
+set_location_assignment PIN_AM17 -to leds[6]
+set_location_assignment PIN_AD24 -to leds[5]
+set_location_assignment PIN_AF24 -to leds[4]
+set_location_assignment PIN_AL17 -to leds[3]
+set_location_assignment PIN_AH18 -to leds[2]
+set_location_assignment PIN_AK24 -to leds[1]
+set_location_assignment PIN_AK25 -to leds[0]
+
+set_location_assignment PIN_AB23 -to rgb_leds[0]
+set_location_assignment PIN_AG24 -to rgb_leds[1]
+set_location_assignment PIN_AH24 -to rgb_leds[2]
+set_location_assignment PIN_AC24 -to rgb_leds[3]
+set_location_assignment PIN_AA24 -to rgb_leds[4]
+set_location_assignment PIN_AB26 -to rgb_leds[5]
+
+set_location_assignment PIN_N24 -to TenGbE_RefClkSel
+
+set_location_assignment PIN_AD26 -to TenGbE_TxDisable[0]
+set_location_assignment PIN_Y26 -to TenGbE_TxDisable[1]
+
+set_instance_assignment -name IO_STANDARD "2.5 V" -to TenGbE_RefClkSel
+
+# Power Supply Management UCD I2C
+set_location_assignment PIN_R26 -to UCD_SCL
+set_location_assignment PIN_T25 -to UCD_SDA
+set_instance_assignment -name IO_STANDARD "2.5 V" -to UCD_SCL
+set_instance_assignment -name IO_STANDARD "2.5 V" -to UCD_SDA
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to UCD_SCL
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to UCD_SDA
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to UCD_SCL
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to UCD_SDA
+set_instance_assignment -name AUTO_OPEN_DRAIN_PINS OFF -to UCD_SCL
+set_instance_assignment -name AUTO_OPEN_DRAIN_PINS OFF -to UCD_SDA
+
+# CPLD UFM I2C
+set_location_assignment PIN_L22 -to UFM_SCL
+set_location_assignment PIN_M22 -to UFM_SDA
+set_instance_assignment -name IO_STANDARD "2.5 V" -to UFM_SCL
+set_instance_assignment -name IO_STANDARD "2.5 V" -to UFM_SDA
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to UFM_SCL
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to UFM_SDA
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to UFM_SCL
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to UFM_SDA
+set_instance_assignment -name AUTO_OPEN_DRAIN_PINS ON -to UFM_SCL
+set_instance_assignment -name AUTO_OPEN_DRAIN_PINS ON -to UFM_SDA
+
+# TMP431C TEMPERATURE SENSOR I2C
+set_location_assignment PIN_M24 -to TMP431C_SCL
+set_location_assignment PIN_M23 -to TMP431C_SDA
+set_instance_assignment -name IO_STANDARD "2.5 V" -to TMP431C_SCL
+set_instance_assignment -name IO_STANDARD "2.5 V" -to TMP431C_SDA
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to TMP431C_SCL
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to TMP431C_SDA
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to TMP431C_SCL
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to TMP431C_SDA
+set_instance_assignment -name AUTO_OPEN_DRAIN_PINS ON -to TMP431C_SCL
+set_instance_assignment -name AUTO_OPEN_DRAIN_PINS ON -to TMP431C_SDA
+
+# FLASH Interface
+set_location_assignment PIN_H25 -to FLASH_A[2]
+set_location_assignment PIN_F26 -to FLASH_A[3]
+set_location_assignment PIN_D27 -to FLASH_A[4]
+set_location_assignment PIN_P26 -to FLASH_A[5]
+set_location_assignment PIN_L25 -to FLASH_A[6]
+set_location_assignment PIN_L24 -to FLASH_A[7]
+set_location_assignment PIN_C27 -to FLASH_A[8]
+set_location_assignment PIN_C25 -to FLASH_A[9]
+set_location_assignment PIN_G26 -to FLASH_A[10]
+set_location_assignment PIN_J25 -to FLASH_A[11]
+set_location_assignment PIN_E26 -to FLASH_A[12]
+set_location_assignment PIN_K25 -to FLASH_A[13]
+set_location_assignment PIN_G25 -to FLASH_A[14]
+set_location_assignment PIN_J24 -to FLASH_A[15]
+set_location_assignment PIN_P25 -to FLASH_A[16]
+set_location_assignment PIN_F27 -to FLASH_A[17]
+set_location_assignment PIN_E27 -to FLASH_A[18]
+set_location_assignment PIN_E25 -to FLASH_A[19]
+set_location_assignment PIN_F24 -to FLASH_A[20]
+set_location_assignment PIN_B25 -to FLASH_A[21]
+set_location_assignment PIN_A25 -to FLASH_A[22]
+set_location_assignment PIN_D25 -to FLASH_A[23]
+set_location_assignment PIN_D33 -to FLASH_A[24]
+set_location_assignment PIN_F32 -to FLASH_A[25]
+set_location_assignment PIN_K24 -to FLASH_A[26]
+set_location_assignment PIN_J29 -to FLASH_ADV_n
+set_location_assignment PIN_A26 -to FLASH_CLK
+set_location_assignment PIN_K27 -to FLASH_DQ[0]
+set_location_assignment PIN_C28 -to FLASH_DQ[1]
+set_location_assignment PIN_K28 -to FLASH_DQ[2]
+set_location_assignment PIN_B28 -to FLASH_DQ[3]
+set_location_assignment PIN_A28 -to FLASH_DQ[4]
+set_location_assignment PIN_B32 -to FLASH_DQ[5]
+set_location_assignment PIN_H28 -to FLASH_DQ[6]
+set_location_assignment PIN_A32 -to FLASH_DQ[7]
+set_location_assignment PIN_G27 -to FLASH_DQ[8]
+set_location_assignment PIN_D28 -to FLASH_DQ[9]
+set_location_assignment PIN_N26 -to FLASH_DQ[10]
+set_location_assignment PIN_E28 -to FLASH_DQ[11]
+set_location_assignment PIN_G28 -to FLASH_DQ[12]
+set_location_assignment PIN_B34 -to FLASH_DQ[13]
+set_location_assignment PIN_E31 -to FLASH_DQ[14]
+set_location_assignment PIN_M26 -to FLASH_DQ[15]
+set_location_assignment PIN_C31 -to FLASH_DQ[16]
+set_location_assignment PIN_L28 -to FLASH_DQ[17]
+set_location_assignment PIN_C32 -to FLASH_DQ[18]
+set_location_assignment PIN_J28 -to FLASH_DQ[19]
+set_location_assignment PIN_J27 -to FLASH_DQ[20]
+set_location_assignment PIN_E32 -to FLASH_DQ[21]
+set_location_assignment PIN_A31 -to FLASH_DQ[22]
+set_location_assignment PIN_C33 -to FLASH_DQ[23]
+set_location_assignment PIN_E30 -to FLASH_DQ[24]
+set_location_assignment PIN_L27 -to FLASH_DQ[25]
+set_location_assignment PIN_F30 -to FLASH_DQ[26]
+set_location_assignment PIN_D30 -to FLASH_DQ[27]
+set_location_assignment PIN_E29 -to FLASH_DQ[28]
+set_location_assignment PIN_A33 -to FLASH_DQ[29]
+set_location_assignment PIN_B31 -to FLASH_DQ[30]
+set_location_assignment PIN_L29 -to FLASH_DQ[31]
+set_location_assignment PIN_A29 -to FLASH_OE_n
+set_location_assignment PIN_L26 -to FLASH_RST_n
+set_location_assignment PIN_D31 -to FLASH_WE_n
+set_location_assignment PIN_H23 -to FLASH_WP_n
+set_location_assignment PIN_B26 -to FLASH_CE_n[0]
+set_location_assignment PIN_J26 -to FLASH_CE_n[1]
+set_location_assignment PIN_H29 -to FLASH_WAIT[0]
+set_location_assignment PIN_M27 -to FLASH_WAIT[1]
+
+set_instance_assignment -name IO_STANDARD "2.5 V" -to FLASH_DQ
+set_instance_assignment -name IO_STANDARD "2.5 V" -to FLASH_A
+set_instance_assignment -name IO_STANDARD "2.5 V" -to FLASH_CE_n
+set_instance_assignment -name IO_STANDARD "2.5 V" -to FLASH_OE_n
+set_instance_assignment -name IO_STANDARD "2.5 V" -to FLASH_WE_n
+set_instance_assignment -name FAST_OUTPUT_REGISTER ON -to FLASH_DQ
+set_instance_assignment -name FAST_INPUT_REGISTER ON -to FLASH_DQ
+set_instance_assignment -name FAST_OUTPUT_REGISTER ON -to FLASH_A
+set_instance_assignment -name FAST_OUTPUT_REGISTER ON -to FLASH_CE_n
+set_instance_assignment -name FAST_OUTPUT_REGISTER ON -to FLASH_OE_n
+set_instance_assignment -name FAST_OUTPUT_REGISTER ON -to FLASH_WE_n
+set_instance_assignment -name SLEW_RATE 0 -to FLASH_DQ
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to FLASH_DQ
+set_instance_assignment -name SLEW_RATE 0 -to FLASH_A
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to FLASH_A
+set_instance_assignment -name SLEW_RATE 1 -to FLASH_CE_n
+set_instance_assignment -name CURRENT_STRENGTH_NEW "MAXIMUM CURRENT" -to FLASH_CE_n
+set_instance_assignment -name SLEW_RATE 1 -to FLASH_OE_n
+set_instance_assignment -name CURRENT_STRENGTH_NEW "MAXIMUM CURRENT" -to FLASH_OE_n
+set_instance_assignment -name SLEW_RATE 1 -to FLASH_WE_n
+set_instance_assignment -name CURRENT_STRENGTH_NEW "MAXIMUM CURRENT" -to FLASH_WE_n
+
+set_location_assignment PIN_D34 -to PFL_FLASH_GRNT
+set_location_assignment PIN_C34 -to PFL_FLASH_REQ
+set_location_assignment PIN_AP30 -to FPGA_SBOOT_EN
+set_location_assignment PIN_E34 -to FPGA_SBOOT_PAGE
+
+set_instance_assignment -name IO_STANDARD "2.5 V" -to PFL_FLASH_GRNT
+set_instance_assignment -name IO_STANDARD "2.5 V" -to PFL_FLASH_REQ
+set_instance_assignment -name IO_STANDARD "2.5 V" -to FPGA_SBOOT_EN
+set_instance_assignment -name IO_STANDARD "2.5 V" -to FPGA_SBOOT_PAGE
+
+# SDRAM
+set_location_assignment PIN_F3 -to Mem0_Rzq
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem0_Rzq
+set_location_assignment PIN_N12 -to Mem0_Dqs[0]
+set_location_assignment PIN_N13 -to Mem0_Dqs_n[0]
+set_location_assignment PIN_K12 -to Mem0_Dm[0]
+set_location_assignment PIN_L11 -to Mem0_Dq[0]
+set_location_assignment PIN_L12 -to Mem0_Dq[1]
+set_location_assignment PIN_H11 -to Mem0_Dq[2]
+set_location_assignment PIN_P11 -to Mem0_Dq[3]
+set_location_assignment PIN_J12 -to Mem0_Dq[4]
+set_location_assignment PIN_M12 -to Mem0_Dq[5]
+set_location_assignment PIN_G12 -to Mem0_Dq[6]
+set_location_assignment PIN_N11 -to Mem0_Dq[7]
+set_location_assignment PIN_M8 -to Mem0_Dqs[1]
+set_location_assignment PIN_L8 -to Mem0_Dqs_n[1]
+set_location_assignment PIN_L6 -to Mem0_Dm[1]
+set_location_assignment PIN_J7 -to Mem0_Dq[8]
+set_location_assignment PIN_L7 -to Mem0_Dq[9]
+set_location_assignment PIN_J8 -to Mem0_Dq[10]
+set_location_assignment PIN_M9 -to Mem0_Dq[11]
+set_location_assignment PIN_K7 -to Mem0_Dq[12]
+set_location_assignment PIN_N9 -to Mem0_Dq[13]
+set_location_assignment PIN_H8 -to Mem0_Dq[14]
+set_location_assignment PIN_K6 -to Mem0_Dq[15]
+set_location_assignment PIN_D9 -to Mem0_Dqs[2]
+set_location_assignment PIN_C9 -to Mem0_Dqs_n[2]
+set_location_assignment PIN_E8 -to Mem0_Dm[2]
+set_location_assignment PIN_E10 -to Mem0_Dq[16]
+set_location_assignment PIN_F8 -to Mem0_Dq[17]
+set_location_assignment PIN_D10 -to Mem0_Dq[18]
+set_location_assignment PIN_F9 -to Mem0_Dq[19]
+set_location_assignment PIN_E9 -to Mem0_Dq[20]
+set_location_assignment PIN_G8 -to Mem0_Dq[21]
+set_location_assignment PIN_E11 -to Mem0_Dq[22]
+set_location_assignment PIN_E7 -to Mem0_Dq[23]
+set_location_assignment PIN_B8 -to Mem0_Dqs[3]
+set_location_assignment PIN_A8 -to Mem0_Dqs_n[3]
+set_location_assignment PIN_A7 -to Mem0_Dm[3]
+set_location_assignment PIN_B10 -to Mem0_Dq[24]
+set_location_assignment PIN_C10 -to Mem0_Dq[25]
+set_location_assignment PIN_B11 -to Mem0_Dq[26]
+set_location_assignment PIN_C7 -to Mem0_Dq[27]
+set_location_assignment PIN_C11 -to Mem0_Dq[28]
+set_location_assignment PIN_B7 -to Mem0_Dq[29]
+set_location_assignment PIN_A11 -to Mem0_Dq[30]
+set_location_assignment PIN_A10 -to Mem0_Dq[31]
+set_location_assignment PIN_J14 -to Mem0_Dqs[4]
+set_location_assignment PIN_J13 -to Mem0_Dqs_n[4]
+set_location_assignment PIN_G14 -to Mem0_Dm[4]
+set_location_assignment PIN_J15 -to Mem0_Dq[32]
+set_location_assignment PIN_H13 -to Mem0_Dq[33]
+set_location_assignment PIN_K13 -to Mem0_Dq[34]
+set_location_assignment PIN_G13 -to Mem0_Dq[35]
+set_location_assignment PIN_K15 -to Mem0_Dq[36]
+set_location_assignment PIN_G16 -to Mem0_Dq[37]
+set_location_assignment PIN_K14 -to Mem0_Dq[38]
+set_location_assignment PIN_H14 -to Mem0_Dq[39]
+set_location_assignment PIN_L10 -to Mem0_Dqs[5]
+set_location_assignment PIN_L9 -to Mem0_Dqs_n[5]
+set_location_assignment PIN_J9 -to Mem0_Dm[5]
+set_location_assignment PIN_N10 -to Mem0_Dq[40]
+set_location_assignment PIN_J10 -to Mem0_Dq[41]
+set_location_assignment PIN_R9 -to Mem0_Dq[42]
+set_location_assignment PIN_G10 -to Mem0_Dq[43]
+set_location_assignment PIN_P10 -to Mem0_Dq[44]
+set_location_assignment PIN_G9 -to Mem0_Dq[45]
+set_location_assignment PIN_T9 -to Mem0_Dq[46]
+set_location_assignment PIN_K9 -to Mem0_Dq[47]
+set_location_assignment PIN_D6 -to Mem0_Dqs[6]
+set_location_assignment PIN_D7 -to Mem0_Dqs_n[6]
+set_location_assignment PIN_B5 -to Mem0_Dm[6]
+set_location_assignment PIN_A4 -to Mem0_Dq[48]
+set_location_assignment PIN_A5 -to Mem0_Dq[49]
+set_location_assignment PIN_E4 -to Mem0_Dq[50]
+set_location_assignment PIN_E6 -to Mem0_Dq[51]
+set_location_assignment PIN_C4 -to Mem0_Dq[52]
+set_location_assignment PIN_E5 -to Mem0_Dq[53]
+set_location_assignment PIN_D4 -to Mem0_Dq[54]
+set_location_assignment PIN_F5 -to Mem0_Dq[55]
+set_location_assignment PIN_C16 -to Mem0_Dqs[7]
+set_location_assignment PIN_B16 -to Mem0_Dqs_n[7]
+set_location_assignment PIN_E15 -to Mem0_Dm[7]
+set_location_assignment PIN_C13 -to Mem0_Dq[56]
+set_location_assignment PIN_D15 -to Mem0_Dq[57]
+set_location_assignment PIN_B13 -to Mem0_Dq[58]
+set_location_assignment PIN_E16 -to Mem0_Dq[59]
+set_location_assignment PIN_A14 -to Mem0_Dq[60]
+set_location_assignment PIN_D16 -to Mem0_Dq[61]
+set_location_assignment PIN_A13 -to Mem0_Dq[62]
+set_location_assignment PIN_B14 -to Mem0_Dq[63]
+set_location_assignment PIN_G11 -to Mem0_Dqs[8]
+set_location_assignment PIN_F11 -to Mem0_Dqs_n[8]
+set_location_assignment PIN_E12 -to Mem0_Dm[8]
+set_location_assignment PIN_E14 -to Mem0_Dq[64]
+set_location_assignment PIN_F12 -to Mem0_Dq[65]
+set_location_assignment PIN_F15 -to Mem0_Dq[66]
+set_location_assignment PIN_C12 -to Mem0_Dq[67]
+set_location_assignment PIN_E13 -to Mem0_Dq[68]
+set_location_assignment PIN_D12 -to Mem0_Dq[69]
+set_location_assignment PIN_F14 -to Mem0_Dq[70]
+set_location_assignment PIN_D13 -to Mem0_Dq[71]
+set_location_assignment PIN_F20 -to Mem0_Addr[0]
+set_location_assignment PIN_D21 -to Mem0_Addr[1]
+set_location_assignment PIN_A19 -to Mem0_Addr[2]
+set_location_assignment PIN_J21 -to Mem0_Addr[3]
+set_location_assignment PIN_E21 -to Mem0_Addr[4]
+set_location_assignment PIN_F21 -to Mem0_Addr[5]
+set_location_assignment PIN_K21 -to Mem0_Addr[6]
+set_location_assignment PIN_F18 -to Mem0_Addr[7]
+set_location_assignment PIN_E18 -to Mem0_Addr[8]
+set_location_assignment PIN_G21 -to Mem0_Addr[9]
+set_location_assignment PIN_C17 -to Mem0_Addr[10]
+set_location_assignment PIN_B19 -to Mem0_Addr[11]
+set_location_assignment PIN_E19 -to Mem0_Addr[12]
+set_location_assignment PIN_J22 -to Mem0_Addr[13]
+set_location_assignment PIN_D18 -to Mem0_Addr[14]
+set_location_assignment PIN_E17 -to Mem0_Addr[15]
+set_location_assignment PIN_J19 -to Mem0_Bank[0]
+set_location_assignment PIN_F17 -to Mem0_Bank[1]
+set_location_assignment PIN_B20 -to Mem0_Bank[2]
+set_location_assignment PIN_A16 -to Mem0_Ck
+set_location_assignment PIN_A17 -to Mem0_Ck_n
+set_location_assignment PIN_C19 -to Mem0_Reset_n
+set_location_assignment PIN_J20 -to Mem0_Cke
+set_location_assignment PIN_E20 -to Mem0_Cs_n
+set_location_assignment PIN_H20 -to Mem0_Ras_n
+set_location_assignment PIN_B17 -to Mem0_Cas_n
+set_location_assignment PIN_A20 -to Mem0_We_n
+set_location_assignment PIN_G20 -to Mem0_Odt
+set_location_assignment PIN_AM6 -to Mem1_Rzq
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem1_Rzq
+set_location_assignment PIN_R10 -to Mem1_Dqs[0]
+set_location_assignment PIN_T10 -to Mem1_Dqs_n[0]
+set_location_assignment PIN_AA8 -to Mem1_Dm[0]
+set_location_assignment PIN_W9 -to Mem1_Dq[0]
+set_location_assignment PIN_Y9 -to Mem1_Dq[1]
+set_location_assignment PIN_V10 -to Mem1_Dq[2]
+set_location_assignment PIN_AC9 -to Mem1_Dq[3]
+set_location_assignment PIN_W10 -to Mem1_Dq[4]
+set_location_assignment PIN_AB9 -to Mem1_Dq[5]
+set_location_assignment PIN_U9 -to Mem1_Dq[6]
+set_location_assignment PIN_AA9 -to Mem1_Dq[7]
+set_location_assignment PIN_V11 -to Mem1_Dqs[1]
+set_location_assignment PIN_W11 -to Mem1_Dqs_n[1]
+set_location_assignment PIN_AB11 -to Mem1_Dm[1]
+set_location_assignment PIN_Y10 -to Mem1_Dq[8]
+set_location_assignment PIN_AB10 -to Mem1_Dq[9]
+set_location_assignment PIN_U11 -to Mem1_Dq[10]
+set_location_assignment PIN_AE11 -to Mem1_Dq[11]
+set_location_assignment PIN_Y11 -to Mem1_Dq[12]
+set_location_assignment PIN_AD11 -to Mem1_Dq[13]
+set_location_assignment PIN_U10 -to Mem1_Dq[14]
+set_location_assignment PIN_AC11 -to Mem1_Dq[15]
+set_location_assignment PIN_AE8 -to Mem1_Dqs[2]
+set_location_assignment PIN_AF8 -to Mem1_Dqs_n[2]
+set_location_assignment PIN_AH11 -to Mem1_Dm[2]
+set_location_assignment PIN_AG9 -to Mem1_Dq[16]
+set_location_assignment PIN_AH8 -to Mem1_Dq[17]
+set_location_assignment PIN_AF10 -to Mem1_Dq[18]
+set_location_assignment PIN_AJ8 -to Mem1_Dq[19]
+set_location_assignment PIN_AH10 -to Mem1_Dq[20]
+set_location_assignment PIN_AJ11 -to Mem1_Dq[21]
+set_location_assignment PIN_AF9 -to Mem1_Dq[22]
+set_location_assignment PIN_AH9 -to Mem1_Dq[23]
+set_location_assignment PIN_AL10 -to Mem1_Dqs[3]
+set_location_assignment PIN_AM10 -to Mem1_Dqs_n[3]
+set_location_assignment PIN_AP10 -to Mem1_Dm[3]
+set_location_assignment PIN_AN9 -to Mem1_Dq[24]
+set_location_assignment PIN_AM11 -to Mem1_Dq[25]
+set_location_assignment PIN_AK9 -to Mem1_Dq[26]
+set_location_assignment PIN_AK10 -to Mem1_Dq[27]
+set_location_assignment PIN_AN10 -to Mem1_Dq[28]
+set_location_assignment PIN_AL11 -to Mem1_Dq[29]
+set_location_assignment PIN_AJ9 -to Mem1_Dq[30]
+set_location_assignment PIN_AK11 -to Mem1_Dq[31]
+set_location_assignment PIN_AG12 -to Mem1_Dqs[4]
+set_location_assignment PIN_AF11 -to Mem1_Dqs_n[4]
+set_location_assignment PIN_AJ12 -to Mem1_Dm[4]
+set_location_assignment PIN_AH14 -to Mem1_Dq[32]
+set_location_assignment PIN_AH13 -to Mem1_Dq[33]
+set_location_assignment PIN_AH15 -to Mem1_Dq[34]
+set_location_assignment PIN_AF14 -to Mem1_Dq[35]
+set_location_assignment PIN_AF12 -to Mem1_Dq[36]
+set_location_assignment PIN_AF13 -to Mem1_Dq[37]
+set_location_assignment PIN_AF15 -to Mem1_Dq[38]
+set_location_assignment PIN_AG13 -to Mem1_Dq[39]
+set_location_assignment PIN_AA13 -to Mem1_Dqs[5]
+set_location_assignment PIN_AB13 -to Mem1_Dqs_n[5]
+set_location_assignment PIN_AB12 -to Mem1_Dm[5]
+set_location_assignment PIN_AC12 -to Mem1_Dq[40]
+set_location_assignment PIN_AA12 -to Mem1_Dq[41]
+set_location_assignment PIN_AE13 -to Mem1_Dq[42]
+set_location_assignment PIN_Y12 -to Mem1_Dq[43]
+set_location_assignment PIN_AD12 -to Mem1_Dq[44]
+set_location_assignment PIN_U13 -to Mem1_Dq[45]
+set_location_assignment PIN_AE14 -to Mem1_Dq[46]
+set_location_assignment PIN_W12 -to Mem1_Dq[47]
+set_location_assignment PIN_AL13 -to Mem1_Dqs[6]
+set_location_assignment PIN_AM13 -to Mem1_Dqs_n[6]
+set_location_assignment PIN_AN12 -to Mem1_Dm[6]
+set_location_assignment PIN_AP13 -to Mem1_Dq[48]
+set_location_assignment PIN_AP12 -to Mem1_Dq[49]
+set_location_assignment PIN_AL14 -to Mem1_Dq[50]
+set_location_assignment PIN_AK12 -to Mem1_Dq[51]
+set_location_assignment PIN_AK14 -to Mem1_Dq[52]
+set_location_assignment PIN_AK13 -to Mem1_Dq[53]
+set_location_assignment PIN_AM14 -to Mem1_Dq[54]
+set_location_assignment PIN_AN13 -to Mem1_Dq[55]
+set_location_assignment PIN_AA14 -to Mem1_Dqs[7]
+set_location_assignment PIN_AB14 -to Mem1_Dqs_n[7]
+set_location_assignment PIN_AC14 -to Mem1_Dm[7]
+set_location_assignment PIN_W14 -to Mem1_Dq[56]
+set_location_assignment PIN_AD15 -to Mem1_Dq[57]
+set_location_assignment PIN_Y14 -to Mem1_Dq[58]
+set_location_assignment PIN_W13 -to Mem1_Dq[59]
+set_location_assignment PIN_AB15 -to Mem1_Dq[60]
+set_location_assignment PIN_AD14 -to Mem1_Dq[61]
+set_location_assignment PIN_AA15 -to Mem1_Dq[62]
+set_location_assignment PIN_AC15 -to Mem1_Dq[63]
+set_location_assignment PIN_AM16 -to Mem1_Dqs[8]
+set_location_assignment PIN_AL16 -to Mem1_Dqs_n[8]
+set_location_assignment PIN_AJ15 -to Mem1_Dm[8]
+set_location_assignment PIN_AK15 -to Mem1_Dq[64]
+set_location_assignment PIN_AK16 -to Mem1_Dq[65]
+set_location_assignment PIN_AN15 -to Mem1_Dq[66]
+set_location_assignment PIN_AJ17 -to Mem1_Dq[67]
+set_location_assignment PIN_AN16 -to Mem1_Dq[68]
+set_location_assignment PIN_AH17 -to Mem1_Dq[69]
+set_location_assignment PIN_AP15 -to Mem1_Dq[70]
+set_location_assignment PIN_AP16 -to Mem1_Dq[71]
+set_location_assignment PIN_AH20 -to Mem1_Addr[0]
+set_location_assignment PIN_AL22 -to Mem1_Addr[1]
+set_location_assignment PIN_AK20 -to Mem1_Addr[2]
+set_location_assignment PIN_AF23 -to Mem1_Addr[3]
+set_location_assignment PIN_AK22 -to Mem1_Addr[4]
+set_location_assignment PIN_AG21 -to Mem1_Addr[5]
+set_location_assignment PIN_AD23 -to Mem1_Addr[6]
+set_location_assignment PIN_AC23 -to Mem1_Addr[7]
+set_location_assignment PIN_AN22 -to Mem1_Addr[8]
+set_location_assignment PIN_AJ20 -to Mem1_Addr[9]
+set_location_assignment PIN_AM20 -to Mem1_Addr[10]
+set_location_assignment PIN_AM22 -to Mem1_Addr[11]
+set_location_assignment PIN_AK21 -to Mem1_Addr[12]
+set_location_assignment PIN_AJ21 -to Mem1_Addr[13]
+set_location_assignment PIN_AP22 -to Mem1_Addr[14]
+set_location_assignment PIN_AH21 -to Mem1_Addr[15]
+set_location_assignment PIN_AH23 -to Mem1_Bank[0]
+set_location_assignment PIN_AF21 -to Mem1_Bank[1]
+set_location_assignment PIN_AF20 -to Mem1_Bank[2]
+set_location_assignment PIN_AN21 -to Mem1_Ck
+set_location_assignment PIN_AP21 -to Mem1_Ck_n
+set_location_assignment PIN_AE23 -to Mem1_Reset_n
+set_location_assignment PIN_AE22 -to Mem1_Cke
+set_location_assignment PIN_AG22 -to Mem1_Cs_n
+set_location_assignment PIN_AM19 -to Mem1_Ras_n
+set_location_assignment PIN_AN19 -to Mem1_Cas_n
+set_location_assignment PIN_AP19 -to Mem1_We_n
+set_location_assignment PIN_AF22 -to Mem1_Odt
+set_instance_assignment -name IO_STANDARD "2.5 V" -to perstl0_n
+set_instance_assignment -name IO_STANDARD HCSL -to pcie_refclk
+set_instance_assignment -name IO_STANDARD "1.5-V PCML" -to hip_serial_rx_in0
+set_instance_assignment -name IO_STANDARD "1.5-V PCML" -to hip_serial_rx_in1
+set_instance_assignment -name IO_STANDARD "1.5-V PCML" -to hip_serial_rx_in2
+set_instance_assignment -name IO_STANDARD "1.5-V PCML" -to hip_serial_rx_in3
+set_instance_assignment -name IO_STANDARD "1.5-V PCML" -to hip_serial_tx_out0
+set_instance_assignment -name IO_STANDARD "1.5-V PCML" -to hip_serial_tx_out1
+set_instance_assignment -name IO_STANDARD "1.5-V PCML" -to hip_serial_tx_out2
+set_instance_assignment -name IO_STANDARD "1.5-V PCML" -to hip_serial_tx_out3
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem0_Addr[14] -tag __board_system_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem0_Addr[15] -tag __board_system_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem1_Addr[14] -tag __board_system_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem1_Addr[15] -tag __board_system_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITHOUT CALIBRATION" -to Mem0_Addr[14] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITHOUT CALIBRATION" -to Mem0_Addr[15] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITHOUT CALIBRATION" -to Mem1_Addr[14] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITHOUT CALIBRATION" -to Mem1_Addr[15] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem1_Dq[0] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem1_Dq[0] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem1_Dq[0] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem1_Dq[1] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem1_Dq[1] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem1_Dq[1] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem1_Dq[2] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem1_Dq[2] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem1_Dq[2] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem1_Dq[3] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem1_Dq[3] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem1_Dq[3] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem1_Dq[4] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem1_Dq[4] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem1_Dq[4] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem1_Dq[5] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem1_Dq[5] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem1_Dq[5] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem1_Dq[6] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem1_Dq[6] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem1_Dq[6] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem1_Dq[7] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem1_Dq[7] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem1_Dq[7] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem1_Dq[8] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem1_Dq[8] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem1_Dq[8] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem1_Dq[9] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem1_Dq[9] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem1_Dq[9] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem1_Dq[10] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem1_Dq[10] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem1_Dq[10] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem1_Dq[11] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem1_Dq[11] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem1_Dq[11] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem1_Dq[12] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem1_Dq[12] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem1_Dq[12] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem1_Dq[13] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem1_Dq[13] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem1_Dq[13] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem1_Dq[14] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem1_Dq[14] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem1_Dq[14] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem1_Dq[15] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem1_Dq[15] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem1_Dq[15] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem1_Dq[16] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem1_Dq[16] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem1_Dq[16] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem1_Dq[17] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem1_Dq[17] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem1_Dq[17] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem1_Dq[18] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem1_Dq[18] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem1_Dq[18] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem1_Dq[19] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem1_Dq[19] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem1_Dq[19] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem1_Dq[20] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem1_Dq[20] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem1_Dq[20] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem1_Dq[21] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem1_Dq[21] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem1_Dq[21] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem1_Dq[22] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem1_Dq[22] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem1_Dq[22] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem1_Dq[23] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem1_Dq[23] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem1_Dq[23] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem1_Dq[24] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem1_Dq[24] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem1_Dq[24] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem1_Dq[25] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem1_Dq[25] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem1_Dq[25] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem1_Dq[26] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem1_Dq[26] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem1_Dq[26] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem1_Dq[27] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem1_Dq[27] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem1_Dq[27] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem1_Dq[28] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem1_Dq[28] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem1_Dq[28] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem1_Dq[29] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem1_Dq[29] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem1_Dq[29] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem1_Dq[30] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem1_Dq[30] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem1_Dq[30] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem1_Dq[31] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem1_Dq[31] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem1_Dq[31] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem1_Dq[32] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem1_Dq[32] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem1_Dq[32] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem1_Dq[33] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem1_Dq[33] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem1_Dq[33] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem1_Dq[34] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem1_Dq[34] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem1_Dq[34] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem1_Dq[35] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem1_Dq[35] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem1_Dq[35] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem1_Dq[36] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem1_Dq[36] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem1_Dq[36] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem1_Dq[37] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem1_Dq[37] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem1_Dq[37] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem1_Dq[38] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem1_Dq[38] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem1_Dq[38] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem1_Dq[39] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem1_Dq[39] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem1_Dq[39] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem1_Dq[40] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem1_Dq[40] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem1_Dq[40] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem1_Dq[41] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem1_Dq[41] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem1_Dq[41] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem1_Dq[42] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem1_Dq[42] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem1_Dq[42] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem1_Dq[43] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem1_Dq[43] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem1_Dq[43] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem1_Dq[44] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem1_Dq[44] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem1_Dq[44] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem1_Dq[45] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem1_Dq[45] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem1_Dq[45] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem1_Dq[46] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem1_Dq[46] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem1_Dq[46] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem1_Dq[47] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem1_Dq[47] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem1_Dq[47] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem1_Dq[48] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem1_Dq[48] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem1_Dq[48] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem1_Dq[49] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem1_Dq[49] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem1_Dq[49] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem1_Dq[50] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem1_Dq[50] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem1_Dq[50] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem1_Dq[51] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem1_Dq[51] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem1_Dq[51] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem1_Dq[52] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem1_Dq[52] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem1_Dq[52] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem1_Dq[53] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem1_Dq[53] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem1_Dq[53] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem1_Dq[54] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem1_Dq[54] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem1_Dq[54] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem1_Dq[55] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem1_Dq[55] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem1_Dq[55] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem1_Dq[56] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem1_Dq[56] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem1_Dq[56] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem1_Dq[57] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem1_Dq[57] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem1_Dq[57] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem1_Dq[58] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem1_Dq[58] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem1_Dq[58] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem1_Dq[59] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem1_Dq[59] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem1_Dq[59] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem1_Dq[60] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem1_Dq[60] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem1_Dq[60] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem1_Dq[61] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem1_Dq[61] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem1_Dq[61] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem1_Dq[62] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem1_Dq[62] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem1_Dq[62] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem1_Dq[63] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem1_Dq[63] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem1_Dq[63] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem1_Dq[64] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem1_Dq[64] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem1_Dq[64] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem1_Dq[65] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem1_Dq[65] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem1_Dq[65] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem1_Dq[66] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem1_Dq[66] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem1_Dq[66] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem1_Dq[67] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem1_Dq[67] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem1_Dq[67] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem1_Dq[68] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem1_Dq[68] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem1_Dq[68] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem1_Dq[69] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem1_Dq[69] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem1_Dq[69] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem1_Dq[70] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem1_Dq[70] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem1_Dq[70] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem1_Dq[71] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem1_Dq[71] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem1_Dq[71] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "DIFFERENTIAL 1.35-V SSTL" -to Mem1_Dqs[0] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem1_Dqs[0] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem1_Dqs[0] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "DIFFERENTIAL 1.35-V SSTL" -to Mem1_Dqs[1] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem1_Dqs[1] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem1_Dqs[1] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "DIFFERENTIAL 1.35-V SSTL" -to Mem1_Dqs[2] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem1_Dqs[2] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem1_Dqs[2] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "DIFFERENTIAL 1.35-V SSTL" -to Mem1_Dqs[3] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem1_Dqs[3] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem1_Dqs[3] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "DIFFERENTIAL 1.35-V SSTL" -to Mem1_Dqs[4] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem1_Dqs[4] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem1_Dqs[4] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "DIFFERENTIAL 1.35-V SSTL" -to Mem1_Dqs[5] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem1_Dqs[5] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem1_Dqs[5] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "DIFFERENTIAL 1.35-V SSTL" -to Mem1_Dqs[6] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem1_Dqs[6] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem1_Dqs[6] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "DIFFERENTIAL 1.35-V SSTL" -to Mem1_Dqs[7] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem1_Dqs[7] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem1_Dqs[7] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "DIFFERENTIAL 1.35-V SSTL" -to Mem1_Dqs[8] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem1_Dqs[8] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem1_Dqs[8] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "DIFFERENTIAL 1.35-V SSTL" -to Mem1_Dqs_n[0] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem1_Dqs_n[0] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem1_Dqs_n[0] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "DIFFERENTIAL 1.35-V SSTL" -to Mem1_Dqs_n[1] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem1_Dqs_n[1] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem1_Dqs_n[1] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "DIFFERENTIAL 1.35-V SSTL" -to Mem1_Dqs_n[2] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem1_Dqs_n[2] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem1_Dqs_n[2] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "DIFFERENTIAL 1.35-V SSTL" -to Mem1_Dqs_n[3] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem1_Dqs_n[3] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem1_Dqs_n[3] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "DIFFERENTIAL 1.35-V SSTL" -to Mem1_Dqs_n[4] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem1_Dqs_n[4] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem1_Dqs_n[4] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "DIFFERENTIAL 1.35-V SSTL" -to Mem1_Dqs_n[5] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem1_Dqs_n[5] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem1_Dqs_n[5] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "DIFFERENTIAL 1.35-V SSTL" -to Mem1_Dqs_n[6] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem1_Dqs_n[6] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem1_Dqs_n[6] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "DIFFERENTIAL 1.35-V SSTL" -to Mem1_Dqs_n[7] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem1_Dqs_n[7] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem1_Dqs_n[7] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "DIFFERENTIAL 1.35-V SSTL" -to Mem1_Dqs_n[8] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem1_Dqs_n[8] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem1_Dqs_n[8] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "DIFFERENTIAL 1.35-V SSTL" -to Mem1_Ck -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITHOUT CALIBRATION" -to Mem1_Ck -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "DIFFERENTIAL 1.35-V SSTL" -to Mem1_Ck_n -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITHOUT CALIBRATION" -to Mem1_Ck_n -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem1_Addr[0] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITHOUT CALIBRATION" -to Mem1_Addr[0] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem1_Addr[10] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITHOUT CALIBRATION" -to Mem1_Addr[10] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem1_Addr[11] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITHOUT CALIBRATION" -to Mem1_Addr[11] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem1_Addr[12] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITHOUT CALIBRATION" -to Mem1_Addr[12] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem1_Addr[13] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITHOUT CALIBRATION" -to Mem1_Addr[13] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem1_Addr[1] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITHOUT CALIBRATION" -to Mem1_Addr[1] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem1_Addr[2] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITHOUT CALIBRATION" -to Mem1_Addr[2] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem1_Addr[3] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITHOUT CALIBRATION" -to Mem1_Addr[3] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem1_Addr[4] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITHOUT CALIBRATION" -to Mem1_Addr[4] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem1_Addr[5] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITHOUT CALIBRATION" -to Mem1_Addr[5] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem1_Addr[6] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITHOUT CALIBRATION" -to Mem1_Addr[6] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem1_Addr[7] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITHOUT CALIBRATION" -to Mem1_Addr[7] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem1_Addr[8] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITHOUT CALIBRATION" -to Mem1_Addr[8] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem1_Addr[9] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITHOUT CALIBRATION" -to Mem1_Addr[9] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem1_Bank[0] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITHOUT CALIBRATION" -to Mem1_Bank[0] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem1_Bank[1] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITHOUT CALIBRATION" -to Mem1_Bank[1] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem1_Bank[2] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITHOUT CALIBRATION" -to Mem1_Bank[2] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem1_Cs_n -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITHOUT CALIBRATION" -to Mem1_Cs_n -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem1_We_n -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITHOUT CALIBRATION" -to Mem1_We_n -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem1_Ras_n -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITHOUT CALIBRATION" -to Mem1_Ras_n -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem1_Cas_n -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITHOUT CALIBRATION" -to Mem1_Cas_n -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem1_Cke -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITHOUT CALIBRATION" -to Mem1_Cke -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem1_Odt -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITHOUT CALIBRATION" -to Mem1_Odt -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem1_Reset_n -tag __system_board_ddr3a_p0
+set_instance_assignment -name BOARD_MODEL_FAR_PULLUP_R OPEN -to Mem1_Reset_n -tag __system_board_ddr3a_p0
+set_instance_assignment -name BOARD_MODEL_NEAR_PULLUP_R OPEN -to Mem1_Reset_n -tag __system_board_ddr3a_p0
+set_instance_assignment -name BOARD_MODEL_FAR_PULLDOWN_R OPEN -to Mem1_Reset_n -tag __system_board_ddr3a_p0
+set_instance_assignment -name BOARD_MODEL_NEAR_PULLDOWN_R OPEN -to Mem1_Reset_n -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem1_Reset_n -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem1_Dm[0] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem1_Dm[0] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem1_Dm[1] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem1_Dm[1] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem1_Dm[2] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem1_Dm[2] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem1_Dm[3] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem1_Dm[3] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem1_Dm[4] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem1_Dm[4] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem1_Dm[5] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem1_Dm[5] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem1_Dm[6] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem1_Dm[6] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem1_Dm[7] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem1_Dm[7] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem1_Dm[8] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem1_Dm[8] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Dq[0] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Dq[1] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Dq[2] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Dq[3] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Dq[4] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Dq[5] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Dq[6] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Dq[7] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Dq[8] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Dq[9] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Dq[10] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Dq[11] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Dq[12] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Dq[13] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Dq[14] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Dq[15] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Dq[16] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Dq[17] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Dq[18] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Dq[19] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Dq[20] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Dq[21] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Dq[22] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Dq[23] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Dq[24] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Dq[25] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Dq[26] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Dq[27] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Dq[28] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Dq[29] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Dq[30] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Dq[31] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Dq[32] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Dq[33] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Dq[34] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Dq[35] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Dq[36] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Dq[37] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Dq[38] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Dq[39] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Dq[40] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Dq[41] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Dq[42] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Dq[43] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Dq[44] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Dq[45] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Dq[46] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Dq[47] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Dq[48] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Dq[49] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Dq[50] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Dq[51] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Dq[52] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Dq[53] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Dq[54] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Dq[55] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Dq[56] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Dq[57] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Dq[58] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Dq[59] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Dq[60] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Dq[61] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Dq[62] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Dq[63] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Dq[64] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Dq[65] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Dq[66] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Dq[67] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Dq[68] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Dq[69] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Dq[70] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Dq[71] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Dm[0] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Dm[1] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Dm[2] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Dm[3] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Dm[4] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Dm[5] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Dm[6] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Dm[7] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Dm[8] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Dqs[0] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Dqs[1] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Dqs[2] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Dqs[3] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Dqs[4] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Dqs[5] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Dqs[6] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Dqs[7] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Dqs[8] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Dqs_n[0] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Dqs_n[1] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Dqs_n[2] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Dqs_n[3] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Dqs_n[4] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Dqs_n[5] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Dqs_n[6] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Dqs_n[7] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Dqs_n[8] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Addr[0] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Addr[10] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Addr[11] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Addr[12] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Addr[13] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Addr[1] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Addr[2] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Addr[3] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Addr[4] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Addr[5] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Addr[6] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Addr[7] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Addr[8] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Addr[9] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Bank[0] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Bank[1] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Bank[2] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Cs_n -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_We_n -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Ras_n -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Cas_n -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Cke -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Odt -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Reset_n -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Ck -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem1_Ck_n -tag __system_board_ddr3a_p0
+set_instance_assignment -name ENABLE_BENEFICIAL_SKEW_OPTIMIZATION_FOR_NON_GLOBAL_CLOCKS ON -to system_inst|board|ddr3b -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem0_Dq[0] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem0_Dq[0] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem0_Dq[0] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem0_Dq[1] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem0_Dq[1] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem0_Dq[1] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem0_Dq[2] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem0_Dq[2] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem0_Dq[2] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem0_Dq[3] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem0_Dq[3] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem0_Dq[3] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem0_Dq[4] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem0_Dq[4] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem0_Dq[4] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem0_Dq[5] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem0_Dq[5] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem0_Dq[5] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem0_Dq[6] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem0_Dq[6] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem0_Dq[6] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem0_Dq[7] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem0_Dq[7] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem0_Dq[7] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem0_Dq[8] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem0_Dq[8] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem0_Dq[8] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem0_Dq[9] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem0_Dq[9] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem0_Dq[9] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem0_Dq[10] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem0_Dq[10] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem0_Dq[10] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem0_Dq[11] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem0_Dq[11] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem0_Dq[11] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem0_Dq[12] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem0_Dq[12] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem0_Dq[12] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem0_Dq[13] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem0_Dq[13] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem0_Dq[13] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem0_Dq[14] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem0_Dq[14] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem0_Dq[14] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem0_Dq[15] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem0_Dq[15] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem0_Dq[15] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem0_Dq[16] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem0_Dq[16] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem0_Dq[16] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem0_Dq[17] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem0_Dq[17] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem0_Dq[17] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem0_Dq[18] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem0_Dq[18] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem0_Dq[18] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem0_Dq[19] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem0_Dq[19] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem0_Dq[19] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem0_Dq[20] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem0_Dq[20] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem0_Dq[20] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem0_Dq[21] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem0_Dq[21] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem0_Dq[21] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem0_Dq[22] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem0_Dq[22] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem0_Dq[22] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem0_Dq[23] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem0_Dq[23] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem0_Dq[23] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem0_Dq[24] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem0_Dq[24] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem0_Dq[24] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem0_Dq[25] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem0_Dq[25] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem0_Dq[25] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem0_Dq[26] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem0_Dq[26] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem0_Dq[26] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem0_Dq[27] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem0_Dq[27] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem0_Dq[27] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem0_Dq[28] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem0_Dq[28] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem0_Dq[28] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem0_Dq[29] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem0_Dq[29] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem0_Dq[29] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem0_Dq[30] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem0_Dq[30] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem0_Dq[30] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem0_Dq[31] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem0_Dq[31] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem0_Dq[31] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem0_Dq[32] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem0_Dq[32] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem0_Dq[32] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem0_Dq[33] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem0_Dq[33] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem0_Dq[33] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem0_Dq[34] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem0_Dq[34] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem0_Dq[34] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem0_Dq[35] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem0_Dq[35] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem0_Dq[35] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem0_Dq[36] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem0_Dq[36] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem0_Dq[36] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem0_Dq[37] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem0_Dq[37] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem0_Dq[37] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem0_Dq[38] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem0_Dq[38] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem0_Dq[38] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem0_Dq[39] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem0_Dq[39] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem0_Dq[39] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem0_Dq[40] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem0_Dq[40] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem0_Dq[40] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem0_Dq[41] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem0_Dq[41] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem0_Dq[41] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem0_Dq[42] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem0_Dq[42] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem0_Dq[42] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem0_Dq[43] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem0_Dq[43] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem0_Dq[43] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem0_Dq[44] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem0_Dq[44] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem0_Dq[44] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem0_Dq[45] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem0_Dq[45] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem0_Dq[45] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem0_Dq[46] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem0_Dq[46] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem0_Dq[46] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem0_Dq[47] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem0_Dq[47] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem0_Dq[47] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem0_Dq[48] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem0_Dq[48] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem0_Dq[48] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem0_Dq[49] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem0_Dq[49] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem0_Dq[49] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem0_Dq[50] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem0_Dq[50] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem0_Dq[50] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem0_Dq[51] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem0_Dq[51] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem0_Dq[51] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem0_Dq[52] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem0_Dq[52] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem0_Dq[52] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem0_Dq[53] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem0_Dq[53] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem0_Dq[53] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem0_Dq[54] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem0_Dq[54] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem0_Dq[54] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem0_Dq[55] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem0_Dq[55] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem0_Dq[55] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem0_Dq[56] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem0_Dq[56] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem0_Dq[56] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem0_Dq[57] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem0_Dq[57] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem0_Dq[57] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem0_Dq[58] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem0_Dq[58] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem0_Dq[58] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem0_Dq[59] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem0_Dq[59] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem0_Dq[59] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem0_Dq[60] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem0_Dq[60] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem0_Dq[60] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem0_Dq[61] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem0_Dq[61] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem0_Dq[61] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem0_Dq[62] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem0_Dq[62] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem0_Dq[62] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem0_Dq[63] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem0_Dq[63] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem0_Dq[63] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem0_Dq[64] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem0_Dq[64] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem0_Dq[64] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem0_Dq[65] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem0_Dq[65] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem0_Dq[65] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem0_Dq[66] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem0_Dq[66] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem0_Dq[66] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem0_Dq[67] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem0_Dq[67] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem0_Dq[67] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem0_Dq[68] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem0_Dq[68] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem0_Dq[68] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem0_Dq[69] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem0_Dq[69] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem0_Dq[69] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem0_Dq[70] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem0_Dq[70] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem0_Dq[70] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem0_Dq[71] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem0_Dq[71] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem0_Dq[71] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "DIFFERENTIAL 1.35-V SSTL" -to Mem0_Dqs[0] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem0_Dqs[0] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem0_Dqs[0] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "DIFFERENTIAL 1.35-V SSTL" -to Mem0_Dqs[1] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem0_Dqs[1] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem0_Dqs[1] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "DIFFERENTIAL 1.35-V SSTL" -to Mem0_Dqs[2] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem0_Dqs[2] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem0_Dqs[2] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "DIFFERENTIAL 1.35-V SSTL" -to Mem0_Dqs[3] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem0_Dqs[3] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem0_Dqs[3] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "DIFFERENTIAL 1.35-V SSTL" -to Mem0_Dqs[4] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem0_Dqs[4] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem0_Dqs[4] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "DIFFERENTIAL 1.35-V SSTL" -to Mem0_Dqs[5] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem0_Dqs[5] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem0_Dqs[5] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "DIFFERENTIAL 1.35-V SSTL" -to Mem0_Dqs[6] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem0_Dqs[6] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem0_Dqs[6] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "DIFFERENTIAL 1.35-V SSTL" -to Mem0_Dqs[7] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem0_Dqs[7] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem0_Dqs[7] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "DIFFERENTIAL 1.35-V SSTL" -to Mem0_Dqs[8] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem0_Dqs[8] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem0_Dqs[8] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "DIFFERENTIAL 1.35-V SSTL" -to Mem0_Dqs_n[0] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem0_Dqs_n[0] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem0_Dqs_n[0] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "DIFFERENTIAL 1.35-V SSTL" -to Mem0_Dqs_n[1] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem0_Dqs_n[1] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem0_Dqs_n[1] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "DIFFERENTIAL 1.35-V SSTL" -to Mem0_Dqs_n[2] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem0_Dqs_n[2] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem0_Dqs_n[2] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "DIFFERENTIAL 1.35-V SSTL" -to Mem0_Dqs_n[3] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem0_Dqs_n[3] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem0_Dqs_n[3] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "DIFFERENTIAL 1.35-V SSTL" -to Mem0_Dqs_n[4] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem0_Dqs_n[4] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem0_Dqs_n[4] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "DIFFERENTIAL 1.35-V SSTL" -to Mem0_Dqs_n[5] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem0_Dqs_n[5] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem0_Dqs_n[5] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "DIFFERENTIAL 1.35-V SSTL" -to Mem0_Dqs_n[6] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem0_Dqs_n[6] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem0_Dqs_n[6] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "DIFFERENTIAL 1.35-V SSTL" -to Mem0_Dqs_n[7] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem0_Dqs_n[7] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem0_Dqs_n[7] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "DIFFERENTIAL 1.35-V SSTL" -to Mem0_Dqs_n[8] -tag __system_board_ddr3a_p0
+set_instance_assignment -name INPUT_TERMINATION "PARALLEL 40 OHM WITH CALIBRATION" -to Mem0_Dqs_n[8] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem0_Dqs_n[8] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "DIFFERENTIAL 1.35-V SSTL" -to Mem0_Ck -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITHOUT CALIBRATION" -to Mem0_Ck -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "DIFFERENTIAL 1.35-V SSTL" -to Mem0_Ck_n -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITHOUT CALIBRATION" -to Mem0_Ck_n -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem0_Addr[0] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITHOUT CALIBRATION" -to Mem0_Addr[0] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem0_Addr[10] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITHOUT CALIBRATION" -to Mem0_Addr[10] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem0_Addr[11] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITHOUT CALIBRATION" -to Mem0_Addr[11] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem0_Addr[12] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITHOUT CALIBRATION" -to Mem0_Addr[12] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem0_Addr[13] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITHOUT CALIBRATION" -to Mem0_Addr[13] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem0_Addr[1] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITHOUT CALIBRATION" -to Mem0_Addr[1] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem0_Addr[2] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITHOUT CALIBRATION" -to Mem0_Addr[2] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem0_Addr[3] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITHOUT CALIBRATION" -to Mem0_Addr[3] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem0_Addr[4] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITHOUT CALIBRATION" -to Mem0_Addr[4] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem0_Addr[5] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITHOUT CALIBRATION" -to Mem0_Addr[5] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem0_Addr[6] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITHOUT CALIBRATION" -to Mem0_Addr[6] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem0_Addr[7] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITHOUT CALIBRATION" -to Mem0_Addr[7] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem0_Addr[8] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITHOUT CALIBRATION" -to Mem0_Addr[8] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem0_Addr[9] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITHOUT CALIBRATION" -to Mem0_Addr[9] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem0_Bank[0] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITHOUT CALIBRATION" -to Mem0_Bank[0] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem0_Bank[1] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITHOUT CALIBRATION" -to Mem0_Bank[1] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem0_Bank[2] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITHOUT CALIBRATION" -to Mem0_Bank[2] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem0_Cs_n -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITHOUT CALIBRATION" -to Mem0_Cs_n -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem0_We_n -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITHOUT CALIBRATION" -to Mem0_We_n -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem0_Ras_n -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITHOUT CALIBRATION" -to Mem0_Ras_n -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem0_Cas_n -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITHOUT CALIBRATION" -to Mem0_Cas_n -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem0_Cke -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITHOUT CALIBRATION" -to Mem0_Cke -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem0_Odt -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITHOUT CALIBRATION" -to Mem0_Odt -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem0_Reset_n -tag __system_board_ddr3a_p0
+set_instance_assignment -name BOARD_MODEL_FAR_PULLUP_R OPEN -to Mem0_Reset_n -tag __system_board_ddr3a_p0
+set_instance_assignment -name BOARD_MODEL_NEAR_PULLUP_R OPEN -to Mem0_Reset_n -tag __system_board_ddr3a_p0
+set_instance_assignment -name BOARD_MODEL_FAR_PULLDOWN_R OPEN -to Mem0_Reset_n -tag __system_board_ddr3a_p0
+set_instance_assignment -name BOARD_MODEL_NEAR_PULLDOWN_R OPEN -to Mem0_Reset_n -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem0_Reset_n -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem0_Dm[0] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem0_Dm[0] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem0_Dm[1] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem0_Dm[1] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem0_Dm[2] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem0_Dm[2] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem0_Dm[3] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem0_Dm[3] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem0_Dm[4] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem0_Dm[4] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem0_Dm[5] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem0_Dm[5] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem0_Dm[6] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem0_Dm[6] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem0_Dm[7] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem0_Dm[7] -tag __system_board_ddr3a_p0
+set_instance_assignment -name IO_STANDARD "SSTL-135" -to Mem0_Dm[8] -tag __system_board_ddr3a_p0
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITH CALIBRATION" -to Mem0_Dm[8] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Dq[0] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Dq[1] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Dq[2] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Dq[3] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Dq[4] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Dq[5] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Dq[6] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Dq[7] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Dq[8] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Dq[9] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Dq[10] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Dq[11] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Dq[12] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Dq[13] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Dq[14] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Dq[15] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Dq[16] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Dq[17] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Dq[18] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Dq[19] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Dq[20] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Dq[21] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Dq[22] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Dq[23] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Dq[24] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Dq[25] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Dq[26] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Dq[27] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Dq[28] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Dq[29] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Dq[30] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Dq[31] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Dq[32] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Dq[33] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Dq[34] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Dq[35] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Dq[36] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Dq[37] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Dq[38] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Dq[39] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Dq[40] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Dq[41] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Dq[42] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Dq[43] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Dq[44] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Dq[45] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Dq[46] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Dq[47] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Dq[48] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Dq[49] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Dq[50] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Dq[51] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Dq[52] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Dq[53] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Dq[54] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Dq[55] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Dq[56] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Dq[57] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Dq[58] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Dq[59] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Dq[60] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Dq[61] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Dq[62] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Dq[63] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Dq[64] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Dq[65] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Dq[66] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Dq[67] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Dq[68] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Dq[69] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Dq[70] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Dq[71] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Dm[0] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Dm[1] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Dm[2] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Dm[3] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Dm[4] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Dm[5] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Dm[6] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Dm[7] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Dm[8] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Dqs[0] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Dqs[1] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Dqs[2] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Dqs[3] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Dqs[4] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Dqs[5] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Dqs[6] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Dqs[7] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Dqs[8] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Dqs_n[0] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Dqs_n[1] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Dqs_n[2] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Dqs_n[3] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Dqs_n[4] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Dqs_n[5] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Dqs_n[6] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Dqs_n[7] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Dqs_n[8] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Addr[0] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Addr[10] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Addr[11] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Addr[12] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Addr[13] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Addr[1] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Addr[2] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Addr[3] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Addr[4] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Addr[5] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Addr[6] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Addr[7] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Addr[8] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Addr[9] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Bank[0] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Bank[1] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Bank[2] -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Cs_n -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_We_n -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Ras_n -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Cas_n -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Cke -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Odt -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Reset_n -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Ck -tag __system_board_ddr3a_p0
+set_instance_assignment -name PACKAGE_SKEW_COMPENSATION ON -to Mem0_Ck_n -tag __system_board_ddr3a_p0
+set_instance_assignment -name ENABLE_BENEFICIAL_SKEW_OPTIMIZATION_FOR_NON_GLOBAL_CLOCKS ON -to system_inst|board|ddr3a -tag __system_board_ddr3a_p0
+set_instance_assignment -name XCVR_VCCR_VCCT_VOLTAGE 1_0V -to "hip_serial_rx_in0(n)"
+set_instance_assignment -name XCVR_VCCR_VCCT_VOLTAGE 1_0V -to hip_serial_rx_in0
+set_instance_assignment -name XCVR_VCCR_VCCT_VOLTAGE 1_0V -to "hip_serial_rx_in1(n)"
+set_instance_assignment -name XCVR_VCCR_VCCT_VOLTAGE 1_0V -to hip_serial_rx_in1
+set_instance_assignment -name XCVR_VCCR_VCCT_VOLTAGE 1_0V -to "hip_serial_rx_in2(n)"
+set_instance_assignment -name XCVR_VCCR_VCCT_VOLTAGE 1_0V -to hip_serial_rx_in2
+set_instance_assignment -name XCVR_VCCR_VCCT_VOLTAGE 1_0V -to "hip_serial_rx_in3(n)"
+set_instance_assignment -name XCVR_VCCR_VCCT_VOLTAGE 1_0V -to hip_serial_rx_in3
+set_global_assignment -name VCCT_GXBL_USER_VOLTAGE 1.0V
+set_global_assignment -name VCCT_GXBR_USER_VOLTAGE 1.0V
+set_global_assignment -name VCCR_GXBL_USER_VOLTAGE 1.0V
+set_global_assignment -name VCCR_GXBR_USER_VOLTAGE 1.0V
+set_global_assignment -name VCCA_GXBL_USER_VOLTAGE 3.0V
+set_global_assignment -name VCCA_GXBR_USER_VOLTAGE 3.0V
+set_global_assignment -name VERILOG_MACRO "PCIE_8LANES=1"
+set_location_assignment PIN_AA34 -to "hip_serial_rx_in4(n)"
+set_location_assignment PIN_AA33 -to hip_serial_rx_in4
+set_location_assignment PIN_W34 -to "hip_serial_rx_in5(n)"
+set_location_assignment PIN_W33 -to hip_serial_rx_in5
+set_location_assignment PIN_U34 -to "hip_serial_rx_in6(n)"
+set_location_assignment PIN_U33 -to hip_serial_rx_in6
+set_location_assignment PIN_R34 -to "hip_serial_rx_in7(n)"
+set_location_assignment PIN_R33 -to hip_serial_rx_in7
+set_location_assignment PIN_Y32 -to "hip_serial_tx_out4(n)"
+set_location_assignment PIN_Y31 -to hip_serial_tx_out4
+set_location_assignment PIN_V32 -to "hip_serial_tx_out5(n)"
+set_location_assignment PIN_V31 -to hip_serial_tx_out5
+set_location_assignment PIN_T32 -to "hip_serial_tx_out6(n)"
+set_location_assignment PIN_T31 -to hip_serial_tx_out6
+set_location_assignment PIN_P32 -to "hip_serial_tx_out7(n)"
+set_location_assignment PIN_P31 -to hip_serial_tx_out7
+set_instance_assignment -name IO_STANDARD "1.5-V PCML" -to hip_serial_tx_out4
+set_instance_assignment -name IO_STANDARD "1.5-V PCML" -to hip_serial_tx_out5
+set_instance_assignment -name IO_STANDARD "1.5-V PCML" -to hip_serial_tx_out6
+set_instance_assignment -name IO_STANDARD "1.5-V PCML" -to hip_serial_tx_out7
+set_instance_assignment -name IO_STANDARD "1.5-V PCML" -to hip_serial_rx_in4
+set_instance_assignment -name IO_STANDARD "1.5-V PCML" -to hip_serial_rx_in5
+set_instance_assignment -name IO_STANDARD "1.5-V PCML" -to hip_serial_rx_in6
+set_instance_assignment -name IO_STANDARD "1.5-V PCML" -to hip_serial_rx_in7
+set_instance_assignment -name XCVR_VCCR_VCCT_VOLTAGE 1_0V -to "hip_serial_rx_in4(n)"
+set_instance_assignment -name XCVR_VCCR_VCCT_VOLTAGE 1_0V -to hip_serial_rx_in4
+set_instance_assignment -name XCVR_VCCR_VCCT_VOLTAGE 1_0V -to "hip_serial_rx_in5(n)"
+set_instance_assignment -name XCVR_VCCR_VCCT_VOLTAGE 1_0V -to hip_serial_rx_in5
+set_instance_assignment -name XCVR_VCCR_VCCT_VOLTAGE 1_0V -to "hip_serial_rx_in6(n)"
+set_instance_assignment -name XCVR_VCCR_VCCT_VOLTAGE 1_0V -to hip_serial_rx_in6
+set_instance_assignment -name XCVR_VCCR_VCCT_VOLTAGE 1_0V -to "hip_serial_rx_in7(n)"
+set_instance_assignment -name XCVR_VCCR_VCCT_VOLTAGE 1_0V -to hip_serial_rx_in7
+set_global_assignment -name VERILOG_MACRO "CVPFIX=1"
+set_global_assignment -name VERILOG_MACRO "MEM_4GB=1"
+
+#Cvp and PLL constraints
+set_instance_assignment -name GLOBAL_SIGNAL "DUAL-REGIONAL CLOCK" -to system_inst|board|ddr3a|pll0|pll_config_clk -tag __system_board_ddr3a_p0
+set_instance_assignment -name GLOBAL_SIGNAL "DUAL-REGIONAL CLOCK" -to system_inst|board|ddr3a|pll0|pll_hr_clk -tag __system_board_ddr3a_p0
+set_instance_assignment -name GLOBAL_SIGNAL "DUAL-REGIONAL CLOCK" -to system_inst|board|ddr3a|pll0|pll_p2c_read_clk -tag __system_board_ddr3a_p0
+set_instance_assignment -name GLOBAL_SIGNAL "DUAL-REGIONAL CLOCK" -to system_inst|board|ddr3b|pll0|pll_config_clk -tag __system_board_ddr3a_p0
+set_instance_assignment -name GLOBAL_SIGNAL "DUAL-REGIONAL CLOCK" -to system_inst|board|ddr3b|pll0|pll_hr_clk -tag __system_board_ddr3a_p0
+set_instance_assignment -name GLOBAL_SIGNAL "DUAL-REGIONAL CLOCK" -to system_inst|board|ddr3b|pll0|pll_p2c_read_clk -tag __system_board_ddr3a_p0
+set_instance_assignment -name GLOBAL_SIGNAL "GLOBAL CLOCK" -to system_inst|board|ddr3a|pll0|afi_clk -tag __system_board_ddr3a_p0
+set_instance_assignment -name GLOBAL_SIGNAL "GLOBAL CLOCK" -to system_inst|board|ddr3b|pll0|afi_clk -tag __system_board_ddr3a_p0
+set_instance_assignment -name GLOBAL_SIGNAL "REGIONAL CLOCK" -to system_inst|board|ddr3a|pll0|pll_avl_clk -tag __system_board_ddr3a_p0
+set_instance_assignment -name GLOBAL_SIGNAL "REGIONAL CLOCK" -to system_inst|board|ddr3b|pll0|pll_avl_clk -tag __system_board_ddr3a_p0
+set_instance_assignment -name GLOBAL_SIGNAL OFF -to system_inst|board|ddr3a|p0|umemphy|uread_datapath|reset_n_fifo_wraddress[0] -tag __system_board_ddr3a_p0
+set_instance_assignment -name GLOBAL_SIGNAL OFF -to system_inst|board|ddr3a|p0|umemphy|uread_datapath|reset_n_fifo_wraddress[1] -tag __system_board_ddr3a_p0
+set_instance_assignment -name GLOBAL_SIGNAL OFF -to system_inst|board|ddr3a|p0|umemphy|uread_datapath|reset_n_fifo_wraddress[2] -tag __system_board_ddr3a_p0
+set_instance_assignment -name GLOBAL_SIGNAL OFF -to system_inst|board|ddr3a|p0|umemphy|uread_datapath|reset_n_fifo_wraddress[3] -tag __system_board_ddr3a_p0
+set_instance_assignment -name GLOBAL_SIGNAL OFF -to system_inst|board|ddr3a|p0|umemphy|uread_datapath|reset_n_fifo_wraddress[4] -tag __system_board_ddr3a_p0
+set_instance_assignment -name GLOBAL_SIGNAL OFF -to system_inst|board|ddr3a|p0|umemphy|uread_datapath|reset_n_fifo_wraddress[5] -tag __system_board_ddr3a_p0
+set_instance_assignment -name GLOBAL_SIGNAL OFF -to system_inst|board|ddr3a|p0|umemphy|uread_datapath|reset_n_fifo_wraddress[6] -tag __system_board_ddr3a_p0
+set_instance_assignment -name GLOBAL_SIGNAL OFF -to system_inst|board|ddr3a|p0|umemphy|uread_datapath|reset_n_fifo_wraddress[7] -tag __system_board_ddr3a_p0
+set_instance_assignment -name GLOBAL_SIGNAL OFF -to system_inst|board|ddr3a|p0|umemphy|uread_datapath|reset_n_fifo_wraddress[8] -tag __system_board_ddr3a_p0
+set_instance_assignment -name GLOBAL_SIGNAL OFF -to system_inst|board|ddr3a|p0|umemphy|ureset|phy_reset_n -tag __system_board_ddr3a_p0
+set_instance_assignment -name GLOBAL_SIGNAL OFF -to system_inst|board|ddr3a|s0|rst_controller|alt_rst_sync_uq1|reset_out -tag __system_board_ddr3a_p0
+set_instance_assignment -name GLOBAL_SIGNAL OFF -to system_inst|board|ddr3a|s0|sequencer_rw_mgr_inst|rw_mgr_inst|rw_mgr_core_inst|rw_soft_reset_n -tag __system_board_ddr3a_p0
+set_instance_assignment -name GLOBAL_SIGNAL OFF -to system_inst|board|ddr3b|p0|umemphy|uread_datapath|reset_n_fifo_wraddress[0] -tag __system_board_ddr3a_p0
+set_instance_assignment -name GLOBAL_SIGNAL OFF -to system_inst|board|ddr3b|p0|umemphy|uread_datapath|reset_n_fifo_wraddress[1] -tag __system_board_ddr3a_p0
+set_instance_assignment -name GLOBAL_SIGNAL OFF -to system_inst|board|ddr3b|p0|umemphy|uread_datapath|reset_n_fifo_wraddress[2] -tag __system_board_ddr3a_p0
+set_instance_assignment -name GLOBAL_SIGNAL OFF -to system_inst|board|ddr3b|p0|umemphy|uread_datapath|reset_n_fifo_wraddress[3] -tag __system_board_ddr3a_p0
+set_instance_assignment -name GLOBAL_SIGNAL OFF -to system_inst|board|ddr3b|p0|umemphy|uread_datapath|reset_n_fifo_wraddress[4] -tag __system_board_ddr3a_p0
+set_instance_assignment -name GLOBAL_SIGNAL OFF -to system_inst|board|ddr3b|p0|umemphy|uread_datapath|reset_n_fifo_wraddress[5] -tag __system_board_ddr3a_p0
+set_instance_assignment -name GLOBAL_SIGNAL OFF -to system_inst|board|ddr3b|p0|umemphy|uread_datapath|reset_n_fifo_wraddress[6] -tag __system_board_ddr3a_p0
+set_instance_assignment -name GLOBAL_SIGNAL OFF -to system_inst|board|ddr3b|p0|umemphy|uread_datapath|reset_n_fifo_wraddress[7] -tag __system_board_ddr3a_p0
+set_instance_assignment -name GLOBAL_SIGNAL OFF -to system_inst|board|ddr3b|p0|umemphy|uread_datapath|reset_n_fifo_wraddress[8] -tag __system_board_ddr3a_p0
+set_instance_assignment -name GLOBAL_SIGNAL OFF -to system_inst|board|ddr3b|p0|umemphy|ureset|phy_reset_n -tag __system_board_ddr3a_p0
+set_instance_assignment -name GLOBAL_SIGNAL OFF -to system_inst|board|ddr3b|s0|rst_controller|alt_rst_sync_uq1|reset_out -tag __system_board_ddr3a_p0
+set_instance_assignment -name GLOBAL_SIGNAL OFF -to system_inst|board|ddr3b|s0|sequencer_rw_mgr_inst|rw_mgr_inst|rw_mgr_core_inst|rw_soft_reset_n -tag __system_board_ddr3a_p0
+set_instance_assignment -name PLL_COMPENSATION_MODE DIRECT -to system_inst|board|ddr3a|pll0|fbout -tag __system_board_ddr3a_p0
+set_instance_assignment -name PLL_COMPENSATION_MODE DIRECT -to system_inst|board|ddr3b|pll0|fbout -tag __system_board_ddr3a_p0
+set_instance_assignment -name FORM_DDR_CLUSTERING_CLIQUE ON -to system_inst|board|ddr3a|p0|umemphy|*qr_to_hr* -tag __system_board_ddr3a_p0
+set_instance_assignment -name FORM_DDR_CLUSTERING_CLIQUE ON -to system_inst|board|ddr3b|p0|umemphy|*qr_to_hr* -tag __system_board_ddr3a_p0
+
+#============================================================
+# Additional Settings
+#============================================================
+set_global_assignment -name UNIPHY_SEQUENCER_DQS_CONFIG_ENABLE ON
+set_global_assignment -name OPTIMIZE_MULTI_CORNER_TIMING ON
+set_global_assignment -name UNIPHY_TEMP_VER_CODE 292421978
+set_global_assignment -name ECO_REGENERATE_REPORT ON
+
+# Global Clock Assignments
+set_instance_assignment -name GLOBAL_SIGNAL "GLOBAL CLOCK" -to "system:system_inst|system_board:board|altera_reset_controller:reset_controller_ddr3a|altera_reset_synchronizer:alt_rst_sync_uq1|altera_reset_synchronizer_int_chain_out"
+set_instance_assignment -name GLOBAL_SIGNAL "GLOBAL CLOCK" -to "system:system_inst|system_board:board|altera_reset_controller:reset_controller_ddr3b|altera_reset_synchronizer:alt_rst_sync_uq1|altera_reset_synchronizer_int_chain_out"
+set_instance_assignment -name GLOBAL_SIGNAL "GLOBAL CLOCK" -to "system:system_inst|system_board:board|altera_reset_controller:reset_controller_pcie|altera_reset_synchronizer:alt_rst_sync_uq1|altera_reset_synchronizer_int_chain_out"
+set_instance_assignment -name GLOBAL_SIGNAL "GLOBAL CLOCK" -to "system:system_inst|system_board:board|altpcie_sv_hip_avmm_hwtcl:pcie|altpcie_sv_hip_ast_hwtcl:altera_s5_a2p|altpcie_hip_256_pipen1b:altpcie_hip_256_pipen1b|coreclkout_hip"
+set_instance_assignment -name GLOBAL_SIGNAL "GLOBAL CLOCK" -to "system:system_inst|system_board:board|system_board_kernel_interface:kernel_interface|altera_reset_controller:reset_controller_sw|altera_reset_synchronizer:alt_rst_sync_uq1|altera_reset_synchronizer_int_chain_out"
+
+set_global_assignment -name SEED 1
+
+# Logic Locked: board_region 
+set_global_assignment -name LL_ENABLED ON -section_id board_region
+set_global_assignment -name LL_RESERVED OFF -section_id board_region
+set_global_assignment -name LL_SECURITY_ROUTING_INTERFACE OFF -section_id board_region
+set_global_assignment -name LL_IGNORE_IO_BANK_SECURITY_CONSTRAINT OFF -section_id board_region
+set_global_assignment -name LL_PR_REGION OFF -section_id board_region
+set_global_assignment -name LL_ROUTING_REGION_EXPANSION_SIZE 2147483647 -section_id board_region
+set_global_assignment -name LL_HEIGHT 24 -section_id board_region
+set_global_assignment -name LL_WIDTH 116 -section_id board_region
+set_global_assignment -name LL_ORIGIN X0_Y1 -section_id board_region
+set_global_assignment -name LL_STATE LOCKED -section_id board_region
+set_global_assignment -name LL_AUTO_SIZE OFF -section_id board_region
+set_instance_assignment -name LL_MEMBER_OF board_region -to "system:system_inst|system_board:board|altera_avalon_mm_bridge:pipe_stage_host_ctrl" -section_id board_region
+set_instance_assignment -name LL_MEMBER_OF board_region -to "system:system_inst|system_board:board|altera_avalon_mm_bridge:pipe_stage_host_flash" -section_id board_region
+set_instance_assignment -name LL_MEMBER_OF board_region -to "system:system_inst|system_board:board|altera_avalon_mm_clock_crossing_bridge:clock_cross_dma_to_pcie" -section_id board_region
+set_instance_assignment -name LL_MEMBER_OF board_region -to "system:system_inst|system_board:board|altera_avalon_mm_clock_crossing_bridge:clock_cross_kernel_mem_0" -section_id board_region
+set_instance_assignment -name LL_MEMBER_OF board_region -to "system:system_inst|system_board:board|altera_avalon_mm_clock_crossing_bridge:clock_cross_kernel_mem_1" -section_id board_region
+set_instance_assignment -name LL_MEMBER_OF board_region -to "system:system_inst|system_board:board|altera_irq_clock_crosser:irq_synchronizer" -section_id board_region
+set_instance_assignment -name LL_MEMBER_OF board_region -to "system:system_inst|system_board:board|altera_irq_clock_crosser:irq_synchronizer_001" -section_id board_region
+set_instance_assignment -name LL_MEMBER_OF board_region -to "system:system_inst|system_board:board|altera_reset_controller:reset_controller_global" -section_id board_region
+set_instance_assignment -name LL_MEMBER_OF board_region -to "system:system_inst|system_board:board|altera_reset_controller:reset_controller_pcie" -section_id board_region
+set_instance_assignment -name LL_MEMBER_OF board_region -to "system:system_inst|system_board:board|altera_reset_controller:rst_controller" -section_id board_region
+set_instance_assignment -name LL_MEMBER_OF board_region -to "system:system_inst|system_board:board|altera_reset_controller:rst_controller_001" -section_id board_region
+set_instance_assignment -name LL_MEMBER_OF board_region -to "system:system_inst|system_board:board|altera_reset_controller:rst_controller_002" -section_id board_region
+set_instance_assignment -name LL_MEMBER_OF board_region -to "system:system_inst|system_board:board|altera_reset_controller:rst_controller_003" -section_id board_region
+set_instance_assignment -name LL_MEMBER_OF board_region -to "system:system_inst|system_board:board|altera_reset_controller:rst_controller_004" -section_id board_region
+set_instance_assignment -name LL_MEMBER_OF board_region -to "system:system_inst|system_board:board|altera_reset_controller:rst_controller_005" -section_id board_region
+set_instance_assignment -name LL_MEMBER_OF board_region -to "system:system_inst|system_board:board|altera_reset_controller:rst_controller_006" -section_id board_region
+set_instance_assignment -name LL_MEMBER_OF board_region -to "system:system_inst|system_board:board|altpcie_sv_hip_avmm_hwtcl:pcie" -section_id board_region
+set_instance_assignment -name LL_MEMBER_OF board_region -to "system:system_inst|system_board:board|i2c_opencores:i2c_opencores_ucd" -section_id board_region
+set_instance_assignment -name LL_MEMBER_OF board_region -to "system:system_inst|system_board:board|sw_reset:por_reset_counter" -section_id board_region
+set_instance_assignment -name LL_MEMBER_OF board_region -to "system:system_inst|system_board:board|system_board_acl_kernel_clk:acl_kernel_clk" -section_id board_region
+set_instance_assignment -name LL_MEMBER_OF board_region -to "system:system_inst|system_board:board|system_board_acl_memory_bank_divider_0:acl_memory_bank_divider_0" -section_id board_region
+set_instance_assignment -name LL_MEMBER_OF board_region -to "system:system_inst|system_board:board|system_board_dma_0:dma_0" -section_id board_region
+set_instance_assignment -name LL_MEMBER_OF board_region -to "system:system_inst|system_board:board|system_board_irq_mapper:irq_mapper" -section_id board_region
+set_instance_assignment -name LL_MEMBER_OF board_region -to "system:system_inst|system_board:board|system_board_kernel_interface:kernel_interface" -section_id board_region
+set_instance_assignment -name LL_MEMBER_OF board_region -to "system:system_inst|system_board:board|system_board_mm_interconnect_2:mm_interconnect_2" -section_id board_region
+set_instance_assignment -name LL_MEMBER_OF board_region -to "system:system_inst|system_board:board|system_board_mm_interconnect_3:mm_interconnect_3" -section_id board_region
+set_instance_assignment -name LL_MEMBER_OF board_region -to "system:system_inst|system_board:board|system_board_mm_interconnect_4:mm_interconnect_4" -section_id board_region
+set_instance_assignment -name LL_MEMBER_OF board_region -to "system:system_inst|system_board:board|system_board_mm_interconnect_5:mm_interconnect_5" -section_id board_region
+set_instance_assignment -name LL_MEMBER_OF board_region -to "system:system_inst|system_board:board|system_board_mm_interconnect_6:mm_interconnect_6" -section_id board_region
+set_instance_assignment -name LL_MEMBER_OF board_region -to "system:system_inst|system_board:board|system_board_mm_interconnect_9:mm_interconnect_9" -section_id board_region
+set_instance_assignment -name LL_MEMBER_OF board_region -to "system:system_inst|system_board:board|system_board_onchip_memory_0:onchip_memory_0" -section_id board_region
+set_instance_assignment -name LL_MEMBER_OF board_region -to "system:system_inst|system_board:board|system_board_pfl_flash_grnt:pfl_flash_grnt" -section_id board_region
+set_instance_assignment -name LL_MEMBER_OF board_region -to "system:system_inst|system_board:board|system_board_pfl_flash_req:pfl_flash_req" -section_id board_region
+set_instance_assignment -name LL_MEMBER_OF board_region -to "system:system_inst|system_board:board|system_board_temperature_pll:temperature_pll" -section_id board_region
+set_instance_assignment -name LL_MEMBER_OF board_region -to "system:system_inst|system_board:board|temperature:temperature_0" -section_id board_region
+set_instance_assignment -name LL_MEMBER_OF board_region -to "system:system_inst|system_board:board|ufm_interface:acl_ufm_interface_0|general_fifo:src_fifo" -section_id board_region
+set_instance_assignment -name LL_MEMBER_OF board_region -to "system:system_inst|system_board:board|uniphy_status:uniphy_status_0" -section_id board_region
+set_instance_assignment -name LL_MEMBER_OF board_region -to "system:system_inst|system_board:board|version_id:version_id_0" -section_id board_region
+
+# Logic Locked: ddr3a_region 
+set_global_assignment -name LL_ENABLED ON -section_id ddr3a_region
+set_global_assignment -name LL_RESERVED OFF -section_id ddr3a_region
+set_global_assignment -name LL_SECURITY_ROUTING_INTERFACE OFF -section_id ddr3a_region
+set_global_assignment -name LL_IGNORE_IO_BANK_SECURITY_CONSTRAINT OFF -section_id ddr3a_region
+set_global_assignment -name LL_PR_REGION OFF -section_id ddr3a_region
+set_global_assignment -name LL_ROUTING_REGION_EXPANSION_SIZE 2147483647 -section_id ddr3a_region
+set_global_assignment -name LL_HEIGHT 21 -section_id ddr3a_region
+set_global_assignment -name LL_WIDTH 63 -section_id ddr3a_region
+set_global_assignment -name LL_ORIGIN X139_Y86 -section_id ddr3a_region
+set_global_assignment -name LL_STATE LOCKED -section_id ddr3a_region
+set_global_assignment -name LL_AUTO_SIZE OFF -section_id ddr3a_region
+set_instance_assignment -name LL_MEMBER_OF ddr3a_region -to "system:system_inst|system_board:board|altera_avalon_mm_bridge:pipe_stage_ddr3a_dimm" -section_id ddr3a_region
+set_instance_assignment -name LL_MEMBER_OF ddr3a_region -to "system:system_inst|system_board:board|altera_reset_controller:reset_controller_ddr3a" -section_id ddr3a_region
+set_instance_assignment -name LL_MEMBER_OF ddr3a_region -to "system:system_inst|system_board:board|system_board_ddr3a:ddr3a" -section_id ddr3a_region
+set_instance_assignment -name LL_MEMBER_OF ddr3a_region -to "system:system_inst|system_board:board|system_board_mm_interconnect_0:mm_interconnect_0" -section_id ddr3a_region
+
+# Logic Locked: ddr3a_xover_region 
+set_global_assignment -name LL_ENABLED ON -section_id ddr3a_xover_region
+set_global_assignment -name LL_RESERVED OFF -section_id ddr3a_xover_region
+set_global_assignment -name LL_SECURITY_ROUTING_INTERFACE OFF -section_id ddr3a_xover_region
+set_global_assignment -name LL_IGNORE_IO_BANK_SECURITY_CONSTRAINT OFF -section_id ddr3a_xover_region
+set_global_assignment -name LL_PR_REGION OFF -section_id ddr3a_xover_region
+set_global_assignment -name LL_ROUTING_REGION_EXPANSION_SIZE 2147483647 -section_id ddr3a_xover_region
+set_global_assignment -name LL_HEIGHT 20 -section_id ddr3a_xover_region
+set_global_assignment -name LL_WIDTH 16 -section_id ddr3a_xover_region
+set_global_assignment -name LL_ORIGIN X186_Y45 -section_id ddr3a_xover_region
+set_global_assignment -name LL_STATE LOCKED -section_id ddr3a_xover_region
+set_global_assignment -name LL_AUTO_SIZE OFF -section_id ddr3a_xover_region
+set_instance_assignment -name LL_MEMBER_OF ddr3a_xover_region -to "system:system_inst|system_board:board|altera_avalon_mm_clock_crossing_bridge:clock_cross_dma_to_ddr3a" -section_id ddr3a_xover_region
+
+# Logic Locked: ddr3b_region 
+set_global_assignment -name LL_ENABLED ON -section_id ddr3b_region
+set_global_assignment -name LL_RESERVED OFF -section_id ddr3b_region
+set_global_assignment -name LL_SECURITY_ROUTING_INTERFACE OFF -section_id ddr3b_region
+set_global_assignment -name LL_IGNORE_IO_BANK_SECURITY_CONSTRAINT OFF -section_id ddr3b_region
+set_global_assignment -name LL_PR_REGION OFF -section_id ddr3b_region
+set_global_assignment -name LL_ROUTING_REGION_EXPANSION_SIZE 2147483647 -section_id ddr3b_region
+set_global_assignment -name LL_HEIGHT 18 -section_id ddr3b_region
+set_global_assignment -name LL_WIDTH 86 -section_id ddr3b_region
+set_global_assignment -name LL_ORIGIN X116_Y1 -section_id ddr3b_region
+set_global_assignment -name LL_STATE LOCKED -section_id ddr3b_region
+set_global_assignment -name LL_AUTO_SIZE OFF -section_id ddr3b_region
+set_instance_assignment -name LL_MEMBER_OF ddr3b_region -to "system:system_inst|system_board:board|altera_avalon_mm_bridge:pipe_stage_ddr3a_iface" -section_id ddr3b_region
+set_instance_assignment -name LL_MEMBER_OF ddr3b_region -to "system:system_inst|system_board:board|altera_avalon_mm_bridge:pipe_stage_ddr3b_dimm" -section_id ddr3b_region
+set_instance_assignment -name LL_MEMBER_OF ddr3b_region -to "system:system_inst|system_board:board|altera_reset_controller:reset_controller_ddr3b" -section_id ddr3b_region
+set_instance_assignment -name LL_MEMBER_OF ddr3b_region -to "system:system_inst|system_board:board|system_board_ddr3a:ddr3b" -section_id ddr3b_region
+set_instance_assignment -name LL_MEMBER_OF ddr3b_region -to "system:system_inst|system_board:board|system_board_mm_interconnect_1:mm_interconnect_1" -section_id ddr3b_region
+
+# Logic Locked: flash_region
+set_global_assignment -name LL_ENABLED ON -section_id flash_region
+set_global_assignment -name LL_RESERVED OFF -section_id flash_region
+set_global_assignment -name LL_SECURITY_ROUTING_INTERFACE OFF -section_id flash_region
+set_global_assignment -name LL_IGNORE_IO_BANK_SECURITY_CONSTRAINT OFF -section_id flash_region
+set_global_assignment -name LL_PR_REGION OFF -section_id flash_region
+set_global_assignment -name LL_ROUTING_REGION_EXPANSION_SIZE 2147483647 -section_id flash_region
+set_global_assignment -name LL_HEIGHT 82 -section_id flash_region
+set_global_assignment -name LL_WIDTH 4 -section_id flash_region
+set_global_assignment -name LL_ORIGIN X1_Y25 -section_id flash_region
+set_global_assignment -name LL_STATE LOCKED -section_id flash_region
+set_global_assignment -name LL_AUTO_SIZE OFF -section_id flash_region
+set_instance_assignment -name LL_MEMBER_OF flash_region -to "system:system_inst|system_board:board|altera_avalon_mm_bridge:pipe_stage_flash_path" -section_id flash_region
+set_instance_assignment -name LL_MEMBER_OF flash_region -to "system:system_inst|system_board:board|altera_avalon_mm_bridge:pipe_stage_tmp431c_path" -section_id flash_region
+set_instance_assignment -name LL_MEMBER_OF flash_region -to "system:system_inst|system_board:board|altera_avalon_mm_bridge:pipe_stage_ufm_path" -section_id flash_region
+set_instance_assignment -name LL_MEMBER_OF flash_region -to "system:system_inst|system_board:board|i2c_opencores:i2c_opencores_tmp431c" -section_id flash_region
+set_instance_assignment -name LL_MEMBER_OF flash_region -to "system:system_inst|system_board:board|i2c_opencores:i2c_opencores_ufm" -section_id flash_region
+set_instance_assignment -name LL_MEMBER_OF flash_region -to "system:system_inst|system_board:board|system_board_generic_tristate_controller_0:generic_tristate_controller_0" -section_id flash_region
+set_instance_assignment -name LL_MEMBER_OF flash_region -to "system:system_inst|system_board:board|system_board_mm_interconnect_10:mm_interconnect_10" -section_id flash_region
+set_instance_assignment -name LL_MEMBER_OF flash_region -to "system:system_inst|system_board:board|system_board_mm_interconnect_12:mm_interconnect_12" -section_id flash_region
+set_instance_assignment -name LL_MEMBER_OF flash_region -to "system:system_inst|system_board:board|system_board_mm_interconnect_13:mm_interconnect_13" -section_id flash_region
+set_instance_assignment -name LL_MEMBER_OF flash_region -to "system:system_inst|system_board:board|system_board_tristate_conduit_bridge_0:tristate_conduit_bridge_0" -section_id flash_region
+
+# Preserve Pipeline Registers
+set_instance_assignment -name PRESERVE_REGISTER ON -to "system:system_inst|system_board:board|altera_avalon_mm_bridge:pipe_stage_flash_path|*"
+set_instance_assignment -name PRESERVE_REGISTER ON -to "system:system_inst|system_board:board|altera_avalon_mm_bridge:pipe_stage_tmp431c_path|*"
+set_instance_assignment -name PRESERVE_REGISTER ON -to "system:system_inst|system_board:board|altera_avalon_mm_bridge:pipe_stage_ufm_path|*"
+
+
+set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top
+set_instance_assignment -name PARTITION_HIERARCHY kernel_789c1 -to "system:system_inst|system_kernel_system:kernel_system" -section_id acl_kernel_partition
+set_instance_assignment -name PARTITION_HIERARCHY cvpup_84f31 -to "system:system_inst|system_board:board|altpcie_sv_hip_avmm_hwtcl:pcie|altpcie_sv_hip_ast_hwtcl:altera_s5_a2p|cvp_update_reset:cvp_update_reset_inst" -section_id cvp_update_reset_partition
+
+set_global_assignment -name SOURCE_TCL_SCRIPT_FILE ip_include.tcl
+
+set_instance_assignment -name AUTO_SHIFT_REGISTER_RECOGNITION OFF -to *_NO_SHIFT_REG*
+
+set_global_assignment -name VERILOG_CONSTANT_LOOP_LIMIT 10000

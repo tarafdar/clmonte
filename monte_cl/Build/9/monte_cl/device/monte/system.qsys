@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<system name="$${FILENAME}">
+ <component
+   name="$${FILENAME}"
+   displayName="$${FILENAME}"
+   version="1.0"
+   description=""
+   tags=""
+   categories="System" />
+ <parameter name="bonusData"><![CDATA[bonusData 
+{
+   element $${FILENAME}
+   {
+   }
+   element board
+   {
+      datum _sortIndex
+      {
+         value = "1";
+         type = "int";
+      }
+   }
+   element global_reset
+   {
+      datum _sortIndex
+      {
+         value = "0";
+         type = "int";
+      }
+   }
+}
+]]></parameter>
+ <parameter name="clockCrossingAdapter" value="FIFO" />
+ <parameter name="device" value="5SGSMD5H2F35C2" />
+ <parameter name="deviceFamily" value="Stratix V" />
+ <parameter name="deviceSpeedGrade" value="2_H2" />
+ <parameter name="fabricMode" value="QSYS" />
+ <parameter name="generateLegacySim" value="false" />
+ <parameter name="generationId" value="0" />
+ <parameter name="globalResetBus" value="false" />
+ <parameter name="hdlLanguage" value="VERILOG" />
+ <parameter name="hideFromIPCatalog" value="false" />
+ <parameter name="maxAdditionalLatency" value="0" />
+ <parameter name="projectName" value="top.qpf" />
+ <parameter name="sopcBorderPoints" value="false" />
+ <parameter name="systemHash" value="0" />
+ <parameter name="testBenchDutName" value="" />
+ <parameter name="timeStamp" value="0" />
+ <parameter name="useTestBenchNamingPattern" value="false" />
+ <instanceScript></instanceScript>
+ <interface name="ddr3a" internal="board.ddr3a" type="conduit" dir="end" />
+ <interface name="ddr3a_mem_oct" internal="board.octa" type="conduit" dir="end" />
+ <interface name="ddr3b_mem_oct" internal="board.octb" type="conduit" dir="end" />
+ <interface
+   name="ddr3b_pll_ref"
+   internal="board.ddr3b_pll_ref"
+   type="clock"
+   dir="end" />
+ <interface
+   name="pcie_refclk"
+   internal="board.pcie_refclk"
+   type="clock"
+   dir="end" />
+ <interface name="pcie" internal="board.pcie_hip_serial" type="conduit" dir="end" />
+ <interface name="pcie_npor" internal="board.pcie_npor" type="conduit" dir="end" />
+ <interface
+   name="ddr3a_pll_ref"
+   internal="board.ddr3a_pll_ref"
+   type="clock"
+   dir="end" />
+ <interface name="pcie_nreset_status" internal="board.pcie_nreset_status" />
+ <interface name="config_clk" internal="board.config_clk" type="clock" dir="end" />
+ <interface name="kernelpll_refclk" internal="board.kernelpll_refclk" />
+ <interface
+   name="global_reset"
+   internal="global_reset.in_reset"
+   type="reset"
+   dir="end" />
+ <interface name="ddr3b" internal="board.ddr3b" type="conduit" dir="end" />
+ <interface
+   name="kernel_pll_refclk"
+   internal="board.kernel_pll_refclk"
+   type="clock"
+   dir="end" />
+ <interface
+   name="pcie_npor_out"
+   internal="board.pcie_npor_out"
+   type="reset"
+   dir="start" />
+ <interface
+   name="reconfig_to_xcvr"
+   internal="board.reconfig_to_xcvr"
+   type="conduit"
+   dir="end" />
+ <interface
+   name="reconfig_from_xcvr"
+   internal="board.reconfig_from_xcvr"
+   type="conduit"
+   dir="end" />
+ <interface name="tengbe_rxlane" internal="board.tengbe_rxlane" />
+ <interface name="tengbe_txlane" internal="board.tengbe_txlane" />
+ <interface name="tengbe_refclk" internal="board.tengbe_refclk" />
+ <interface name="tengbe_rxlane_0" internal="board.tengbe_rxlane_0" />
+ <interface name="tengbe_txlane_0" internal="board.tengbe_txlane_0" />
+ <interface name="tengbe_rxlane_1" internal="board.tengbe_rxlane_1" />
+ <interface name="tengbe_txlane_1" internal="board.tengbe_txlane_1" />
+ <interface name="i2c_ucd" internal="board.i2c_ucd" type="conduit" dir="end" />
+ <interface name="i2c_ufm" internal="board.i2c_ufm" type="conduit" dir="end" />
+ <interface
+   name="i2c_tmp431c"
+   internal="board.i2c_tmp431c"
+   type="conduit"
+   dir="end" />
+ <interface
+   name="pfl_flash_req"
+   internal="board.pfl_flash_req"
+   type="conduit"
+   dir="end" />
+ <interface
+   name="pfl_flash_grnt"
+   internal="board.pfl_flash_grnt"
+   type="conduit"
+   dir="end" />
+ <interface name="flash_if" internal="board.flash_if" type="conduit" dir="end" />
+ <module kind="board" version="1.0" enabled="1" name="board">
+  <parameter name="AUTO_GENERATION_ID" value="0" />
+  <parameter name="AUTO_UNIQUE_ID" value="$${FILENAME}_board" />
+  <parameter name="AUTO_DEVICE_FAMILY" value="Stratix V" />
+  <parameter name="AUTO_DEVICE" value="5SGSMD5H2F35C2" />
+  <parameter name="AUTO_PCIE_REFCLK_CLOCK_RATE" value="0" />
+  <parameter name="AUTO_PCIE_REFCLK_CLOCK_DOMAIN" value="7" />
+  <parameter name="AUTO_PCIE_REFCLK_RESET_DOMAIN" value="7" />
+  <parameter name="AUTO_DDR3A_PLL_REF_CLOCK_RATE" value="0" />
+  <parameter name="AUTO_DDR3A_PLL_REF_CLOCK_DOMAIN" value="2" />
+  <parameter name="AUTO_DDR3A_PLL_REF_RESET_DOMAIN" value="2" />
+  <parameter name="AUTO_DDR3B_PLL_REF_CLOCK_RATE" value="0" />
+  <parameter name="AUTO_DDR3B_PLL_REF_CLOCK_DOMAIN" value="3" />
+  <parameter name="AUTO_DDR3B_PLL_REF_RESET_DOMAIN" value="3" />
+  <parameter name="AUTO_CONFIG_CLK_CLOCK_RATE" value="0" />
+  <parameter name="AUTO_CONFIG_CLK_CLOCK_DOMAIN" value="1" />
+  <parameter name="AUTO_CONFIG_CLK_RESET_DOMAIN" value="1" />
+  <parameter name="AUTO_KERNEL_PLL_REFCLK_CLOCK_RATE" value="0" />
+  <parameter name="AUTO_KERNEL_PLL_REFCLK_CLOCK_DOMAIN" value="5" />
+  <parameter name="AUTO_KERNEL_PLL_REFCLK_RESET_DOMAIN" value="5" />
+  <parameter name="AUTO_KERNEL_IRQ_INTERRUPTS_USED" value="0" />
+ </module>
+ <module
+   kind="altera_reset_bridge"
+   version="14.0"
+   enabled="1"
+   name="global_reset">
+  <parameter name="ACTIVE_LOW_RESET" value="1" />
+  <parameter name="SYNCHRONOUS_EDGES" value="none" />
+  <parameter name="NUM_RESET_OUTPUTS" value="1" />
+  <parameter name="AUTO_CLK_CLOCK_RATE" value="-1" />
+ </module>
+ <connection
+   kind="reset"
+   version="14.0"
+   start="global_reset.out_reset"
+   end="board.global_reset" />
+ <interconnectRequirement for="$system" name="qsys_mm.clockCrossingAdapter" value="FIFO" />
+ <interconnectRequirement for="$system" name="qsys_mm.maxAdditionalLatency" value="0" />
+</system>
